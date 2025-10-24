@@ -1,30 +1,19 @@
-// bullet.js
-export class Bullet {
-  constructor(x, y, dirX, dirY) {
-    this.x = x;
-    this.y = y;
-    this.size = 6;
-    this.speed = 12;
-    this.dirX = dirX;
-    this.dirY = dirY;
+// Bullet.js
+export class BulletManager {
+  constructor() {
+    this.bullets = [];
   }
 
-  update() {
-    this.x += this.dirX * this.speed;
-    this.y += this.dirY * this.speed;
+  update(canvas) {
+    this.bullets = this.bullets.filter(b => {
+      b.x += b.dx;
+      b.y += b.dy;
+      return b.x >= -20 && b.x <= canvas.width + 20 && b.y >= -20 && b.y <= canvas.height + 20;
+    });
   }
 
   draw(ctx) {
     ctx.fillStyle = "yellow";
-    ctx.fillRect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
-  }
-
-  offscreen(width, height) {
-    return (
-      this.x < -this.size ||
-      this.x > width + this.size ||
-      this.y < -this.size ||
-      this.y > height + this.size
-    );
+    this.bullets.forEach(b => ctx.fillRect(b.x - b.size/2, b.y - b.size/2, b.size, b.size));
   }
 }
