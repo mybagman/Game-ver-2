@@ -1,9 +1,12 @@
 // main.js
-import { Player } from "./player.js";
-import { Enemy } from "./enemy.js";
-import { WaveManager } from "./waveManager.js";
-import { InputHandler } from "./inputHandler.js"; // optional, if you modularize input later
-import { Explosion } from "./explosion.js"; // optional future module
+import { Player } from "./Player.js";
+import { Enemy } from "./Enemy.js";
+import { WaveManager } from "./WaveManager.js";
+import { Bullet } from "./Bullet.js";
+import { Explosion } from "./Explosion.js";
+import { Tunnel } from "./Tunnel.js";
+import { Diamond } from "./Diamond.js";
+import { Utils } from "./Utils.js"; // optional helper functions
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
