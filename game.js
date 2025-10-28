@@ -30,6 +30,7 @@ export function gameLoop(now) {
   checkBulletCollisions();
   tryAdvanceWave();
 
+  // Fixed malformed player-death block (removed duplicated nested block)
   if (state.player.health <= 0) {
     state.player.lives--;
     if (state.player.lives > 0) {
