@@ -1,4 +1,4 @@
-// Bullet.js
+// state.js
 export class BulletManager {
   constructor() {
     this.bullets = [];
