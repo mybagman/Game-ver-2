@@ -173,48 +173,101 @@ export function respawnGoldStar() {
 }
 
 // Release attached enemies from a diamond: detach and launch them outward.
-// This is the missing export that enemies.js expects.
 export function diamondReleaseAttachedEnemies(diamond) {
   if (!diamond || !Array.isArray(diamond.attachments) || diamond.attachments.length === 0) return;
 
   for (let i = 0; i < diamond.attachments.length; i++) {
     const a = diamond.attachments[i];
     if (!a) continue;
-    // set detach state
+    // detach
     a.attachedTo = null;
-    // prevent immediate reattachment
     a.canReattach = false;
 
-    // launch outward from diamond center
-    const dx = (a.x - diamond.x);
-    const dy = (a.y - diamond.y);
+    // defensive: ensure a position exists
+    a.x = a.x ?? diamond.x;
+    a.y = a.y ?? diamond.y;
+
+    // compute outward launch vector
+    const dx = a.x - diamond.x;
+    const dy = a.y - diamond.y;
     const dist = Math.hypot(dx, dy) || 1;
-    const force = 6 + Math.random() * 4; // tweak as needed
+    const force = 6 + Math.random() * 4;
     a.vx = (dx / dist) * force;
     a.vy = (dy / dist) * force;
 
-    // small random spin/state marker (optional)
     a.state = 'launched';
 
-    // reintroduce into enemies list / processing pipeline
-    // use pushEnemy to ensure any queueing logic in state is respected
-    state.pushEnemy(a);
+    // re-add to enemies processing (use pushEnemy if available)
+    if (state && typeof state.pushEnemy === 'function') {
+      state.pushEnemy(a);
+    } else {
+      // fallback: push directly into enemies array if it exists
+      if (Array.isArray(state.enemies)) state.enemies.push(a);
+    }
 
-    // small visual effect for each released enemy
-    state.pushExplosion({
-      x: a.x,
-      y: a.y,
-      dx: (dx / dist) * 2,
-      dy: (dy / dist) * 2,
-      radius: 3,
-      color: "rgba(255,180,120,0.9)",
-      life: 20
-    });
+    // small visual effect
+    if (state && typeof state.pushExplosion === 'function') {
+      state.pushExplosion({
+        x: a.x,
+        y: a.y,
+        dx: (dx / dist) * 2,
+        dy: (dy / dist) * 2,
+        radius: 3,
+        color: "rgba(255,180,120,0.9)",
+        life: 20
+      });
+    }
   }
 
-  // clear attachments on diamond
   diamond.attachments = [];
-
-  // central release explosion
   createExplosion(diamond.x, diamond.y, "white");
+}
+
+// Handle collision/interaction between a moving entity and a tunnel.
+// This is intentionally conservative: it nudges intersecting entities out and applies a small tunnel-driven force.
+export function handleTunnelCollisionForEntity(e, t) {
+  if (!e || !t || !t.active) return;
+
+  // approximate entity radius
+  const r = (e.size || 20) / 2;
+
+  const left = t.x;
+  const right = t.x + t.width;
+  const top = t.y;
+  const bottom = t.y + t.height;
+
+  // quick AABB circle overlap test
+  const nearestX = Math.max(left, Math.min(e.x, right));
+  const nearestY = Math.max(top, Math.min(e.y, bottom));
+  const dx = e.x - nearestX;
+  const dy = e.y - nearestY;
+  const distSq = dx * dx + dy * dy;
+  if (distSq > r * r) return; // no collision
+
+  // if inside tunnel bounds, nudge entity out away from tunnel centerline and apply tunnel motion
+  const tunnelCenterY = top + (t.height / 2);
+  // push horizontally away from tunnel (tunnels generally move left, so nudge left)
+  const tunnelMotion = (typeof t.speed === 'number') ? t.speed : 2;
+  // Determine a primary push axis: if tunnel is top/bottom it's vertical span; nudge vertically to avoid sticking
+  const verticalGap = Math.abs(e.y - tunnelCenterY);
+
+  // small outward nudge
+  const nudgeStrength = 4;
+  if (e.y < tunnelCenterY) {
+    e.y -= nudgeStrength;
+  } else {
+    e.y += nudgeStrength;
+  }
+
+  // apply horizontal motion of the tunnel to the entity (help carry it)
+  e.vx = (e.vx || 0) - tunnelMotion * 0.6;
+  // slight downward/upward pull toward center to simulate tunnel flow
+  e.vy = (e.vy || 0) + (tunnelCenterY - e.y) * 0.02;
+
+  // safety clamp so velocities don't become NaN or huge
+  if (!isFinite(e.vx)) e.vx = 0;
+  if (!isFinite(e.vy)) e.vy = 0;
+
+  // Mark state so other logic can respond
+  e.state = e.state || 'tunnel-affected';
 }
