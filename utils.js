@@ -171,3 +171,50 @@ export function respawnGoldStar() {
   state.goldStar.x = pos.x;
   state.goldStar.y = pos.y;
 }
+
+// Release attached enemies from a diamond: detach and launch them outward.
+// This is the missing export that enemies.js expects.
+export function diamondReleaseAttachedEnemies(diamond) {
+  if (!diamond || !Array.isArray(diamond.attachments) || diamond.attachments.length === 0) return;
+
+  for (let i = 0; i < diamond.attachments.length; i++) {
+    const a = diamond.attachments[i];
+    if (!a) continue;
+    // set detach state
+    a.attachedTo = null;
+    // prevent immediate reattachment
+    a.canReattach = false;
+
+    // launch outward from diamond center
+    const dx = (a.x - diamond.x);
+    const dy = (a.y - diamond.y);
+    const dist = Math.hypot(dx, dy) || 1;
+    const force = 6 + Math.random() * 4; // tweak as needed
+    a.vx = (dx / dist) * force;
+    a.vy = (dy / dist) * force;
+
+    // small random spin/state marker (optional)
+    a.state = 'launched';
+
+    // reintroduce into enemies list / processing pipeline
+    // use pushEnemy to ensure any queueing logic in state is respected
+    state.pushEnemy(a);
+
+    // small visual effect for each released enemy
+    state.pushExplosion({
+      x: a.x,
+      y: a.y,
+      dx: (dx / dist) * 2,
+      dy: (dy / dist) * 2,
+      radius: 3,
+      color: "rgba(255,180,120,0.9)",
+      life: 20
+    });
+  }
+
+  // clear attachments on diamond
+  diamond.attachments = [];
+
+  // central release explosion
+  createExplosion(diamond.x, diamond.y, "white");
+}
