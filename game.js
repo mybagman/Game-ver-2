@@ -34,10 +34,6 @@ export function gameLoop(now) {
     state.player.lives--;
     if (state.player.lives > 0) {
       respawnPlayer();
-  if (state.player.health <= 0) {
-    state.player.lives--;
-    if (state.player.lives > 0) {
-      respawnPlayer();
     } else {
       state.setGameOver(true);
       saveHighScoresOnGameOver();
