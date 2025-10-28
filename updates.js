@@ -1,88 +1,93 @@
-// main.js
-import { Player } from "./Player.js";
-import { Enemy } from "./Enemy.js";
-import { WaveManager } from "./WaveManager.js";
-import { Bullet } from "./Bullet.js";
-import { Explosion } from "./Explosion.js";
-import { Tunnel } from "./Tunnel.js";
-import { Diamond } from "./Diamond.js";
-import { Utils } from "./Utils.js"; // optional helper functions
+import * as state from './state.js';
+import { createExplosion, spawnPowerUp, spawnDebris } from './utils.js';
 
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-// Game state variables
-let keys = {};
-let bullets = [];
-let enemies = [];
-let diamonds = [];
-let explosions = [];
-let score = 0;
-
-// Initialize main objects
-const player = new Player(innerWidth / 2, innerHeight / 2);
-const waveManager = new WaveManager(enemies, diamonds);
-
-// Input handling
-window.addEventListener("keydown", e => {
-  keys[e.key] = true;
-  if (e.key === " ") {
-    bullets.push(player.shoot());
+export function updatePlayerMovement() {
+  let mx = 0, my = 0;
+  if (state.keys["w"]) my = -1;
+  if (state.keys["s"]) my = 1;
+  if (state.keys["a"]) mx = -1;
+  if (state.keys["d"]) mx = 1;
+  const mag = Math.hypot(mx, my) || 0;
+  if (mag > 0) {
+    state.player.x += (mx / mag) * state.player.speed;
+    state.player.y += (my / mag) * state.player.speed;
+    state.player.x = Math.max(state.player.size/2, Math.min(state.canvas.width - state.player.size/2, state.player.x));
+    state.player.y = Math.max(state.player.size/2, Math.min(state.canvas.height - state.player.size/2, state.player.y));
   }
-});
-
-window.addEventListener("keyup", e => {
-  keys[e.key] = false;
-});
-
-// Main game loop
-function gameLoop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Update player
-  player.update(keys);
-  player.draw(ctx);
-
-  // Update enemies
-  enemies.forEach(enemy => {
-    enemy.update(player);
-    enemy.draw(ctx);
-  });
-
-  // Update bullets
-  bullets.forEach((bullet, index) => {
-    bullet.update();
-    bullet.draw(ctx);
-
-    enemies.forEach(enemy => {
-      if (bullet.hits(enemy)) {
-        enemy.takeDamage(bullet.damage);
-        bullets.splice(index, 1);
-        score += 10;
-
-        if (enemy.isDead()) {
-          explosions.push(new Explosion(enemy.x, enemy.y));
-        }
-      }
-    });
-  });
-
-  // Update explosions
-  explosions.forEach((explosion, i) => {
-    explosion.update();
-    explosion.draw(ctx);
-    if (explosion.done) explosions.splice(i, 1);
-  });
-
-  // Update wave system
-  waveManager.updateWave();
-  waveManager.drawWaveInfo(ctx, score);
-
-  requestAnimationFrame(gameLoop);
 }
 
-// Start the first wave and loop
-waveManager.startNextWave();
-gameLoop();
+export function handleShooting() {
+  if (state.shootCooldown > 0) state.decrementShootCooldown();
+  let dirX = 0, dirY = 0;
+  if (state.keys["arrowup"]) dirY = -1; 
+  if (state.keys["arrowdown"]) dirY = 1;
+  if (state.keys["arrowleft"]) dirX = -1; 
+  if (state.keys["arrowright"]) dirX = 1;
+  if ((dirX !== 0 || dirY !== 0) && state.shootCooldown === 0) {
+    const mag = Math.hypot(dirX, dirY) || 1;
+    state.pushBullet({x: state.player.x, y: state.player.y, dx: (dirX/mag)*10, dy: (dirY/mag)*10, size: 6, owner: "player"});
+    state.setShootCooldown(Math.max(5, Math.floor(10 / state.player.fireRateBoost)));
+
+    state.setFireIndicatorAngle(state.firingIndicatorAngle + Math.PI / 2);
+  }
+}
+
+export function updateBullets() {
+  state.filterBullets(b => {
+    b.x += b.dx; b.y += b.dy;
+    return b.x >= -40 && b.x <= state.canvas.width+40 && b.y >= -40 && b.y <= state.canvas.height+40;
+  });
+}
+
+export function updatePowerUps() {
+  state.filterPowerUps(p => { p.lifetime--; return p.lifetime > 0; });
+}
+
+export function updateTunnels() { 
+  for (let i = state.tunnels.length-1; i >= 0; i--) { 
+    const t = state.tunnels[i]; 
+    if (!t.active) continue; 
+    t.x -= t.speed; 
+    if (t.x+t.width < 0) state.tunnels.splice(i,1); 
+  }
+}
+
+export function updateExplosions(){ 
+  state.filterExplosions(ex => { 
+    ex.x += ex.dx; 
+    ex.y += ex.dy; 
+    ex.life--; 
+    return ex.life>0; 
+  }); 
+}
+
+export function updateRedPunchEffects() {
+  for (let i = state.redPunchEffects.length-1; i >= 0; i--) {
+    const e = state.redPunchEffects[i];
+    e.life--;
+    e.r = e.maxR * (1 - e.life / e.maxLife);
+    if (e.life <= 0) state.redPunchEffects.splice(i,1);
+  }
+}
+
+export function updateDebris() {
+  for (let i = state.debris.length - 1; i >= 0; i--) {
+    const d = state.debris[i];
+    d.x += d.dx;
+    d.y += d.dy;
+    d.rotation += d.rotationSpeed;
+    d.life--;
+    if (d.life <= 0) {
+      state.debris.splice(i, 1);
+    }
+  }
+}
+
+export function updateCloudParticles() {
+  state.cloudParticles.forEach(c => {
+    c.x -= c.speed;
+    if (c.x + c.size < 0) {
+      c.x = state.canvas.width + c.size;
+    }
+  });
+}
