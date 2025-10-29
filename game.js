@@ -168,6 +168,7 @@ export function resetGame() {
 
   respawnGoldStar();
   resetAuraOnDeath();
-  spawnWave(0);
+  state.wave = 1;
+  spawnWave(state.wave);
   requestAnimationFrame(gameLoop);
 }
