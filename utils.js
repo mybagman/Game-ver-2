@@ -85,24 +85,27 @@ export function getSafeSpawnPosition(minDist = state.MIN_SPAWN_DIST) {
 }
 
 // Spawn red square enemies
-export function spawnRedSquares(count) {
-  for (let i = 0; i < count; i++) {
+export function spawnRedSquares(count = 1) {
+  const c = Math.max(0, Math.floor(count));
+  for (let i = 0; i < c; i++) {
     const pos = getSafeSpawnPosition();
     state.pushEnemy({ x: pos.x, y: pos.y, type: "red-square" });
   }
 }
 
 // Spawn triangle enemies
-export function spawnTriangles(count) {
-  for (let i = 0; i < count; i++) {
+export function spawnTriangles(count = 1) {
+  const c = Math.max(0, Math.floor(count));
+  for (let i = 0; i < c; i++) {
     const pos = getSafeSpawnPosition();
     state.pushEnemy({ x: pos.x, y: pos.y, type: "triangle" });
   }
 }
 
 // Spawn reflectors
-export function spawnReflectors(count) {
-  for (let i = 0; i < count; i++) {
+export function spawnReflectors(count = 1) {
+  const c = Math.max(0, Math.floor(count));
+  for (let i = 0; i < c; i++) {
     const pos = getSafeSpawnPosition();
     state.pushEnemy({ x: pos.x, y: pos.y, type: "reflector" });
   }
@@ -127,24 +130,27 @@ export function spawnDiamondEnemy() {
 }
 
 // Spawn tank
-export function spawnTank(count) {
-  for (let i = 0; i < count; i++) {
+export function spawnTank(count = 1) {
+  const c = Math.max(0, Math.floor(count));
+  for (let i = 0; i < c; i++) {
     const pos = getSafeSpawnPosition();
     state.pushTank({ x: pos.x, y: pos.y });
   }
 }
 
 // Spawn walker
-export function spawnWalker(count) {
-  for (let i = 0; i < count; i++) {
+export function spawnWalker(count = 1) {
+  const c = Math.max(0, Math.floor(count));
+  for (let i = 0; i < c; i++) {
     const pos = getSafeSpawnPosition();
     state.pushWalker({ x: pos.x, y: pos.y });
   }
 }
 
 // Spawn mech
-export function spawnMech(count) {
-  for (let i = 0; i < count; i++) {
+export function spawnMech(count = 1) {
+  const c = Math.max(0, Math.floor(count));
+  for (let i = 0; i < c; i++) {
     const pos = getSafeSpawnPosition();
     state.pushMech({ x: pos.x, y: pos.y });
   }
