@@ -85,12 +85,18 @@ export function getSafeSpawnPosition(minDist = state.MIN_SPAWN_DIST) {
 }
 
 // Spawn red square enemies
-export function spawnRedSquares(count = 1) {
-  const c = Math.max(0, Math.floor(count));
+export function spawnRedSquares(c, fromBoss = false) {
+  console.log('[spawnRedSquares] spawning', c, 'red squares');
   for (let i = 0; i < c; i++) {
     const pos = getSafeSpawnPosition();
-    state.pushEnemy({ x: pos.x, y: pos.y, type: "red-square" });
+    console.log('[spawnRedSquares] enemy position:', pos);
+    state.pushEnemy({
+      x: pos.x,
+      y: pos.y,
+      size: 30, speed: 1.8, health: 30, type: "red-square", shootTimer: 0, fromBoss
+    });
   }
+  console.log('[spawnRedSquares] enemies array length:', state.enemies.length);
 }
 
 // Spawn triangle enemies
