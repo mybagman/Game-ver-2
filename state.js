@@ -117,16 +117,64 @@ export function setAuraShockwaves(val) { auraShockwaves = val; }
 export function incrementAuraPulseTimer() { auraPulseTimer++; }
 
 // Array mutators
-export function clearBullets() { bullets = []; }
-export function clearLightning() { lightning = []; }
-export function filterBullets(fn) { bullets = bullets.filter(fn); }
-export function filterPowerUps(fn) { powerUps = powerUps.filter(fn); }
-export function filterLightning(fn) { lightning = lightning.filter(fn); }
-export function filterExplosions(fn) { explosions = explosions.filter(fn); }
-export function filterEnemies(fn) { enemies = enemies.filter(fn); }
+export function clearBullets() { bullets.length = 0; }
+export function clearLightning() { lightning.length = 0; }
+export function filterBullets(fn) { 
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    if (!fn(bullets[i])) bullets.splice(i, 1);
+  }
+}
+export function filterPowerUps(fn) { 
+  for (let i = powerUps.length - 1; i >= 0; i--) {
+    if (!fn(powerUps[i])) powerUps.splice(i, 1);
+  }
+}
+export function filterLightning(fn) { 
+  for (let i = lightning.length - 1; i >= 0; i--) {
+    if (!fn(lightning[i])) lightning.splice(i, 1);
+  }
+}
+export function filterExplosions(fn) { 
+  for (let i = explosions.length - 1; i >= 0; i--) {
+    if (!fn(explosions[i])) explosions.splice(i, 1);
+  }
+}
+export function filterEnemies(fn) { 
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    if (!fn(enemies[i])) enemies.splice(i, 1);
+  }
+}
 export function pushEnemy(e) { enemies.push(e); }
 export function pushBullet(b) { bullets.push(b); }
 export function pushLightning(l) { lightning.push(l); }
+export function pushExplosion(e) { explosions.push(e); }
+export function pushPowerUp(p) { powerUps.push(p); }
+export function pushTunnel(t) { tunnels.push(t); }
+export function pushDiamond(d) { diamonds.push(d); }
+export function pushTank(t) { tanks.push(t); }
+export function pushWalker(w) { walkers.push(w); }
+export function pushMech(m) { mechs.push(m); }
+export function pushDebris(d) { debris.push(d); }
+export function pushCloudParticle(c) { cloudParticles.push(c); }
+export function pushReflectionEffect(r) { reflectionEffects.push(r); }
+export function pushRedPunchEffect(e) { redPunchEffects.push(e); }
+export function pushAuraSpark(s) { auraSparks.push(s); }
+export function pushAuraShockwave(s) { auraShockwaves.push(s); }
+export function filterAuraSparks(fn) { 
+  for (let i = auraSparks.length - 1; i >= 0; i--) {
+    if (!fn(auraSparks[i])) auraSparks.splice(i, 1);
+  }
+}
+export function filterAuraShockwaves(fn) { 
+  for (let i = auraShockwaves.length - 1; i >= 0; i--) {
+    if (!fn(auraShockwaves[i])) auraShockwaves.splice(i, 1);
+  }
+}
+export function pushMinion(m) { minionsToAdd.push(m); }
+export function flushMinions() { 
+  enemies.push(...minionsToAdd); 
+  minionsToAdd.length = 0;
+}(l); }
 export function pushExplosion(e) { explosions.push(e); }
 export function pushPowerUp(p) { powerUps.push(p); }
 export function pushTunnel(t) { tunnels.push(t); }
