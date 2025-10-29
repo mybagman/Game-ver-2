@@ -119,6 +119,7 @@ export function incrementAuraPulseTimer() { auraPulseTimer++; }
 // Array mutators
 export function clearBullets() { bullets.length = 0; }
 export function clearLightning() { lightning.length = 0; }
+
 export function filterBullets(fn) { 
   for (let i = bullets.length - 1; i >= 0; i--) {
     if (!fn(bullets[i])) bullets.splice(i, 1);
@@ -144,6 +145,7 @@ export function filterEnemies(fn) {
     if (!fn(enemies[i])) enemies.splice(i, 1);
   }
 }
+
 export function pushEnemy(e) { 
   console.log('[pushEnemy] adding enemy:', e.type, 'at', e.x, e.y);
   enemies.push(e); 
@@ -164,38 +166,12 @@ export function pushReflectionEffect(r) { reflectionEffects.push(r); }
 export function pushRedPunchEffect(e) { redPunchEffects.push(e); }
 export function pushAuraSpark(s) { auraSparks.push(s); }
 export function pushAuraShockwave(s) { auraShockwaves.push(s); }
-export function filterAuraSparks(fn) { 
-  for (let i = auraSparks.length - 1; i >= 0; i--) {
-    if (!fn(auraSparks[i])) auraSparks.splice(i, 1);
-  }
-}
-export function filterAuraShockwaves(fn) { 
-  for (let i = auraShockwaves.length - 1; i >= 0; i--) {
-    if (!fn(auraShockwaves[i])) auraShockwaves.splice(i, 1);
-  }
-}
+
+export function filterAuraSparks(fn) { auraSparks = auraSparks.filter(fn); }
+export function filterAuraShockwaves(fn) { auraShockwaves = auraShockwaves.filter(fn); }
+
 export function pushMinion(m) { minionsToAdd.push(m); }
 export function flushMinions() { 
   enemies.push(...minionsToAdd); 
   minionsToAdd.length = 0;
-}(l); }
-export function pushExplosion(e) { explosions.push(e); }
-export function pushPowerUp(p) { powerUps.push(p); }
-export function pushTunnel(t) { tunnels.push(t); }
-export function pushDiamond(d) { diamonds.push(d); }
-export function pushTank(t) { tanks.push(t); }
-export function pushWalker(w) { walkers.push(w); }
-export function pushMech(m) { mechs.push(m); }
-export function pushDebris(d) { debris.push(d); }
-export function pushCloudParticle(c) { cloudParticles.push(c); }
-export function pushReflectionEffect(r) { reflectionEffects.push(r); }
-export function pushRedPunchEffect(e) { redPunchEffects.push(e); }
-export function pushAuraSpark(s) { auraSparks.push(s); }
-export function pushAuraShockwave(s) { auraShockwaves.push(s); }
-export function filterAuraSparks(fn) { auraSparks = auraSparks.filter(fn); }
-export function filterAuraShockwaves(fn) { auraShockwaves = auraShockwaves.filter(fn); }
-export function pushMinion(m) { minionsToAdd.push(m); }
-export function flushMinions() { 
-  enemies.push(...minionsToAdd); 
-  minionsToAdd = []; 
 }
