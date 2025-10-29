@@ -1,3 +1,4 @@
+console.log("spawnWave called with index:", waveIndex, "waves.length:", waves.length);
 import * as state from './state.js';
 import { waves } from './waves.js';
 import * as spawns from './utils.js';
