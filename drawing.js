@@ -502,6 +502,39 @@ export function drawGoldStar() {
   }
 }
 
+// NEW: drawGoldStarAura — export a named function so game.js can import it
+export function drawGoldStarAura() {
+  if (!state.goldStar.alive) return;
+  if (!state.goldStarAura || !state.goldStarAura.active) return;
+
+  const aura = state.goldStarAura;
+  const pulse = Math.sin(state.frameCount * 0.15) * 0.3 + 0.7;
+  const levelFactor = Math.max(0, aura.level || 0);
+  const radius = (aura.radius || (state.goldStar.size / 2 + 20)) + levelFactor * 4 + pulse * 8;
+
+  state.ctx.save();
+  state.ctx.globalCompositeOperation = 'lighter';
+
+  const grad = state.ctx.createRadialGradient(state.goldStar.x, state.goldStar.y, 0, state.goldStar.x, state.goldStar.y, radius);
+  grad.addColorStop(0, `rgba(255,220,80,${0.6 * pulse})`);
+  grad.addColorStop(0.5, `rgba(255,180,40,${0.35 * pulse})`);
+  grad.addColorStop(1, `rgba(255,120,0,0)`);
+
+  state.ctx.fillStyle = grad;
+  state.ctx.beginPath();
+  state.ctx.arc(state.goldStar.x, state.goldStar.y, radius, 0, Math.PI*2);
+  state.ctx.fill();
+
+  // subtle outer ring
+  state.ctx.strokeStyle = `rgba(255,220,80,${0.15 * pulse})`;
+  state.ctx.lineWidth = 2;
+  state.ctx.beginPath();
+  state.ctx.arc(state.goldStar.x, state.goldStar.y, radius + 6, 0, Math.PI*2);
+  state.ctx.stroke();
+
+  state.ctx.restore();
+}
+
 export function drawRedPunchEffects() {
   state.ctx.save();
   state.ctx.globalCompositeOperation = 'lighter';
