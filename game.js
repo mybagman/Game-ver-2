@@ -5,9 +5,11 @@ import { updateLightning, checkBulletCollisions } from './collisions.js';
 import { updateGoldStar } from './goldstar.js';
 import { updateGoldStarAura } from './aura.js';
 import { tryAdvanceWave, spawnWave } from './waveManager.js';
-import { drawBackground, drawTunnels, drawDiamonds, drawEnemies, drawTanks, drawWalkers, drawMechs, drawDebris, drawBullets, drawLightning, drawExplosions, drawPowerUps, drawGoldStar, drawGoldStarAura, drawRedPunchEffects, drawPlayer, updateAndDrawReflectionEffects, drawUI } from './drawing.js';
+import { drawBackground, drawTunnels, drawDiamonds, drawEnemies, drawTanks, drawWalkers, drawMechs, drawDebris, drawBullets, drawLightning, drawExplosions, drawPowerUps, drawGoldStar, drawGoldStarAura, drawRedPunchEffects, drawPlayer, updateAndDrawReflectionEffects, drawUI } from './draws.js';
 import { respawnPlayer, respawnGoldStar } from './utils.js';
 import { resetAuraOnDeath } from './aura.js';
+
+// --- Game loop and integration with high-score UI ---
 
 export function gameLoop(now) {
   if (state.cinematic.playing) return;
@@ -30,14 +32,17 @@ export function gameLoop(now) {
   checkBulletCollisions();
   tryAdvanceWave();
 
-  // Fixed malformed player-death block (removed duplicated nested block)
+  // Player death handling
   if (state.player.health <= 0) {
     state.player.lives--;
     if (state.player.lives > 0) {
       respawnPlayer();
     } else {
       state.setGameOver(true);
+      // Save/record high scores
       saveHighScoresOnGameOver();
+      // Show the game over UI overlay
+      showGameOverUI();
     }
   }
 
@@ -64,6 +69,7 @@ export function gameLoop(now) {
   drawUI();
 
   if (state.gameOver) {
+    // We still draw the fullscreen dark overlay + GAME OVER text on the canvas as a fallback.
     state.ctx.save();
     state.ctx.fillStyle = "rgba(0,0,0,0.6)";
     state.ctx.fillRect(0, 0, state.canvas.width, state.canvas.height);
@@ -74,6 +80,7 @@ export function gameLoop(now) {
     state.ctx.font = "20px Arial";
     state.ctx.fillText("Press R to restart", state.canvas.width / 2, state.canvas.height / 2 + 30);
     state.ctx.restore();
+    // The DOM overlay is handled by showGameOverUI() which is called when gameOver was set.
     return;
   }
 
@@ -153,8 +160,13 @@ export function resetGame() {
   state.setGameOver(false);
   state.setRecordedScoreThisRun(false);
 
-  state.player.x = state.canvas.width/2;
-  state.player.y = state.canvas.height/2;
+  if (state.canvas) {
+    state.player.x = state.canvas.width/2;
+    state.player.y = state.canvas.height/2;
+  } else {
+    state.player.x = 0;
+    state.player.y = 0;
+  }
   state.player.size = 28;
   state.player.speed = 4;
   state.player.health = 100;
@@ -172,3 +184,145 @@ export function resetGame() {
   spawnWave(state.wave);
   requestAnimationFrame(gameLoop);
 }
+
+/* ---- Integration with simple high-score DOM overlay and UI from example ----
+   This integrates the overlay/highscore UI into the existing game file.
+   The project already persists highscores via localStorage in saveHighScoresOnGameOver/loadHighScores.
+   Below are helper functions and event handlers that use state.* functions and state.highScores.
+*/
+
+// DOM elements expected to exist on the page (optional - graceful if absent)
+const overlayEl = document.getElementById('overlay');
+const finalScoreEl = document.getElementById('final-score');
+const continueBtn = document.getElementById('continue-btn');
+const restartBtn = document.getElementById('restart-btn');
+const highscoreList = document.getElementById('highscore-list');
+const newHighscorePanel = document.getElementById('new-highscore');
+const newHighscoreInput = document.getElementById('new-highscore-name');
+const saveHighscoreBtn = document.getElementById('save-highscore-btn');
+
+// Utility: check whether a score would qualify as a high score (top 5)
+function isHighScore(score) {
+  const scores = state.highScores || [];
+  if (!Array.isArray(scores) || scores.length < 5) return true;
+  // assume scores sorted desc; if not, compute lowest of top 5
+  const lowest = scores.slice(0,5).reduce((min, s) => Math.min(min, s.score), Infinity);
+  return score > lowest;
+}
+
+// Render the high score list into the DOM if element exists
+function renderHighScoreList() {
+  if (!highscoreList) return;
+  const scores = state.highScores || [];
+  highscoreList.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const li = document.createElement('li');
+    if (scores[i]) {
+      li.textContent = `${scores[i].name} — ${scores[i].score}`;
+    } else {
+      li.textContent = `--- — 0`;
+    }
+    highscoreList.appendChild(li);
+  }
+}
+
+// Show the game's overlay UI when the game ends (if overlay exists)
+export function showGameOverUI() {
+  if (!overlayEl) return;
+  overlayEl.classList.remove('hidden');
+
+  if (finalScoreEl) {
+    finalScoreEl.textContent = 'Score: ' + (state.score || 0);
+  }
+
+  // populate list (we already saved via saveHighScoresOnGameOver)
+  renderHighScoreList();
+
+  if (newHighscorePanel && newHighscoreInput && saveHighscoreBtn) {
+    if (isHighScore(state.score || 0)) {
+      newHighscorePanel.classList.remove('hidden');
+      newHighscoreInput.value = '';
+      newHighscoreInput.focus();
+    } else {
+      newHighscorePanel.classList.add('hidden');
+    }
+  }
+
+  if (continueBtn) {
+    continueBtn.disabled = !(Number.isInteger(state.wave) && state.wave >= 1);
+  }
+}
+
+// Hide overlay and resume/continue (used by continue button)
+function hideGameOverUI() {
+  if (!overlayEl) return;
+  overlayEl.classList.add('hidden');
+  if (newHighscorePanel) newHighscorePanel.classList.add('hidden');
+}
+
+// Continue from current wave with new lives (maps to example continueFromCurrentWave)
+function continueFromCurrentWave() {
+  // give player 3 lives, keep score and wave, resume
+  state.player.lives = 3;
+  state.setGameOver(false);
+  hideGameOverUI();
+  spawnWave(state.wave || 1);
+  requestAnimationFrame(gameLoop);
+}
+
+// Start a fresh new game (maps to example startNewGame)
+function startNewGame() {
+  resetGame();
+  hideGameOverUI();
+}
+
+// Hook up DOM buttons if they exist
+if (continueBtn) {
+  continueBtn.addEventListener('click', () => {
+    continueFromCurrentWave();
+  });
+}
+
+if (restartBtn) {
+  restartBtn.addEventListener('click', () => {
+    startNewGame();
+  });
+}
+
+if (saveHighscoreBtn && newHighscoreInput) {
+  saveHighscoreBtn.addEventListener('click', () => {
+    const raw = newHighscoreInput.value || '---';
+    const name = raw.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3).padEnd(3, '-');
+    // Add to state.highScores and persist
+    state.addHighScore({ name, score: state.score || 0 });
+    try {
+      localStorage.setItem("mybagman_highscores", JSON.stringify(state.highScores));
+      localStorage.setItem("mybagman_best", String(state.highScore));
+    } catch (e) {}
+    newHighscorePanel.classList.add('hidden');
+    renderHighScoreList();
+  });
+
+  // allow Enter to submit
+  newHighscoreInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveHighscoreBtn.click();
+    }
+  });
+
+  // optional: enforce only letters, up to 3 chars
+  newHighscoreInput.addEventListener('input', (e) => {
+    const filtered = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+    e.target.value = filtered.slice(0, 3);
+  });
+}
+
+// Expose some helpers for debugging in console (as in example)
+window.__gameState = state;
+window.startNewGame = startNewGame;
+window.continueFromCurrentWave = continueFromCurrentWave;
+window.showGameOverUI = showGameOverUI;
+
+// Ensure highscores are loaded at startup
+loadHighScores();
