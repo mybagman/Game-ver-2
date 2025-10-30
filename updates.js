@@ -1,14 +1,14 @@
 import * as state from './state.js';
-import { isAABBColliding } from './utils.js';
 
 export function updatePlayerMovement() {
-  // Read input and apply movement (supports Arrow keys and WASD).
-  // This was removed earlier which prevented any position updates.
+  // Read input and apply movement.
+  // NOTE: Movement is restricted to WASD to avoid arrow-key shooting also moving the player.
   let dirX = 0, dirY = 0;
-  if (state.keys["arrowup"] || state.keys["w"]) dirY = -1;
-  if (state.keys["arrowdown"] || state.keys["s"]) dirY = 1;
-  if (state.keys["arrowleft"] || state.keys["a"]) dirX = -1;
-  if (state.keys["arrowright"] || state.keys["d"]) dirX = 1;
+  // use only WASD for movement so arrow keys can be reserved for shooting
+  if (state.keys["w"]) dirY = -1;
+  if (state.keys["s"]) dirY = 1;
+  if (state.keys["a"]) dirX = -1;
+  if (state.keys["d"]) dirX = 1;
 
   if (dirX !== 0 || dirY !== 0) {
     const mag = Math.hypot(dirX, dirY) || 1;
@@ -26,29 +26,13 @@ export function updatePlayerMovement() {
   const TUNNEL_DAMAGE_PER_SECOND = 20; // adjust this value to tune how harmful tunnels are
   const damagePerFrame = TUNNEL_DAMAGE_PER_SECOND / 60; // assuming ~60 FPS
 
-  // Prepare player AABB for reuse
-  const px = state.player.x - state.player.size/2;
-  const py = state.player.y - state.player.size/2;
-  const pw = state.player.size;
-  const ph = state.player.size;
-  const radius = state.player.size / 2;
-
   for (let ti = 0; ti < state.tunnels.length; ti++) {
     const t = state.tunnels[ti];
     if (!t || !t.active) continue;
 
-    // First, try AABB vs AABB (consistent with other entity->tunnel checks).
-    if (isAABBColliding(px, py, pw, ph, t.x, t.y, t.width, t.height)) {
-      if (!state.player.invulnerable) {
-        state.player.health -= damagePerFrame;
-        console.debug('Tunnel AABB damage applied', { ti, health: state.player.health.toFixed(2) });
-      } else {
-        console.debug('Tunnel overlap but player invulnerable', { ti, invulnerableTimer: state.player.invulnerableTimer });
-      }
-      continue;
-    }
-
-    // Fallback: circle-vs-rect distance check (keeps existing precision)
+    // Check overlap between the player's circle and the tunnel rectangle.
+    // We'll treat the player's hit area as a circle with radius = player.size/2.
+    const radius = state.player.size / 2;
     const nearestX = Math.max(t.x, Math.min(state.player.x, t.x + t.width));
     const nearestY = Math.max(t.y, Math.min(state.player.y, t.y + t.height));
     const dx = state.player.x - nearestX;
@@ -59,9 +43,7 @@ export function updatePlayerMovement() {
       // Player is overlapping the tunnel. Apply damage unless invulnerable.
       if (!state.player.invulnerable) {
         state.player.health -= damagePerFrame;
-        console.debug('Tunnel circle damage applied', { ti, distSq, radiusSq: radius*radius, health: state.player.health.toFixed(2) });
-      } else {
-        console.debug('Tunnel circle overlap but player invulnerable', { ti, invulnerableTimer: state.player.invulnerableTimer });
+        // Optional: small visual effect or hurt sound can be triggered here.
       }
     }
   }
@@ -72,6 +54,7 @@ export function updatePlayerMovement() {
 export function handleShooting() {
   if (state.shootCooldown > 0) state.decrementShootCooldown();
   let dirX = 0, dirY = 0;
+  // arrows control shooting (no change here)
   if (state.keys["arrowup"]) dirY = -1; 
   if (state.keys["arrowdown"]) dirY = 1;
   if (state.keys["arrowleft"]) dirX = -1; 
