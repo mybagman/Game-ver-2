@@ -38,6 +38,7 @@ export function drawClouds() {
       state.ctx.restore();
       // very important: reset filter after restore in case some browsers keep it
       state.ctx.filter = 'none';
+      state.ctx.globalAlpha = 1;
     });
   });
 }
@@ -51,34 +52,132 @@ export function drawCityBackground() {
   }
 }
 
-export function drawPlayer() {
-  const invulFlash = state.player.invulnerable && Math.floor(Date.now()/100)%2 === 0;
-  state.ctx.fillStyle = invulFlash ? "rgba(0,255,0,0.5)" : "lime";
-  state.ctx.fillRect(state.player.x-state.player.size/2, state.player.y-state.player.size/2, state.player.size, state.player.size);
+// New 8-bit style player sprite drawing
+function drawPlayer8Bit(ctx, player) {
+  // Pixel-art 'canvas' is 9 x 9 logical pixels; scale with player.size
+  const grid = [
+    "001000100", // 0
+    "011011110", // 1
+    "111111111", // 2
+    "111111111", // 3
+    "011111110", // 4
+    "001111100", // 5
+    "001111100", // 6
+    "010000010", // 7 - tail / thruster base
+    "001000100"  // 8 - exhaust glow
+  ];
+  // Colors for different pixel values:
+  // 0 -> transparent
+  // 1 -> hull color
+  // 2 -> cockpit (we'll mark cockpit with '2' in grid if needed)
+  // For simplicity use hull and accent mapped from player state (atmospheric/space)
+  const hullColor = player.hullColor || "#88ff88"; // default lime-ish
+  const accentColor = player.accentColor || "#00e0ff";
+  const cockpitColor = player.cockpitColor || "#ffffff";
+  const exhaustColor = player.exhaustColor || "rgba(255,120,40,0.9)";
 
+  const size = player.size || 24;
+  const pixels = grid.length;
+  const px = Math.floor(size / pixels); // integer pixel scale
+  const remainder = size - px * pixels;
+  // center offset so sprite matches player.x,y center
+  const offsetX = player.x - (px * pixels + remainder) / 2;
+  const offsetY = player.y - (px * pixels + remainder) / 2;
+
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = hullColor;
+
+  for (let gy = 0; gy < pixels; gy++) {
+    const row = grid[gy];
+    for (let gx = 0; gx < row.length; gx++) {
+      const v = row[gx];
+      if (v === "0") continue;
+      // choose color by row/col to add detail
+      let color = hullColor;
+      // cockpit center approx
+      if (gy >= 2 && gy <= 3 && gx >= 3 && gx <= 5) color = cockpitColor;
+      // accent on wing tips
+      if (gx === 0 || gx === row.length - 1) color = accentColor;
+      // tail/exhaust rows: make exhaust glow
+      if (gy === 8) color = exhaustColor;
+      ctx.fillStyle = color;
+      const drawX = offsetX + gx * px + Math.floor(remainder / 2);
+      const drawY = offsetY + gy * px + Math.floor(remainder / 2);
+      // draw sharp rectangle pixel
+      ctx.fillRect(Math.round(drawX), Math.round(drawY), px, px);
+    }
+  }
+
+  // Thruster glow / movement indication
+  if (player.thrusting) {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = "rgba(255,140,60,0.6)";
+    ctx.beginPath();
+    ctx.ellipse(player.x, player.y + size / 2.6, size / 4, size / 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // invulnerability flicker overlay
+  if (player.invulnerable) {
+    ctx.globalAlpha = 0.6;
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    ctx.fillRect(offsetX, offsetY, px * pixels + remainder, px * pixels + remainder);
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.restore();
+}
+
+// replace drawPlayer rectangle with an 8-bit craft
+export function drawPlayer() {
+  // ensure any lingering canvas state is reset before drawing player
+  state.ctx.save();
+  state.ctx.filter = 'none';
+  state.ctx.shadowBlur = 0;
+  state.ctx.globalAlpha = 1;
+  state.ctx.globalCompositeOperation = 'source-over';
+
+  // determine some colors from player / environment for a more interesting craft
+  state.player.hullColor = state.player.hullColor || (state.inAtmosphere ? "#c0e0ff" : "#88ff88");
+  state.player.accentColor = state.player.accentColor || (state.inAtmosphere ? "#ffcc66" : "#00e0ff");
+  state.player.cockpitColor = state.player.cockpitColor || "#222222";
+  state.player.exhaustColor = state.player.exhaustColor || (state.inAtmosphere ? "rgba(255,200,100,0.85)" : "rgba(255,90,90,0.9)");
+
+  // draw 8-bit sprite centered on player.x, player.y
+  drawPlayer8Bit(state.ctx, state.player);
+
+  // firing indicator (small dot) when gold star aura active and either shooting or moving
   if (state.goldStarAura.active && (state.shootCooldown > 0 || (state.keys["arrowup"] || state.keys["arrowdown"] || state.keys["arrowleft"] || state.keys["arrowright"]))) {
     const indicatorDistance = state.player.size / 2 + 8;
     const dotX = state.player.x + Math.cos(state.firingIndicatorAngle) * indicatorDistance;
     const dotY = state.player.y + Math.sin(state.firingIndicatorAngle) * indicatorDistance;
 
+    state.ctx.save();
     state.ctx.shadowBlur = 10;
     state.ctx.shadowColor = "yellow";
     state.ctx.fillStyle = "yellow";
     state.ctx.beginPath();
     state.ctx.arc(dotX, dotY, 4, 0, Math.PI * 2);
     state.ctx.fill();
-    state.ctx.shadowBlur = 0;
+    state.ctx.restore();
 
     state.setFireIndicatorAngle(state.firingIndicatorAngle + 0.15);
   }
 
+  // reflect aura ring
   if (state.player.reflectAvailable) {
+    state.ctx.save();
     state.ctx.strokeStyle = "cyan";
     state.ctx.lineWidth = 2;
     state.ctx.beginPath(); 
     state.ctx.arc(state.player.x, state.player.y, state.player.size/2 + 14, 0, Math.PI*2); 
     state.ctx.stroke();
+    state.ctx.restore();
   }
+
+  state.ctx.restore();
 }
 
 // Helper: draw a soft glowing trail for a bullet (if bullet has trail[]), otherwise just a subtle glow behind it.
@@ -605,54 +704,116 @@ export function drawTunnels() {
   }); 
 }
 
+// Improved drawPowerUps: ensure alpha / shadow / composite are reset and draw clearer icons.
+// This change addresses "powerups are present but not visible" by forcing full opacity,
+// resetting canvas state, and drawing distinct shapes per powerup type.
 export function drawPowerUps() {
   state.powerUps.forEach(p => {
-    state.ctx.save(); 
+    state.ctx.save();
+    // reset potential weird state from previous draws
+    state.ctx.globalAlpha = 1;
+    state.ctx.filter = 'none';
+    state.ctx.globalCompositeOperation = 'source-over';
+
+    // center transform for easier drawing
     state.ctx.translate(p.x, p.y);
 
-    const pulse = Math.sin(state.frameCount * 0.1) * 0.3 + 0.7;
-    state.ctx.shadowBlur = 15 * pulse;
-
+    const pulse = Math.sin(state.frameCount * 0.15 + (p._seed || 0)) * 0.15 + 0.85;
+    const shadowStrength = 12 * pulse;
+    state.ctx.shadowBlur = shadowStrength;
+    // type specific visuals
     if (p.type === "red-punch") {
-      state.ctx.shadowColor = "red";
-      state.ctx.fillStyle = "red";
+      state.ctx.shadowColor = "rgba(255,80,80,0.8)";
+      state.ctx.fillStyle = "rgba(220,40,40,0.95)";
       state.ctx.beginPath(); 
-      state.ctx.arc(0, 0, p.size/2, 0, Math.PI*2); 
+      state.ctx.arc(0, 0, (p.size||18)/2, 0, Math.PI*2); 
       state.ctx.fill();
-      state.ctx.fillStyle = "white"; 
-      state.ctx.fillRect(-2, -6, 4, 4);
+
+      // fist icon - simple rectangle + notch
+      state.ctx.shadowBlur = 0;
+      state.ctx.fillStyle = "white";
+      state.ctx.fillRect(-4, -4, 8, 8);
+      state.ctx.clearRect(-1, -6, 2, 2); // thumb notch (works with some canvases)
     }
     else if (p.type === "blue-cannon") {
-      state.ctx.shadowColor = "cyan";
-      state.ctx.fillStyle = "cyan";
+      state.ctx.shadowColor = "rgba(0,200,255,0.8)";
+      state.ctx.fillStyle = "rgba(0,180,220,0.95)";
       state.ctx.beginPath(); 
-      state.ctx.arc(0, 0, p.size/2, 0, Math.PI*2); 
+      state.ctx.arc(0, 0, (p.size||18)/2, 0, Math.PI*2); 
       state.ctx.fill();
-      state.ctx.fillStyle = "white"; 
-      state.ctx.fillRect(-2, -6, 4, 4);
+
+      state.ctx.shadowBlur = 0;
+      state.ctx.fillStyle = "white";
+      // small triangle cannon
+      state.ctx.beginPath();
+      state.ctx.moveTo(0, -6);
+      state.ctx.lineTo(-6, 6);
+      state.ctx.lineTo(6, 6);
+      state.ctx.closePath();
+      state.ctx.fill();
     }
     else if (p.type === "health") {
-      state.ctx.shadowColor = "magenta";
-      state.ctx.fillStyle = "magenta";
+      state.ctx.shadowColor = "rgba(255,100,200,0.9)";
+      state.ctx.fillStyle = "rgba(220,50,150,0.95)";
       state.ctx.beginPath(); 
-      state.ctx.arc(0, 0, p.size/2, 0, Math.PI*2); 
+      state.ctx.arc(0, 0, (p.size||18)/2, 0, Math.PI*2); 
       state.ctx.fill();
-      state.ctx.fillStyle = "white"; 
-      state.ctx.fillRect(-2, -6, 4, 4);
+
+      state.ctx.shadowBlur = 0;
+      state.ctx.fillStyle = "white";
+      // plus sign
+      state.ctx.fillRect(-2, -6, 4, 12);
+      state.ctx.fillRect(-6, -2, 12, 4);
     }
     else if (p.type === "reflect") {
-      state.ctx.shadowColor = "purple";
-      state.ctx.fillStyle = "purple";
+      state.ctx.shadowColor = "rgba(160,100,255,0.9)";
+      state.ctx.fillStyle = "rgba(140,80,220,0.95)";
       state.ctx.beginPath(); 
-      state.ctx.arc(0, 0, p.size/2, 0, Math.PI*2); 
+      state.ctx.arc(0, 0, (p.size||18)/2, 0, Math.PI*2); 
       state.ctx.fill();
+
+      state.ctx.shadowBlur = 0;
       state.ctx.strokeStyle = "cyan";
       state.ctx.lineWidth = 2;
       state.ctx.beginPath(); 
-      state.ctx.arc(0, 0, p.size/2 + 4, 0, Math.PI*2); 
+      state.ctx.arc(0, 0, (p.size||18)/2 + 4, 0, Math.PI*2); 
       state.ctx.stroke();
+
+      // small reflect icon
+      state.ctx.fillStyle = "rgba(220,240,255,0.95)";
+      state.ctx.fillRect(-2, -6, 4, 12);
     }
+    else {
+      // fallback visible placeholder when unknown type
+      state.ctx.shadowColor = "rgba(255,255,255,0.8)";
+      state.ctx.fillStyle = "rgba(255,255,255,0.12)";
+      state.ctx.beginPath(); 
+      state.ctx.arc(0, 0, (p.size||18)/2, 0, Math.PI*2); 
+      state.ctx.fill();
+
+      state.ctx.shadowBlur = 0;
+      state.ctx.fillStyle = "rgba(255,255,255,0.9)";
+      state.ctx.font = "10px 'Orbitron', monospace";
+      state.ctx.textAlign = "center";
+      state.ctx.textBaseline = "middle";
+      state.ctx.fillText("?", 0, 0);
+    }
+
+    // small floating label (count) if applicable
+    if (typeof p.count === 'number' && p.count > 1) {
+      state.ctx.shadowBlur = 6;
+      state.ctx.shadowColor = "rgba(0,0,0,0.6)";
+      state.ctx.fillStyle = "rgba(20,20,30,0.9)";
+      state.ctx.fillRect(8, -10, 16, 12);
+      state.ctx.shadowBlur = 0;
+      state.ctx.fillStyle = "white";
+      state.ctx.font = "10px 'Orbitron', monospace";
+      state.ctx.fillText(String(p.count), 16, -4);
+    }
+
+    // restore to avoid leaking visual state
     state.ctx.shadowBlur = 0;
+    state.ctx.globalAlpha = 1;
     state.ctx.restore();
   });
 }
