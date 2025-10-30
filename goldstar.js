@@ -196,18 +196,107 @@ export function updateGoldStar() {
 
   let moveX = 0, moveY = 0;
 
+  // Improved dodging behavior:
+  // - When a danger is detected while a nearby power-up is the target, instead of dodging directly away and then returning straight to the power-up,
+  //   compute an avoidance offset point near the power-up (perpendicular offset) and travel to that offset while the dodge timer is active.
+  // - This reduces chance of stopping back in line of fire.
   if (dangerCount > 0) {
-    moveX = dangerX;
-    moveY = dangerY;
+    // If we're currently already avoiding, continue decrementing avoid timer.
+    gs.avoidTicks = Math.max(0, gs.avoidTicks || 0);
+
+    // If there's a nearby power-up we care about, set up an avoidance maneuver.
+    if (nearest && minDist < 300) {
+      // If not already in an avoidance maneuver, initialize it.
+      if (!gs.avoidTicks) {
+        // pick a perpendicular direction relative to vector from gold star to power-up
+        const toPUx = (nearest.x || 0) - (gs.x || 0);
+        const toPUy = (nearest.y || 0) - (gs.y || 0);
+        const mag = Math.hypot(toPUx, toPUy) || 1;
+        // perpendicular vectors
+        const perp1 = { x: -toPUy / mag, y: toPUx / mag };
+        const perp2 = { x: toPUy / mag, y: -toPUx / mag };
+
+        // choose the perpendicular that increases distance from the nearest incoming enemy/lightning
+        let best = perp1, bestScore = -Infinity;
+        const dangers = (state.enemies || []).concat(state.lightning || []);
+        for (const cand of [perp1, perp2]) {
+          // hypothetical offset point near power-up
+          const offsetDist = 80; // how far to sidestep
+          const testX = (nearest.x || 0) + cand.x * offsetDist;
+          const testY = (nearest.y || 0) + cand.y * offsetDist;
+          // score by distance sum from dangers (further is better)
+          let score = 0;
+          for (const d of dangers) {
+            const dd = Math.hypot((d.x || 0) - testX, (d.y || 0) - testY) || 0.001;
+            score += dd;
+          }
+          if (score > bestScore) { bestScore = score; best = cand; }
+        }
+
+        gs.avoidDir = best; // normalized perpendicular vector
+        gs.avoidTicks = 60; // hold avoidance for ~60 frames (1 sec at 60fps), adjustable
+        gs.avoidTargetId = nearest.id || null; // optional id to prefer same PU while avoiding
+      }
+
+      // While avoiding, move toward the offset point (power-up position + perpendicular offset).
+      if (gs.avoidTicks > 0) {
+        const offsetDistance = 80; // consistent with initialization
+        const targetX = (nearest.x || 0) + (gs.avoidDir ? gs.avoidDir.x * offsetDistance : 0);
+        const targetY = (nearest.y || 0) + (gs.avoidDir ? gs.avoidDir.y * offsetDistance : 0);
+        const dx = targetX - (gs.x || 0);
+        const dy = targetY - (gs.y || 0);
+        const mag = Math.hypot(dx, dy) || 1;
+        moveX = dx / mag;
+        moveY = dy / mag;
+        gs.avoidTicks--;
+        // keep the gold star from starting a collect while avoiding
+        if (gs.avoidTicks > 0) {
+          // ensure we don't flip into collecting state prematurely
+          // (so we won't set gs.collecting/targetPowerUp here)
+        }
+      } else {
+        // fallback: if avoidTicks reaches 0, clear avoidance and fallthrough to danger behavior
+        gs.avoidDir = null;
+        gs.avoidTargetId = null;
+      }
+    } else {
+      // No nearby power-up to bias toward, do the original danger avoidance
+      moveX = dangerX;
+      moveY = dangerY;
+    }
+
+    // If we didn't set a move vector via the alternate branch, ensure basic danger vector is used.
+    if (moveX === 0 && moveY === 0) {
+      moveX = dangerX;
+      moveY = dangerY;
+    }
   } else if (nearest && minDist < 300) {
-    const dx = nearest.x - (gs.x || 0), dy = nearest.y - (gs.y || 0), mag = Math.hypot(dx, dy) || 1;
-    moveX = dx / mag;
-    moveY = dy / mag;
-    if (minDist < 25) {
-      gs.collecting = true;
-      gs.targetPowerUp = nearest;
-      gs.collectTimer = 0;
-      return;
+    // If we're not currently in danger but we have an active avoidance timer, keep finishing the sidestep.
+    if (gs.avoidTicks && gs.avoidTicks > 0 && gs.avoidDir && (gs.avoidTargetId == null || gs.avoidTargetId === (nearest.id || null))) {
+      const offsetDistance = 80;
+      const targetX = (nearest.x || 0) + gs.avoidDir.x * offsetDistance;
+      const targetY = (nearest.y || 0) + gs.avoidDir.y * offsetDistance;
+      const dx = targetX - (gs.x || 0);
+      const dy = targetY - (gs.y || 0);
+      const mag = Math.hypot(dx, dy) || 1;
+      moveX = dx / mag;
+      moveY = dy / mag;
+      gs.avoidTicks = Math.max(0, gs.avoidTicks - 1);
+    } else {
+      // normal attraction toward power-up
+      const dx = nearest.x - (gs.x || 0), dy = nearest.y - (gs.y || 0), mag = Math.hypot(dx, dy) || 1;
+      moveX = dx / mag;
+      moveY = dy / mag;
+      if (minDist < 25) {
+        gs.collecting = true;
+        gs.targetPowerUp = nearest;
+        gs.collectTimer = 0;
+        // reset avoidance so future pickups start fresh
+        gs.avoidTicks = 0;
+        gs.avoidDir = null;
+        gs.avoidTargetId = null;
+        return;
+      }
     }
   } else {
     const dx = (state.player.x || 0) - (gs.x || 0), dy = (state.player.y || 0) - (gs.y || 0), dist = Math.hypot(dx, dy);
