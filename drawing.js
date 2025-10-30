@@ -1,3 +1,12 @@
+/* Full file with a new exported helper `drawAll` added at the end.
+
+   Purpose of drawAll:
+   - Provide a single entrypoint to ensure every drawing routine is invoked each frame.
+   - Use defensive checks so missing/undefined functions won't throw.
+   - Keep sensible ordering (background first, world objects, FX, UI, player last or where appropriate).
+   - Accept waveNum (passed through to background routines that require it).
+*/
+
 import * as state from './state.js';
 
 export function drawClouds() {
@@ -1353,4 +1362,66 @@ export function drawTunnelCollisions() {
     ctx.arc(c.x, c.y, 4, 0, Math.PI * 2);
     ctx.fill();
   });
+}
+
+
+// ------------------------------------------------------------------
+// New export: drawAll
+// - Centralized place to call every draw function in a sensible order.
+// - Accepts waveNum, but will default to state.wave if omitted.
+// - Runs defensively: checks function existence before calling to avoid runtime errors.
+// - Helpful when you want to ensure nothing is forgotten each frame.
+// ------------------------------------------------------------------
+export function drawAll(waveNum) {
+  const wave = (typeof waveNum === 'number') ? waveNum : state.wave;
+
+  // helper to call exported functions defensively
+  const call = (fn, ...args) => {
+    try {
+      if (typeof fn === 'function') fn(...args);
+    } catch (err) {
+      // swallow errors to avoid breaking rendering loop; optionally you can console.error
+      // console.error("drawAll: error calling", fn && fn.name, err);
+    }
+  };
+
+  // BACKGROUNDS & ENVIRONMENT (furthest first)
+  call(drawBackground, wave);
+  call(drawPlanetBackground);
+  call(drawReentryEffects);
+
+  // Large environmental elements / parallax
+  call(drawClouds);
+  call(drawCityBackground);
+
+  // TUNNELS / SPECIAL AREAS
+  call(drawTunnels);
+  call(drawTunnelCollisions);
+
+  // WORLD OBJECTS
+  call(drawDiamonds);
+  call(drawPowerUps);
+  call(drawLightning);
+  call(drawDropship, { x: 0, y: 0, size: 0 }); // safe no-op signature - dropship normally expects a mech; calling is harmless if mech undefined
+  call(drawEnemies);
+  call(drawTanks);
+  call(drawWalkers);
+  call(drawMechs);
+
+  // BULLETS, PROJECTILES, DEBRIS, EFFECTS
+  call(drawBullets);
+  call(drawDebris);
+  call(drawExplosions);
+  call(drawRedPunchEffects);
+  call(updateAndDrawReflectionEffects);
+
+  // GOLD STAR AND AURA (world-level)
+  call(drawGoldStarAura);
+  call(drawGoldStar);
+
+  // PLAYER
+  call(drawPlayer);
+
+  // UI on top
+  call(drawUI);
 }
