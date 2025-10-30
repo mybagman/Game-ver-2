@@ -395,7 +395,7 @@ export function drawExplosions(){
     state.ctx.fillStyle = ex.color; 
     state.ctx.beginPath(); 
     state.ctx.arc(ex.x, ex.y, ex.radius, 0, Math.PI*2); 
-    state.ctx.fill(); 
+    state.ctx.fill();
   }); 
 }
 
@@ -569,6 +569,7 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
+// Modified drawUI: removed high score, and spread out Gold Star UI content inside same-sized box
 export function drawUI() {
   const pad = 12;
   const hudW = 260;
@@ -621,7 +622,8 @@ export function drawUI() {
   state.ctx.fillStyle = "rgba(200,220,255,0.95)";
   state.ctx.font = "12px 'Orbitron', monospace";
   state.ctx.fillText(`SCORE: ${state.score}`, hbX, hbY + hbH + 10);
-  state.ctx.fillText(`BEST: ${state.highScore}`, hbX + 100, hbY + hbH + 10);
+  // Removed high score from UI per request:
+  // state.ctx.fillText(`BEST: ${state.highScore}`, hbX + 100, hbY + hbH + 10);
   state.ctx.fillText(`WAVE: ${state.wave+1}`, hbX + 180, hbY + hbH + 10);
 
   const livesX = x + hudW - 12 - 18;
@@ -659,26 +661,37 @@ export function drawUI() {
   state.ctx.font = "11px 'Orbitron', monospace";
   state.ctx.fillText("REFLECT", badgeX + 6, badgeY + 2);
 
+  // Gold Star panel (same sized box, but reflowed content)
   const gsX = x + hudW + 12;
   const gsY = y + 8;
+  const gsW = 150;
+  const gsH = 56;
+
   state.ctx.save();
   state.ctx.fillStyle = "rgba(10,14,20,0.5)";
-  roundRect(state.ctx, gsX, gsY, 150, 56, 8);
+  roundRect(state.ctx, gsX, gsY, gsW, gsH, 8);
   state.ctx.fill();
   state.ctx.strokeStyle = "rgba(100,120,255,0.06)";
   state.ctx.stroke();
   state.ctx.restore();
 
+  // Row 1: Title (left) and Aura level (right)
   state.ctx.fillStyle = state.goldStar.alive ? "rgba(255,210,90,0.98)" : "rgba(255,100,100,0.9)";
   state.ctx.font = "12px 'Orbitron', monospace";
   state.ctx.fillText("GOLD STAR", gsX + 10, gsY + 6);
 
-  const alX = gsX + 10, alY = gsY + 26;
   state.ctx.font = "10px 'Orbitron', monospace";
   state.ctx.fillStyle = "rgba(190,210,255,0.9)";
-  state.ctx.fillText(`Aura Lv ${state.goldStarAura.level}`, alX, alY - 12);
+  const auraLabel = `Aura Lv ${state.goldStarAura.level}`;
+  // right-align the aura label in the panel
+  const auraLabelX = gsX + gsW - 10 - (state.ctx.measureText ? state.ctx.measureText(auraLabel).width : 40);
+  state.ctx.fillText(auraLabel, auraLabelX, gsY + 6);
 
-  const barW = 110, barH = 8;
+  // Row 2: Aura bar (centered across)
+  const alX = gsX + 10;
+  const alY = gsY + 22;
+  const barW = gsW - 20;
+  const barH = 8;
   state.ctx.fillStyle = "rgba(255,255,255,0.04)";
   roundRect(state.ctx, alX, alY, barW, barH, 6);
   state.ctx.fill();
@@ -692,31 +705,46 @@ export function drawUI() {
   roundRect(state.ctx, alX + 1, alY + 1, (barW - 2) * fillRatio, barH - 2, 5);
   state.ctx.fill();
 
+  // R: radius label to the right of the bar
   state.ctx.fillStyle = "rgba(180,200,255,0.75)";
   state.ctx.font = "10px 'Orbitron', monospace";
   state.ctx.fillText(`R: ${Math.floor(state.goldStarAura.radius)}`, alX + barW - 38, alY - 12);
 
-  let iconX = alX + barW + 8;
-  const iconY = alY - 8;
-  state.ctx.font = "10px 'Orbitron', monospace";
+  // Row 3: Power-up icons + counts (spaced across)
+  const iconsY = gsY + 36;
+  let iconX = gsX + 10;
+  const iconSpacing = 44;
+
+  // Red punch
   if (state.goldStar.redPunchLevel > 0) {
     state.ctx.fillStyle = "red";
-    state.ctx.fillRect(iconX, iconY, 12, 12);
+    state.ctx.fillRect(iconX, iconsY, 12, 12);
     state.ctx.fillStyle = "rgba(220,230,255,0.95)";
-    state.ctx.fillText(state.goldStar.redPunchLevel.toString(), iconX + 16, iconY + 1);
-    iconX += 34;
+    state.ctx.font = "10px 'Orbitron', monospace";
+    state.ctx.fillText(state.goldStar.redPunchLevel.toString(), iconX + 16, iconsY + 0);
+    iconX += iconSpacing;
   }
+
+  // Blue cannon
   if (state.goldStar.blueCannonnLevel > 0) {
     state.ctx.fillStyle = "cyan";
     state.ctx.beginPath();
-    state.ctx.moveTo(iconX + 6, iconY);
-    state.ctx.lineTo(iconX, iconY + 12);
-    state.ctx.lineTo(iconX + 12, iconY + 12);
+    // draw a small triangle cannon icon
+    state.ctx.moveTo(iconX + 6, iconsY);
+    state.ctx.lineTo(iconX, iconsY + 12);
+    state.ctx.lineTo(iconX + 12, iconsY + 12);
     state.ctx.closePath();
     state.ctx.fill();
     state.ctx.fillStyle = "rgba(220,230,255,0.95)";
-    state.ctx.fillText(state.goldStar.blueCannonnLevel.toString(), iconX + 16, iconY + 1);
-    iconX += 34;
+    state.ctx.font = "10px 'Orbitron', monospace";
+    state.ctx.fillText(state.goldStar.blueCannonnLevel.toString(), iconX + 16, iconsY + 0);
+    iconX += iconSpacing;
+  }
+  // If no powerups present, show a dim placeholder
+  if (state.goldStar.redPunchLevel === 0 && state.goldStar.blueCannonnLevel === 0) {
+    state.ctx.fillStyle = "rgba(255,255,255,0.06)";
+    state.ctx.font = "10px 'Orbitron', monospace";
+    state.ctx.fillText("No power-ups", gsX + 10, iconsY + 0);
   }
 
   if (state.waveTransition) {
