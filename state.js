@@ -189,3 +189,92 @@ export function flushMinions() {
   enemies.push(...minionsToAdd); 
   minionsToAdd.length = 0;
 }
+
+// --- Add these functions near the end of state.js ---
+
+// Call this to reset everything for a new run
+export function resetGame() {
+  console.log('[resetGame] resetting game state for a new run');
+
+  // clear collections
+  cloudParticles.length = 0;
+  bullets.length = 0;
+  enemies.length = 0;
+  diamonds.length = 0;
+  tunnels.length = 0;
+  tanks.length = 0;
+  walkers.length = 0;
+  mechs.length = 0;
+  debris.length = 0;
+  explosions.length = 0;
+  lightning.length = 0;
+  powerUps.length = 0;
+  reflectionEffects.length = 0;
+  redPunchEffects.length = 0;
+  minionsToAdd.length = 0;
+  auraSparks.length = 0;
+  auraShockwaves.length = 0;
+
+  // reset simple state
+  keys = {};
+  shootCooldown = 0;
+  frameCount = 0;
+  firingIndicatorAngle = 0;
+  score = 0;
+  wave = 0;
+  waveTransition = false;
+  waveTransitionTimer = 0;
+  gameOver = false;
+  recordedScoreThisRun = false;
+  auraPulseTimer = 0;
+  backgroundOffset = 0;
+
+  // reset player
+  player.x = 0;
+  player.y = 0;
+  player.size = 28;
+  player.speed = 4;
+  player.health = player.maxHealth = 100;
+  player.lives = 3;
+  player.invulnerable = false;
+  player.invulnerableTimer = 0;
+  player.reflectAvailable = false;
+  player.fireRateBoost = 1;
+  player.healAccumulator = 0;
+
+  // reset gold star
+  goldStar.x = 0;
+  goldStar.y = 0;
+  goldStar.size = 36;
+  goldStar.health = goldStar.maxHealth = 200;
+  goldStar.alive = true;
+  goldStar.collecting = false;
+  goldStar.collectTimer = 0;
+  goldStar.speed = 2;
+  goldStar.reflectAvailable = false;
+  goldStar.redPunchLevel = 0;
+  goldStar.blueCannonnLevel = 0;
+  goldStar.redKills = 0;
+  goldStar.blueKills = 0;
+  goldStar.punchCooldown = 0;
+  goldStar.cannonCooldown = 0;
+  goldStar.respawnTimer = 0;
+  goldStar.healAccumulator = 0;
+  goldStar.targetPowerUp = null;
+
+  // aura
+  goldStarAura.radius = goldStarAura.baseRadius = 50;
+  goldStarAura.pulse = 0;
+  goldStarAura.level = 0;
+  goldStarAura.active = false;
+
+  console.log('[resetGame] state after reset:', {
+    gameOver, score, wave, playerLives: player.lives, playerHealth: player.health, goldStarAlive: goldStar.alive
+  });
+}
+
+// Optional: defensive check you can call before rendering the game over screen to avoid false positives
+export function shouldShowGameOver() {
+  // adjust conditions to match your intended rules
+  return gameOver || (player.lives <= 0) || (!goldStar.alive && wave > 0);
+}
