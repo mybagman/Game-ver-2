@@ -1,8 +1,20 @@
 import * as state from './state.js';
 
 export function updatePlayerMovement() {
-  // existing movement handling expected to be above this (input handling etc.)
-  // this function should be called every frame after player position updates
+  // Read input and apply movement (supports Arrow keys and WASD).
+  // This was removed earlier which prevented any position updates.
+  let dirX = 0, dirY = 0;
+  if (state.keys["arrowup"] || state.keys["w"]) dirY = -1;
+  if (state.keys["arrowdown"] || state.keys["s"]) dirY = 1;
+  if (state.keys["arrowleft"] || state.keys["a"]) dirX = -1;
+  if (state.keys["arrowright"] || state.keys["d"]) dirX = 1;
+
+  if (dirX !== 0 || dirY !== 0) {
+    const mag = Math.hypot(dirX, dirY) || 1;
+    // Normalize so diagonal movement isn't faster, then scale by player speed.
+    state.player.x += (dirX / mag) * state.player.speed;
+    state.player.y += (dirY / mag) * state.player.speed;
+  }
 
   // keep player within canvas
   state.player.x = Math.max(state.player.size/2, Math.min(state.canvas.width - state.player.size/2, state.player.x));
