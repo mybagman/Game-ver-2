@@ -370,14 +370,30 @@ export function updateEnemies() {
     if (state.player.invulnerableTimer <= 0) state.player.invulnerable = false; 
   }
 
+  // Decrement reattach cooldowns for enemies so detached units can't reattach for 10s (600 frames)
+  for (let ei = state.enemies.length - 1; ei >= 0; ei--) {
+    const en = state.enemies[ei];
+    if (!en) continue;
+    if (en.reattachCooldown && en.reattachCooldown > 0) {
+      en.reattachCooldown--;
+      if (en.reattachCooldown <= 0) {
+        en.canReattach = true;
+        delete en.reattachCooldown;
+      }
+    }
+  }
+
   for (let di = state.diamonds.length-1; di >= 0; di--) {
     const d = state.diamonds[di];
     updateDiamond(d);
     if (d.health <= 0) {
       createExplosion(d.x, d.y, "white");
+      // When diamond dies, detach attachments but give them a reattach cooldown so they can't immediately reattach to any diamond.
       d.attachments.forEach(a => {
         a.attachedTo = null;
-        a.canReattach = true;
+        a.canReattach = false;
+        // 10 seconds cooldown at ~60 FPS = 600 frames
+        a.reattachCooldown = 600;
         state.pushEnemy(a);
       });
       state.diamonds.splice(di,1);
@@ -451,6 +467,7 @@ export function updateEnemies() {
         if (t.active) handleTunnelCollisionForEntity(e, t);
       }
 
+      // find nearest non-reflector ally within 150
       let nearestAlly = null, minDist = Infinity;
       state.enemies.forEach(ally => {
         if (ally !== e && ally.type !== "reflector") {
@@ -461,14 +478,30 @@ export function updateEnemies() {
 
       if (nearestAlly) {
         const dx = nearestAlly.x - e.x, dy = nearestAlly.y - e.y, dist = Math.hypot(dx,dy)||1;
+        // standard follow speed when shielding
         e.x += (dx/dist) * e.speed;
         e.y += (dy/dist) * e.speed;
         e.shieldActive = true;
+        e.crashMode = false;
       } else {
-        const dx = state.player.x - e.x, dy = state.player.y - e.y, dist = Math.hypot(dx,dy)||1;
-        e.x += (dx/dist) * e.speed * 0.5;
-        e.y += (dy/dist) * e.speed * 0.5;
-        e.shieldActive = false;
+        // If no nearby ally, decide whether there are any other enemies in the scene.
+        const otherEnemiesExist = state.enemies.some(al => al !== e && al.type !== 'reflector');
+        if (!otherEnemiesExist) {
+          // No other enemies present -> enter crash mode: move faster toward player to try to ram.
+          const dx = state.player.x - e.x, dy = state.player.y - e.y, dist = Math.hypot(dx,dy)||1;
+          const crashSpeedMultiplier = 1.8; // increased speed when trying to crash
+          e.x += (dx/dist) * e.speed * crashSpeedMultiplier;
+          e.y += (dy/dist) * e.speed * crashSpeedMultiplier;
+          e.shieldActive = false;
+          e.crashMode = true;
+        } else {
+          // No nearby ally but other enemies exist: return to a cautious approach (slower)
+          const dx = state.player.x - e.x, dy = state.player.y - e.y, dist = Math.hypot(dx,dy)||1;
+          e.x += (dx/dist) * e.speed * 0.5;
+          e.y += (dy/dist) * e.speed * 0.5;
+          e.shieldActive = false;
+          e.crashMode = false;
+        }
       }
 
       e.angle = (e.angle||0)+0.1;
