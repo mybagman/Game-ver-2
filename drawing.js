@@ -18,6 +18,9 @@ export function drawClouds() {
       state.ctx.save();
       if (layer.blur > 0) {
         state.ctx.filter = `blur(${layer.blur}px)`;
+      } else {
+        // ensure filter is cleared when blur is 0
+        state.ctx.filter = 'none';
       }
       
       state.ctx.globalAlpha = c.opacity * layer.alpha;
@@ -33,6 +36,8 @@ export function drawClouds() {
       state.ctx.fill();
       
       state.ctx.restore();
+      // very important: reset filter after restore in case some browsers keep it
+      state.ctx.filter = 'none';
     });
   });
 }
@@ -918,7 +923,7 @@ export function drawUI() {
   }
 
   // Blue cannon
-  if (state.goldStar.blueCannonnLevel > 0) {
+  if (state.goldStar.blueCannonLevel > 0) {
     state.ctx.fillStyle = "cyan";
     state.ctx.beginPath();
     // draw a small triangle cannon icon
@@ -929,11 +934,11 @@ export function drawUI() {
     state.ctx.fill();
     state.ctx.fillStyle = "rgba(220,230,255,0.95)";
     state.ctx.font = "10px 'Orbitron', monospace";
-    state.ctx.fillText(state.goldStar.blueCannonnLevel.toString(), iconX + 16, iconsY + 0);
+    state.ctx.fillText(state.goldStar.blueCannonLevel.toString(), iconX + 16, iconsY + 0);
     iconX += iconSpacing;
   }
   // If no powerups present, show a dim placeholder
-  if (state.goldStar.redPunchLevel === 0 && state.goldStar.blueCannonnLevel === 0) {
+  if (state.goldStar.redPunchLevel === 0 && state.goldStar.blueCannonLevel === 0) {
     state.ctx.fillStyle = "rgba(255,255,255,0.06)";
     state.ctx.font = "10px 'Orbitron', monospace";
     state.ctx.fillText("No power-ups", gsX + 10, iconsY + 0);
