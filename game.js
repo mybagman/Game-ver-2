@@ -114,7 +114,15 @@ export function gameLoop(now) {
     state.ctx.font = "20px Arial";
     state.ctx.fillText("Press R to restart", state.canvas.width / 2, state.canvas.height / 2 + 30);
     state.ctx.restore();
-    // The DOM overlay is handled by showGameOverUI() which is called when gameOver was set.
+    // Ensure the DOM overlay (panel with Continue / Restart / Highscores) is shown when gameOver is true.
+    // showGameOverUI() is a safe no-op if the overlay DOM isn't present.
+    try {
+      showGameOverUI();
+    } catch (e) {
+      // If the function isn't available in this context (shouldn't happen in normal app),
+      // ignore and rely on the canvas fallback overlay.
+      // console.warn('showGameOverUI not available:', e);
+    }
     return;
   }
 
