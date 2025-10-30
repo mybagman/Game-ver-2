@@ -1,13 +1,14 @@
 import * as state from './state.js';
 
 export function updatePlayerMovement() {
-  // Read input and apply movement (supports Arrow keys and WASD).
-  // This was removed earlier which prevented any position updates.
+  // Read input and apply movement.
+  // NOTE: Movement is restricted to WASD to avoid arrow-key shooting also moving the player.
   let dirX = 0, dirY = 0;
-  if (state.keys["arrowup"] || state.keys["w"]) dirY = -1;
-  if (state.keys["arrowdown"] || state.keys["s"]) dirY = 1;
-  if (state.keys["arrowleft"] || state.keys["a"]) dirX = -1;
-  if (state.keys["arrowright"] || state.keys["d"]) dirX = 1;
+  // use only WASD for movement so arrow keys can be reserved for shooting
+  if (state.keys["w"]) dirY = -1;
+  if (state.keys["s"]) dirY = 1;
+  if (state.keys["a"]) dirX = -1;
+  if (state.keys["d"]) dirX = 1;
 
   if (dirX !== 0 || dirY !== 0) {
     const mag = Math.hypot(dirX, dirY) || 1;
@@ -53,6 +54,7 @@ export function updatePlayerMovement() {
 export function handleShooting() {
   if (state.shootCooldown > 0) state.decrementShootCooldown();
   let dirX = 0, dirY = 0;
+  // arrows control shooting (no change here)
   if (state.keys["arrowup"]) dirY = -1; 
   if (state.keys["arrowdown"]) dirY = 1;
   if (state.keys["arrowleft"]) dirX = -1; 
