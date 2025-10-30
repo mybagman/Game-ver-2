@@ -65,15 +65,15 @@ export function drawCityBackground() {
 function drawPlayer8Bit(ctx, player) {
   // Pixel-art 'canvas' is 9 x 9 logical pixels; scale with player.size
   const grid = [
-    "001000100", // 0
-    "011011110", // 1
-    "111111111", // 2
-    "111111111", // 3
-    "011111110", // 4
-    "001111100", // 5
-    "001111100", // 6
-    "010000010", // 7 - tail / thruster base
-    "001000100"  // 8 - exhaust glow
+    "001010100", // nose tip
+    "011111110", // upper angled wings
+    "111111111", // full hull
+    "111121111", // cockpit center
+    "011131110", // lower angled wings with accents
+    "001111100", // fuselage taper
+    "001101100", // tail stabilizers
+    "010000010", // dual thruster base
+    "010010010"  // exhaust glow for l
   ];
   // Colors for different pixel values:
   // 0 -> transparent
