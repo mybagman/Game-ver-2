@@ -5,7 +5,7 @@ import { updateLightning, checkBulletCollisions } from './collisions.js';
 import { updateGoldStar } from './goldstar.js';
 import { updateGoldStarAura } from './aura.js';
 import { tryAdvanceWave, spawnWave } from './waveManager.js';
-import { drawBackground, drawTunnels, drawDiamonds, drawEnemies, drawTanks, drawWalkers, drawMechs, drawDebris, drawBullets, drawLightning, drawExplosions, drawPowerUps, drawGoldStar, drawGoldStarAura, drawRedPunchEffects, drawPlayer, updateAndDrawReflectionEffects, drawUI } from './drawing.js';
+import { drawBackground, drawTunnels, drawDiamonds, drawEnemies, drawTanks, drawWalkers, drawMechs, drawDebris, drawBullets, drawLightning, drawExplosions, drawPowerUps, drawGoldStar, drawGoldStarAura[...]
 import { respawnPlayer, respawnGoldStar } from './utils.js';
 import { resetAuraOnDeath } from './aura.js';
 
@@ -153,8 +153,10 @@ export function resetGame() {
   state.redPunchEffects.length = 0;
   state.minionsToAdd.length = 0;
 
-  state.score = 0;
-  state.wave = 0;
+  // state.score = 0;
+  state.setScore(0);
+  // state.wave = 0;
+  state.setWave(0);
   state.setWaveTransition(false);
   state.setWaveTransitionTimer(0);
   state.setGameOver(false);
