@@ -1,4 +1,4 @@
-// goldstar.js
+// goldStar.js
 import * as state from './state.js';
 import { createExplosion, spawnPowerUp, respawnGoldStar } from './utils.js';
 import { levelUpGoldStar } from './aura.js';
@@ -9,22 +9,18 @@ function safeCall(fn, ...args) {
 }
 
 export function performRedPunch() {
-  // Read the goldStar object from state. Do NOT reassign state.goldStar (exports are read-only).
   const gs = state.goldStar;
-  if (!gs) {
-    console.warn('performRedPunch: state.goldStar is undefined');
-    return;
-  }
+  if (!gs) return;
 
   const baseRadius = 80;
-  const level = Math.max(0, (gs.redPunchLevel || 0));
-  const radius = baseRadius + Math.max(0, (level - 1)) * 40;
-  let punches = Math.max(1, Math.min(level || 1, 8));
+  const level = Math.max(0, gs.redPunchLevel || 0);
+  const radius = baseRadius + Math.max(0, level - 1) * 40;
+  const punches = Math.max(1, Math.min(level || 1, 8));
   const damage = 40 * (level || 0);
   const knockbackForce = (level >= 3) ? 15 + (level - 3) * 5 : 0;
 
   const nearby = (state.enemies || [])
-    .map(e => ({ e, d: Math.hypot((e.x || 0) - (gs.x || 0), (e.y || 0) - (gs.y || 0)) }))
+    .map(e => ({ e, d: Math.hypot((e.x||0) - gs.x, (e.y||0) - gs.y) }))
     .filter(o => o.d <= radius)
     .sort((a, b) => a.d - b.d)
     .slice(0, punches);
@@ -35,8 +31,8 @@ export function performRedPunch() {
     safeCall(createExplosion, o.e.x, o.e.y, (level >= 3 ? "magenta" : "orange"));
 
     if (knockbackForce > 0 && o.d > 0) {
-      const dx = o.e.x - (gs.x || 0);
-      const dy = o.e.y - (gs.y || 0);
+      const dx = o.e.x - gs.x;
+      const dy = o.e.y - gs.y;
       const dist = Math.sqrt(dx * dx + dy * dy) || 1;
       o.e.x += (dx / dist) * knockbackForce;
       o.e.y += (dy / dist) * knockbackForce;
@@ -62,101 +58,78 @@ export function performRedPunch() {
     }
   });
 
-  // Visual / particle effects — guard calls so missing functions don't crash
-  if ((gs.redPunchLevel || 0) <= 1) {
+  // Visual effects
+  if (level <= 1) {
     safeCall(state.pushRedPunchEffect, { x: gs.x, y: gs.y, maxR: radius, r: 0, life: 18, maxLife: 18, color: "rgba(255,220,120,0.9)", fill: true });
-    for (let i = 0; i < 8; i++) {
-      safeCall(state.pushExplosion, { x: gs.x, y: gs.y, dx: (Math.random() - 0.5) * 8, dy: (Math.random() - 0.5) * 8, radius: Math.random() * 6 + 2, color: "rgba(255,200,100,0.9)" });
-    }
-  } else if (gs.redPunchLevel === 2) {
-    safeCall(state.pushRedPunchEffect, { x: gs.x, y: gs.y, maxR: radius + 30, r: 0, life: 24, maxLife: 24, color: "rgba(255,160,60,0.95)", fill: true });
-    for (let i = 0; i < 14; i++) {
-      safeCall(state.pushExplosion, { x: gs.x, y: gs.y, dx: (Math.random() - 0.5) * 10, dy: (Math.random() - 0.5) * 10, radius: Math.random() * 8 + 3, color: "rgba(255,140,50,0.95)", life: 16 });
-    }
+    for (let i = 0; i < 8; i++) safeCall(state.pushExplosion, { x: gs.x, y: gs.y, dx: (Math.random()-0.5)*8, dy: (Math.random()-0.5)*8, radius: Math.random()*6+2, color: "rgba(255,200,100,0.9)" });
+  } else if (level === 2) {
+    safeCall(state.pushRedPunchEffect, { x: gs.x, y: gs.y, maxR: radius+30, r:0, life:24, maxLife:24, color:"rgba(255,160,60,0.95)", fill:true });
+    for (let i = 0; i < 14; i++) safeCall(state.pushExplosion, { x: gs.x, y: gs.y, dx:(Math.random()-0.5)*10, dy:(Math.random()-0.5)*10, radius: Math.random()*8+3, color:"rgba(255,140,50,0.95)", life:16 });
   } else {
-    safeCall(state.pushRedPunchEffect, { x: gs.x, y: gs.y, maxR: radius + 60, r: 0, life: 36, maxLife: 36, color: "rgba(255,60,255,0.95)", fill: false, ring: true });
-    safeCall(state.pushExplosion, { x: gs.x, y: gs.y, dx: 0, dy: 0, radius: 40, color: "rgba(255,255,255,0.95)", life: 8 });
-    for (let i = 0; i < 20; i++) {
-      safeCall(state.pushExplosion, { x: gs.x, y: gs.y, dx: (Math.random() - 0.5) * 12, dy: (Math.random() - 0.5) * 12, radius: Math.random() * 6 + 2, color: "rgba(255,50,20,0.95)", life: 18 });
-    }
+    safeCall(state.pushRedPunchEffect, { x: gs.x, y: gs.y, maxR: radius+60, r:0, life:36, maxLife:36, color:"rgba(255,60,255,0.95)", fill:false, ring:true });
+    safeCall(state.pushExplosion, { x: gs.x, y: gs.y, dx:0, dy:0, radius:40, color:"rgba(255,255,255,0.95)", life:8 });
+    for (let i=0;i<20;i++) safeCall(state.pushExplosion,{ x:gs.x, y:gs.y, dx:(Math.random()-0.5)*12, dy:(Math.random()-0.5)*12, radius:Math.random()*6+2, color:"rgba(255,50,20,0.95)", life:18 });
   }
 
-  if ((gs.redPunchLevel || 0) >= 3) {
-    safeCall(createExplosion, gs.x, gs.y, "magenta");
-  }
+  if (level >= 3) safeCall(createExplosion, gs.x, gs.y, "magenta");
 }
 
 export function updateGoldStar() {
-  // Read the goldStar and player objects from state; do NOT reassign exported bindings.
   const gs = state.goldStar;
-  if (!gs) {
-    console.warn('updateGoldStar: state.goldStar is undefined');
-    return;
-  }
+  if (!gs) return;
   const player = state.player || {};
 
-  // respawn handling
+  // Respawn
   if (!gs.alive) {
-    gs.respawnTimer = (gs.respawnTimer || 0) + 1;
-    if ((gs.respawnTimer || 0) >= 300) safeCall(respawnGoldStar);
+    gs.respawnTimer = (gs.respawnTimer||0)+1;
+    if (gs.respawnTimer >= 300) safeCall(respawnGoldStar);
     return;
   }
 
-  // collecting power-up handling
+  // Collecting power-ups
   if (gs.collecting) {
-    gs.collectTimer = (gs.collectTimer || 0) + 1;
-    if (gs.collectTimer >= (state.GOLD_STAR_PICKUP_FRAMES || 30)) {
-      if (gs.targetPowerUp) {
-        const centerPU = gs.targetPowerUp;
-        const picked = (state.powerUps || []).filter(p => Math.hypot((p.x || 0) - centerPU.x, (p.y || 0) - centerPU.y) <= (state.PICKUP_RADIUS || 50));
+    gs.collectTimer = (gs.collectTimer||0)+1;
+    if (gs.collectTimer >= (state.GOLD_STAR_PICKUP_FRAMES||30) && gs.targetPowerUp) {
+      const centerPU = gs.targetPowerUp;
+      const picked = (state.powerUps||[]).filter(p => Math.hypot((p.x||0)-centerPU.x, (p.y||0)-centerPU.y) <= (state.PICKUP_RADIUS||50));
 
-        for (const pu of picked) {
-          if (!pu || !pu.type) continue;
-
-          if (pu.type === "red-punch") {
-            gs.redKills = (gs.redKills || 0) + 1;
-            if (gs.redKills % 5 === 0 && (gs.redPunchLevel || 0) < 5) {
-              gs.redPunchLevel = (gs.redPunchLevel || 0) + 1;
-              safeCall(levelUpGoldStar, state);
-            }
-            safeCall(createExplosion, pu.x, pu.y, "orange");
-            safeCall(state.addScore, 8);
-          }
-          else if (pu.type === "blue-cannon") {
-            gs.blueKills = (gs.blueKills || 0) + 1;
-            if (gs.blueKills % 5 === 0 && (gs.blueCannonLevel || 0) < 5) {
-              gs.blueCannonLevel = (gs.blueCannonLevel || 0) + 1;
-              safeCall(levelUpGoldStar, state);
-            }
-            safeCall(createExplosion, pu.x, pu.y, "cyan");
-            safeCall(state.addScore, 8);
-          }
-          else if (pu.type === "health") {
-            gs.health = Math.min(gs.maxHealth || 100, (gs.health || 0) + 30);
-            state.player.health = Math.min(state.player.maxHealth || 100, (state.player.health || 0) + 30);
-            safeCall(createExplosion, pu.x, pu.y, "magenta");
-            safeCall(state.addScore, 5);
-          }
-          else if (pu.type === "reflect") {
-            gs.reflectAvailable = true;
-            state.player.reflectAvailable = true;
-            safeCall(createExplosion, pu.x, pu.y, "magenta");
-            safeCall(state.addScore, 12);
-          } else {
-            safeCall(createExplosion, pu.x, pu.y, "white");
-            safeCall(state.addScore, 1);
-          }
-        }
-
-        // remove picked power-ups from global list without reassigning the exported binding
-        if (typeof state.filterPowerUps === "function") {
-          state.filterPowerUps(p => !picked.includes(p));
-        } else if (Array.isArray(state.powerUps)) {
-          const remaining = state.powerUps.filter(p => !picked.includes(p));
-          state.powerUps.length = 0;
-          state.powerUps.push(...remaining);
+      for (const pu of picked) {
+        if (!pu || !pu.type) continue;
+        if (pu.type === "red-punch") {
+          gs.redKills = (gs.redKills||0)+1;
+          if (gs.redKills%5===0 && (gs.redPunchLevel||0)<5) gs.redPunchLevel = (gs.redPunchLevel||0)+1;
+          safeCall(levelUpGoldStar, state);
+          safeCall(createExplosion, pu.x, pu.y, "orange");
+          safeCall(state.addScore, 8);
+        } else if (pu.type === "blue-cannon") {
+          gs.blueKills = (gs.blueKills||0)+1;
+          if (gs.blueKills%5===0 && (gs.blueCannonLevel||0)<5) gs.blueCannonLevel = (gs.blueCannonLevel||0)+1;
+          safeCall(levelUpGoldStar, state);
+          safeCall(createExplosion, pu.x, pu.y, "cyan");
+          safeCall(state.addScore, 8);
+        } else if (pu.type === "health") {
+          gs.health = Math.min(gs.maxHealth||100, gs.health+30);
+          player.health = Math.min(player.maxHealth||100, player.health+30);
+          safeCall(createExplosion, pu.x, pu.y, "magenta");
+          safeCall(state.addScore, 5);
+        } else if (pu.type === "reflect") {
+          gs.reflectAvailable = true;
+          player.reflectAvailable = true;
+          safeCall(createExplosion, pu.x, pu.y, "magenta");
+          safeCall(state.addScore, 12);
+        } else {
+          safeCall(createExplosion, pu.x, pu.y, "white");
+          safeCall(state.addScore, 1);
         }
       }
+
+      if (typeof state.filterPowerUps==="function") state.filterPowerUps(p => !picked.includes(p));
+      else if (Array.isArray(state.powerUps)) {
+        const remaining = state.powerUps.filter(p => !picked.includes(p));
+        state.powerUps.length=0;
+        state.powerUps.push(...remaining);
+      }
+
       gs.collecting = false;
       gs.collectTimer = 0;
       gs.targetPowerUp = null;
@@ -164,195 +137,101 @@ export function updateGoldStar() {
     return;
   }
 
-  // danger / attraction logic
-  let dangerX = 0, dangerY = 0, dangerCount = 0;
+  // Detect dangers
+  let dangerX=0, dangerY=0, dangerCount=0;
   const DANGER_RADIUS = 120;
-
-  (state.enemies || []).forEach(e => {
-    const dist = Math.hypot((e.x || 0) - (gs.x || 0), (e.y || 0) - (gs.y || 0));
-    if (dist < DANGER_RADIUS && dist > 0) {
-      const weight = (DANGER_RADIUS - dist) / DANGER_RADIUS;
-      dangerX += ((gs.x || 0) - e.x) / dist * weight;
-      dangerY += ((gs.y || 0) - e.y) / dist * weight;
+  (state.enemies||[]).forEach(e => {
+    const dist = Math.hypot((e.x||0)-gs.x,(e.y||0)-gs.y);
+    if(dist<DANGER_RADIUS && dist>0){
+      const weight = (DANGER_RADIUS-dist)/DANGER_RADIUS;
+      dangerX += ((gs.x||0)-e.x)/dist*weight;
+      dangerY += ((gs.y||0)-e.y)/dist*weight;
+      dangerCount++;
+    }
+  });
+  (state.lightning||[]).forEach(l => {
+    const dist = Math.hypot((l.x||0)-gs.x,(l.y||0)-gs.y);
+    if(dist<DANGER_RADIUS && dist>0){
+      const weight=(DANGER_RADIUS-dist)/DANGER_RADIUS*1.5;
+      dangerX+=((gs.x||0)-l.x)/dist*weight;
+      dangerY+=((gs.y||0)-l.y)/dist*weight;
       dangerCount++;
     }
   });
 
-  (state.lightning || []).forEach(l => {
-    const dist = Math.hypot((l.x || 0) - (gs.x || 0), (l.y || 0) - (gs.y || 0));
-    if (dist < DANGER_RADIUS && dist > 0) {
-      const weight = (DANGER_RADIUS - dist) / DANGER_RADIUS * 1.5;
-      dangerX += ((gs.x || 0) - l.x) / dist * weight;
-      dangerY += ((gs.y || 0) - l.y) / dist * weight;
-      dangerCount++;
-    }
-  });
-
-  let nearest = null, minDist = Infinity;
-  for (const pu of (state.powerUps || [])) {
-    const dist = Math.hypot((pu.x || 0) - (gs.x || 0), (pu.y || 0) - (gs.y || 0));
-    if (dist < minDist) { minDist = dist; nearest = pu; }
+  // Determine nearest power-up
+  let nearestPU=null, minPUDist=Infinity;
+  for(const pu of (state.powerUps||[])){
+    const dist=Math.hypot((pu.x||0)-gs.x,(pu.y||0)-gs.y);
+    if(dist<minPUDist){ minPUDist=dist; nearestPU=pu; }
   }
 
-  let moveX = 0, moveY = 0;
+  let moveX=0, moveY=0;
 
-  // Improved dodging behavior:
-  // - When a danger is detected while a nearby power-up is the target, instead of dodging directly away and then returning straight to the power-up,
-  //   compute an avoidance offset point near the power-up (perpendicular offset) and travel to that offset while the dodge timer is active.
-  // - This reduces chance of stopping back in line of fire.
-  if (dangerCount > 0) {
-    // If we're currently already avoiding, continue decrementing avoid timer.
-    gs.avoidTicks = Math.max(0, gs.avoidTicks || 0);
+  // Move toward nearest power-up first
+  if(nearestPU){
+    const dx = nearestPU.x - gs.x;
+    const dy = nearestPU.y - gs.y;
+    const mag = Math.hypot(dx, dy) || 1;
+    moveX = (dx/mag)*(gs.speed||2.5);
+    moveY = (dy/mag)*(gs.speed||2.5);
 
-    // If there's a nearby power-up we care about, set up an avoidance maneuver.
-    if (nearest && minDist < 300) {
-      // If not already in an avoidance maneuver, initialize it.
-      if (!gs.avoidTicks) {
-        // pick a perpendicular direction relative to vector from gold star to power-up
-        const toPUx = (nearest.x || 0) - (gs.x || 0);
-        const toPUy = (nearest.y || 0) - (gs.y || 0);
-        const mag = Math.hypot(toPUx, toPUy) || 1;
-        // perpendicular vectors
-        const perp1 = { x: -toPUy / mag, y: toPUx / mag };
-        const perp2 = { x: toPUy / mag, y: -toPUx / mag };
-
-        // choose the perpendicular that increases distance from the nearest incoming enemy/lightning
-        let best = perp1, bestScore = -Infinity;
-        const dangers = (state.enemies || []).concat(state.lightning || []);
-        for (const cand of [perp1, perp2]) {
-          // hypothetical offset point near power-up
-          const offsetDist = 80; // how far to sidestep
-          const testX = (nearest.x || 0) + cand.x * offsetDist;
-          const testY = (nearest.y || 0) + cand.y * offsetDist;
-          // score by distance sum from dangers (further is better)
-          let score = 0;
-          for (const d of dangers) {
-            const dd = Math.hypot((d.x || 0) - testX, (d.y || 0) - testY) || 0.001;
-            score += dd;
-          }
-          if (score > bestScore) { bestScore = score; best = cand; }
-        }
-
-        gs.avoidDir = best; // normalized perpendicular vector
-        gs.avoidTicks = 60; // hold avoidance for ~60 frames (1 sec at 60fps), adjustable
-        gs.avoidTargetId = nearest.id || null; // optional id to prefer same PU while avoiding
-      }
-
-      // While avoiding, move toward the offset point (power-up position + perpendicular offset).
-      if (gs.avoidTicks > 0) {
-        const offsetDistance = 80; // consistent with initialization
-        const targetX = (nearest.x || 0) + (gs.avoidDir ? gs.avoidDir.x * offsetDistance : 0);
-        const targetY = (nearest.y || 0) + (gs.avoidDir ? gs.avoidDir.y * offsetDistance : 0);
-        const dx = targetX - (gs.x || 0);
-        const dy = targetY - (gs.y || 0);
-        const mag = Math.hypot(dx, dy) || 1;
-        moveX = dx / mag;
-        moveY = dy / mag;
-        gs.avoidTicks--;
-        // keep the gold star from starting a collect while avoiding
-        if (gs.avoidTicks > 0) {
-          // ensure we don't flip into collecting state prematurely
-          // (so we won't set gs.collecting/targetPowerUp here)
-        }
-      } else {
-        // fallback: if avoidTicks reaches 0, clear avoidance and fallthrough to danger behavior
-        gs.avoidDir = null;
-        gs.avoidTargetId = null;
-      }
-    } else {
-      // No nearby power-up to bias toward, do the original danger avoidance
-      moveX = dangerX;
-      moveY = dangerY;
-    }
-
-    // If we didn't set a move vector via the alternate branch, ensure basic danger vector is used.
-    if (moveX === 0 && moveY === 0) {
-      moveX = dangerX;
-      moveY = dangerY;
-    }
-  } else if (nearest && minDist < 300) {
-    // If we're not currently in danger but we have an active avoidance timer, keep finishing the sidestep.
-    if (gs.avoidTicks && gs.avoidTicks > 0 && gs.avoidDir && (gs.avoidTargetId == null || gs.avoidTargetId === (nearest.id || null))) {
-      const offsetDistance = 80;
-      const targetX = (nearest.x || 0) + gs.avoidDir.x * offsetDistance;
-      const targetY = (nearest.y || 0) + gs.avoidDir.y * offsetDistance;
-      const dx = targetX - (gs.x || 0);
-      const dy = targetY - (gs.y || 0);
-      const mag = Math.hypot(dx, dy) || 1;
-      moveX = dx / mag;
-      moveY = dy / mag;
-      gs.avoidTicks = Math.max(0, gs.avoidTicks - 1);
-    } else {
-      // normal attraction toward power-up
-      const dx = nearest.x - (gs.x || 0), dy = nearest.y - (gs.y || 0), mag = Math.hypot(dx, dy) || 1;
-      moveX = dx / mag;
-      moveY = dy / mag;
-      if (minDist < 25) {
-        gs.collecting = true;
-        gs.targetPowerUp = nearest;
-        gs.collectTimer = 0;
-        // reset avoidance so future pickups start fresh
-        gs.avoidTicks = 0;
-        gs.avoidDir = null;
-        gs.avoidTargetId = null;
-        return;
-      }
-    }
-  } else {
-    const dx = (state.player.x || 0) - (gs.x || 0), dy = (state.player.y || 0) - (gs.y || 0), dist = Math.hypot(dx, dy);
-    if (dist > 100) {
-      const mag = dist || 1;
-      moveX = dx / mag * 0.7;
-      moveY = dy / mag * 0.7;
+    if(minPUDist<25){
+      gs.collecting=true;
+      gs.targetPowerUp=nearestPU;
+      gs.collectTimer=0;
+      gs.avoidTicks=0;
+      gs.avoidDir=null;
+      gs.avoidTargetId=null;
+      return;
     }
   }
 
+  // Danger avoidance only if no immediate power-up
+  if(dangerCount>0 && (!nearestPU || minPUDist>50)){
+    moveX += dangerX;
+    moveY += dangerY;
+  }
+
+  // Slight random jitter for independence
+  moveX += (Math.random()-0.5)*0.3;
+  moveY += (Math.random()-0.5)*0.3;
+
+  // Apply movement
   const moveMag = Math.hypot(moveX, moveY);
-  if (moveMag > 0) {
-    gs.x = (gs.x || 0) + (moveX / moveMag) * (gs.speed || 2);
-    gs.y = (gs.y || 0) + (moveY / moveMag) * (gs.speed || 2);
+  if(moveMag>0){
+    gs.x += (moveX/moveMag)*(gs.speed||2);
+    gs.y += (moveY/moveMag)*(gs.speed||2);
   }
 
-  gs.x = Math.max(50, Math.min((state.canvas && state.canvas.width) ? state.canvas.width - 50 : (gs.x || 50), gs.x));
-  gs.y = Math.max(50, Math.min((state.canvas && state.canvas.height) ? state.canvas.height - 50 : (gs.y || 50), gs.y));
+  // Keep inside canvas
+  gs.x = Math.max(50, Math.min((state.canvas?.width||gs.x), gs.x));
+  gs.y = Math.max(50, Math.min((state.canvas?.height||gs.y), gs.y));
 
-  // red punch auto-fire
-  if ((gs.redPunchLevel || 0) > 0) {
-    gs.punchCooldown = (gs.punchCooldown || 0) + 1;
-    if (gs.punchCooldown >= 300) {
-      gs.punchCooldown = 0;
-      performRedPunch();
-    }
+  // Red punch auto-fire
+  if(gs.redPunchLevel>0){
+    gs.punchCooldown=(gs.punchCooldown||0)+1;
+    if(gs.punchCooldown>=300){ gs.punchCooldown=0; performRedPunch(); }
   }
 
-  // blue cannon firing logic (note: use consistent property name blueCannonLevel)
-  if ((gs.blueCannonLevel || 0) > 0) {
-    gs.cannonCooldown = (gs.cannonCooldown || 0) + 1;
-    if (gs.cannonCooldown > 50) {
-      gs.cannonCooldown = 0;
-      if ((state.enemies || []).length > 0) {
-        const target = state.enemies[0];
-        const dx = (target.x || 0) - (gs.x || 0), dy = (target.y || 0) - (gs.y || 0), mag = Math.hypot(dx, dy) || 1;
-        if (gs.blueCannonLevel === 1) safeCall(state.pushBullet, { x: gs.x, y: gs.y, dx: (dx / mag) * 8, dy: (dy / mag) * 8, size: 8, owner: "gold" });
-        else if (gs.blueCannonLevel === 2) {
-          safeCall(state.pushBullet, { x: gs.x, y: gs.y - 5, dx: (dx / mag) * 8, dy: (dy / mag) * 8, size: 8, owner: "gold" });
-          safeCall(state.pushBullet, { x: gs.x, y: gs.y + 5, dx: (dx / mag) * 8, dy: (dy / mag) * 8, size: 8, owner: "gold" });
-        }
-        else if (gs.blueCannonLevel === 3) {
-          for (let i = -1; i <= 1; i++) {
-            const angle = Math.atan2(dy, dx) + i * 0.3;
-            safeCall(state.pushBullet, { x: gs.x, y: gs.y, dx: Math.cos(angle) * 8, dy: Math.sin(angle) * 8, size: 8, owner: "gold" });
-          }
-        }
-        else if (gs.blueCannonLevel === 4) {
-          for (let i = -2; i <= 2; i++) {
-            const angle = Math.atan2(dy, dx) + i * 0.25;
-            safeCall(state.pushBullet, { x: gs.x, y: gs.y, dx: Math.cos(angle) * 8, dy: Math.sin(angle) * 8, size: 8, owner: "gold" });
-          }
-        }
-        else if (gs.blueCannonLevel === 5) {
-          for (let i = 0; i < 5; i++) safeCall(state.pushBullet, { x: gs.x + (dx / mag) * i * 20, y: gs.y + (dy / mag) * i * 20, dx: (dx / mag) * 12, dy: (dy / mag) * 12, size: 10, owner: "gold" });
-        }
+  // Blue cannon auto-fire
+  if(gs.blueCannonLevel>0 && (state.enemies||[]).length>0){
+    gs.cannonCooldown=(gs.cannonCooldown||0)+1;
+    if(gs.cannonCooldown>50){
+      gs.cannonCooldown=0;
+      const target=state.enemies[0];
+      const dx=target.x-gs.x, dy=target.y-gs.y;
+      const mag=Math.hypot(dx,dy)||1;
+      if(gs.blueCannonLevel===1) safeCall(state.pushBullet,{ x:gs.x, y:gs.y, dx:dx/mag*8, dy:dy/mag*8, size:8, owner:"gold" });
+      else if(gs.blueCannonLevel===2){
+        safeCall(state.pushBullet,{ x:gs.x, y:gs.y-5, dx:dx/mag*8, dy:dy/mag*8, size:8, owner:"gold" });
+        safeCall(state.pushBullet,{ x:gs.x, y:gs.y+5, dx:dx/mag*8, dy:dy/mag*8, size:8, owner:"gold" });
+      } else if(gs.blueCannonLevel===3){
+        for(let i=-1;i<=1;i++){ const angle=Math.atan2(dy,dx)+i*0.3; safeCall(state.pushBullet,{ x:gs.x, y:gs.y, dx:Math.cos(angle)*8, dy:Math.sin(angle)*8, size:8, owner:"gold" }); }
+      } else if(gs.blueCannonLevel===4){
+        for(let i=-2;i<=2;i++){ const angle=Math.atan2(dy,dx)+i*0.25; safeCall(state.pushBullet,{ x:gs.x, y:gs.y, dx:Math.cos(angle)*8, dy:Math.sin(angle)*8, size:8, owner:"gold" }); }
+      } else if(gs.blueCannonLevel===5){
+        for(let i=0;i<5;i++) safeCall(state.pushBullet,{ x:gs.x+dx/mag*i*20, y:gs.y+dy/mag*i*20, dx:dx/mag*12, dy:dy/mag*12, size:10, owner:"gold" });
       }
     }
   }
