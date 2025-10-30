@@ -278,3 +278,34 @@ export function shouldShowGameOver() {
   // adjust conditions to match your intended rules
   return gameOver || (player.lives <= 0) || (!goldStar.alive && wave > 0);
 }
+
+/*
+  Added getters to avoid callers accidentally reading a snapshot of the state
+  at import time. Prefer these functions in other modules:
+    import { getGameOver, getPlayer, setGameOver } from './state.js'
+  then call getGameOver() each frame or right before rendering the UI.
+
+  Example:
+    if (getGameOver() || getPlayer().lives <= 0) {
+      showGameOverUI();
+    }
+*/
+
+// New getters for live access to primitives/objects
+export function getGameOver() {
+  return gameOver;
+}
+
+// Return the player object reference — callers should read properties from it
+// (do not assign this to a local copy if you need live values)
+export function getPlayer() {
+  return player;
+}
+
+// Convenience getters for frequently checked numeric values
+export function getPlayerLives() {
+  return player.lives;
+}
+export function getPlayerHealth() {
+  return player.health;
+}
