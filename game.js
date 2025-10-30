@@ -323,6 +323,16 @@ function renderHighScoreList() {
 
 // Show the game's overlay UI when the game ends (if overlay exists)
 export function showGameOverUI() {
+  // Guard: only show DOM overlay when the game is actually over.
+  // This prevents the overlay from appearing at startup due to initial state values.
+  if (!state.getGameOver && typeof state.getGameOver === 'function') {
+    // defensive: if getter exists, require it to be true
+    if (!state.getGameOver()) return;
+  } else {
+    // fallback to checking the primitive directly
+    if (!state.gameOver) return;
+  }
+
   if (!overlayEl) return;
   overlayEl.classList.remove('hidden');
 
@@ -421,3 +431,11 @@ window.showGameOverUI = showGameOverUI;
 
 // Ensure highscores are loaded at startup
 loadHighScores();
+
+// Ensure overlay is hidden at startup so it doesn't flash/appear before a game-over event.
+// This covers cases where the DOM element may start visible (e.g. non-hidden by default in markup or CSS)
+try {
+  hideGameOverUI();
+} catch (e) {
+  // ignore if hideGameOverUI not available for some reason
+}
