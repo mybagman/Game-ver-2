@@ -1063,3 +1063,128 @@ export function drawBackground(waveNum) {
 
   state.incrementBackgroundOffset(0.5);
 }
+
+// ----------------------
+// New additions: planetary parallax, re-entry, dropship, tunnel collisions
+// These are appended here so game.js can import them alongside existing exports.
+// ----------------------
+
+// ----------------------
+// Layered parallax setup
+// ----------------------
+const planetLayers = [
+  { y: 0.2, scale: 0.3, speed: 0.1, color: '#2b2b2b' },
+  { y: 0.3, scale: 0.5, speed: 0.2, color: '#3d3d3d' },
+  { y: 0.4, scale: 0.8, speed: 0.3, color: '#4d4d4d' }
+];
+
+let tunnelCollisions = [];
+
+// ----------------------
+// Parallax Planet Render
+// ----------------------
+export function drawPlanetBackground() {
+  const ctx = state.ctx;
+  const { width, height, wave } = state;
+  if (wave < 5) return;
+
+  const planetSize = Math.min(width, height) * (0.5 + Math.min((wave - 5) * 0.1, 1.5));
+  const planetX = width / 2;
+  const planetY = height * (0.7 + Math.sin(state.time / 5000) * 0.01);
+
+  planetLayers.forEach((layer) => {
+    const offset = Math.sin(state.time * layer.speed * 0.001) * 10;
+    ctx.fillStyle = layer.color;
+    ctx.beginPath();
+    ctx.arc(planetX + offset, planetY, planetSize * layer.scale, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  const pixelCount = 60 + wave * 2;
+  for (let i = 0; i < pixelCount; i++) {
+    const px = planetX + (Math.random() - 0.5) * planetSize;
+    const py = planetY + (Math.random() - 0.5) * planetSize * 0.5;
+    ctx.fillStyle = `rgba(${80 + Math.random() * 50},${80 + Math.random() * 50},${80 + Math.random() * 50},0.3)`;
+    ctx.fillRect(px, py, 2, 2);
+  }
+}
+
+// ----------------------
+// Re-entry visual effects
+// ----------------------
+export function drawReentryEffects() {
+  const ctx = state.ctx;
+  const { width, height, wave } = state;
+  if (wave < 12) return;
+
+  const intensity = Math.min((wave - 11) / 2, 1);
+  const gradient = ctx.createLinearGradient(0, 0, 0, height);
+  gradient.addColorStop(0, `rgba(255, 100, 0, ${0.1 * intensity})`);
+  gradient.addColorStop(1, `rgba(0, 0, 0, 0.7)`);
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+
+  for (let i = 0; i < 40 * intensity; i++) {
+    const x = Math.random() * width;
+    const y = Math.random() * height;
+    ctx.strokeStyle = `rgba(255,${120 + Math.random() * 80},0,${Math.random() * 0.6})`;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + (Math.random() - 0.5) * 6, y + 20 + Math.random() * 30);
+    ctx.stroke();
+  }
+}
+
+// ----------------------
+// Mech → Dropship visuals
+// ----------------------
+export function drawDropship(mech) {
+  const ctx = state.ctx;
+  const size = mech.size || 40;
+  const x = mech.x, y = mech.y;
+
+  ctx.fillStyle = '#222';
+  ctx.fillRect(x - size/2, y - size/3, size, size/2);
+
+  ctx.fillStyle = '#555';
+  ctx.fillRect(x - size/3, y - size/2, size/1.5, size/3);
+
+  ctx.fillStyle = '#00aaff';
+  ctx.fillRect(x - size/4, y - size/2.2, size/2, size/5);
+
+  ctx.fillStyle = `rgba(255,120,0,${0.3 + Math.random() * 0.5})`;
+  ctx.beginPath();
+  ctx.arc(x, y + size/2, size/4, 0, Math.PI);
+  ctx.fill();
+
+  if (mech.deploying) {
+    ctx.fillStyle = '#888';
+    ctx.fillRect(x - 10, y + size/2, 20, 10);
+  }
+}
+
+// ----------------------
+// Tunnel collision effects
+// ----------------------
+export function triggerTunnelCollision(x, y) {
+  tunnelCollisions.push({ x, y, life: 20 });
+}
+
+export function drawTunnelCollisions() {
+  const ctx = state.ctx;
+  tunnelCollisions = tunnelCollisions.filter(c => c.life-- > 0);
+
+  tunnelCollisions.forEach(c => {
+    const alpha = c.life / 20;
+    ctx.strokeStyle = `rgba(255,255,200,${alpha})`;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, 10 + (20 - c.life), 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = `rgba(255,100,0,${alpha * 0.5})`;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
