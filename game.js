@@ -30,7 +30,7 @@ import {
   // newly added to match drawing.js exports used by game.js:
   drawPowerUps,
   drawRedPunchEffects,
-  drawPlayer8Bit,
+  drawPlayer,
   // drawAll could be used instead of calling all draws individually if desired:
   drawAll
 } from './drawing.js';
