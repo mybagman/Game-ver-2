@@ -85,13 +85,18 @@ function drawPlayer8Bit(ctx, player) {
   const cockpitColor = player.cockpitColor || "#ffffff";
   const exhaustColor = player.exhaustColor || "rgba(255,120,40,0.9)";
 
+  // Patch: ensure pixel scale is at least 1 so tiny players still draw
+  // Replace the px/remainder/offset section inside drawPlayer8Bit with the following:
+
   const size = player.size || 24;
   const pixels = grid.length;
-  const px = Math.floor(size / pixels); // integer pixel scale
-  const remainder = size - px * pixels;
+  // ensure we always have at least 1 device pixel per 'logical pixel'
+  const px = Math.max(1, Math.floor(size / pixels)); // integer pixel scale, never 0
+  const totalPixelSize = px * pixels;
+  const remainder = Math.max(0, size - totalPixelSize);
   // center offset so sprite matches player.x,y center
-  const offsetX = player.x - (px * pixels + remainder) / 2;
-  const offsetY = player.y - (px * pixels + remainder) / 2;
+  const offsetX = Math.round(player.x - (totalPixelSize + remainder) / 2);
+  const offsetY = Math.round(player.y - (totalPixelSize + remainder) / 2);
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
