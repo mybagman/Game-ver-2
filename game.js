@@ -5,7 +5,30 @@ import { updateLightning, checkBulletCollisions } from './collisions.js';
 import { updateGoldStar } from './goldstar.js';
 import { updateGoldStarAura } from './aura.js';
 import { tryAdvanceWave, spawnWave } from './waveManager.js';
-import { drawBackground, drawTunnels, drawDiamonds, drawEnemies, drawTanks, drawWalkers, drawMechs, drawDebris, drawBullets, drawLightning, drawExplosions, drawPowerUps, drawGoldStar, drawGoldStarAura[...]
+/* patched imports: consolidated drawing helpers from drawing.js */
+import {
+  drawBackground,
+  drawPlanetBackground,
+  drawReentryEffects,
+  drawClouds,
+  drawBullets,
+  drawEnemies,
+  drawTunnels,
+  drawTunnelCollisions,
+  drawGoldStarAura,
+  drawGoldStar,
+  drawUI,
+  drawDropship,
+  drawTanks,
+  drawWalkers,
+  drawMechs,
+  drawDebris,
+  drawDiamonds,
+  drawLightning,
+  drawExplosions,
+  updateAndDrawReflectionEffects
+} from './drawing.js';
+
 import { respawnPlayer, respawnGoldStar } from './utils.js';
 import { resetAuraOnDeath } from './aura.js';
 
@@ -49,24 +72,35 @@ export function gameLoop(now) {
   if (!ensureCanvas()) return;
   state.ctx.clearRect(0, 0, state.canvas.width, state.canvas.height);
 
-  drawBackground(state.wave);
-  drawTunnels();
-  drawDiamonds();
-  drawEnemies();
-  drawTanks();
-  drawWalkers();
-  drawMechs();
-  drawDebris();
-  drawBullets();
-  drawLightning();
-  drawExplosions();
-  drawPowerUps();
-  drawGoldStar();
-  drawGoldStarAura(state.ctx);
-  drawRedPunchEffects();
-  drawPlayer();
-  updateAndDrawReflectionEffects();
-  drawUI();
+  // Use the new renderFrame sequence (order matters)
+  renderFrame();
+
+  // Some effects / overlays that were previously drawn after main scene:
+  // draw any red punch effects (screen flash / hit indicators)
+  if (typeof drawRedPunchEffects === 'function') {
+    drawRedPunchEffects();
+  } else {
+    // fallback to existing update-based draw if drawing function isn't provided
+    // (original code used drawRedPunchEffects(); here we attempt to call it if available)
+    try {
+      // no-op if not present
+    } catch (e) {}
+  }
+
+  // draw player on top of many world objects (keep original drawPlayer if present)
+  if (typeof drawPlayer === 'function') {
+    drawPlayer();
+  } else if (state.player && state.ctx) {
+    // fallback: simple player representation if drawPlayer helper isn't available.
+    const p = state.player;
+    const ctx = state.ctx;
+    ctx.save();
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(p.x || state.canvas.width/2, p.y || state.canvas.height/2, p.size || 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
 
   if (state.gameOver) {
     // We still draw the fullscreen dark overlay + GAME OVER text on the canvas as a fallback.
@@ -85,6 +119,51 @@ export function gameLoop(now) {
   }
 
   requestAnimationFrame(gameLoop);
+}
+
+/* New renderFrame() added per patch — this centralizes draw order */
+export function renderFrame() {
+  // 1) Background (base)
+  drawBackground(state.wave);
+
+  // 2) Special planet / re-entry layers (if applicable)
+  if (typeof drawPlanetBackground === 'function') drawPlanetBackground();
+  if (typeof drawReentryEffects === 'function') drawReentryEffects();
+
+  // 3) Environment/clouds/city
+  if (typeof drawClouds === 'function') drawClouds();
+
+  // 4) World objects: tunnels, planet colliders
+  if (typeof drawTunnels === 'function') drawTunnels();
+  if (typeof drawTunnelCollisions === 'function') drawTunnelCollisions();
+
+  // 5) Enemies / bullets / dropships / mechs / tanks / walkers
+  if (typeof drawEnemies === 'function') drawEnemies();
+  if (typeof drawDropship === 'function') {
+    // if drawDropship exists, draw for mechs that are deploying or dropshipVisible
+    state.mechs.forEach(m => { if (m.deploying || m.dropshipVisible) drawDropship(m); });
+  }
+  if (typeof drawTanks === 'function') drawTanks();
+  if (typeof drawWalkers === 'function') drawWalkers();
+  if (typeof drawMechs === 'function') drawMechs();
+
+  // 6) Bullets and related effects
+  if (typeof drawBullets === 'function') drawBullets();
+  if (typeof updateAndDrawReflectionEffects === 'function') updateAndDrawReflectionEffects();
+
+  // 7) Items / diamonds / lightning / debris / explosions
+  if (typeof drawDiamonds === 'function') drawDiamonds();
+  if (typeof drawPowerUps === 'function') drawPowerUps();
+  if (typeof drawLightning === 'function') drawLightning();
+  if (typeof drawExplosions === 'function') drawExplosions();
+  if (typeof drawDebris === 'function') drawDebris();
+
+  // 8) Gold star aura & star itself (before UI so aura sits behind UI)
+  if (typeof drawGoldStarAura === 'function') drawGoldStarAura(state.ctx);
+  if (typeof drawGoldStar === 'function') drawGoldStar();
+
+  // 9) UI last (HUD)
+  if (typeof drawUI === 'function') drawUI();
 }
 
 export function ensureCanvas() {
