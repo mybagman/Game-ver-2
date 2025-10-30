@@ -1,10 +1,9 @@
 // goldstar.js
 // Responsible for Gold Star power-up handling and related logic.
 //
-// Note: This file exposes a single helper `processPickedPowerUps(state, picked)`
-// which applies the effects of picked power-ups to the provided `state` object.
-// It intentionally uses `state.filterPowerUps(...)` instead of reassigning
-// `state.powerUps` to avoid reassigning an imported binding.
+// Exports:
+// - processPickedPowerUps(state, picked)
+// - updateGoldStar(state, ...args)  // safe delegator; calls state.updateGoldStar if provided
 
 function safeCall(fn, ...args) {
   if (typeof fn === "function") return fn(...args);
@@ -13,10 +12,8 @@ function safeCall(fn, ...args) {
 }
 
 // Called whenever GoldStar levels up. Prefer to use a function supplied on state,
-// otherwise this is a no-op. This keeps this module self-contained while allowing
-// the rest of the engine to provide the real implementation.
+// otherwise this is a no-op.
 function levelUpGoldStar(state) {
-  // prefer state's implementation if available
   return safeCall(state && state.levelUpGoldStar, state);
 }
 
@@ -28,7 +25,7 @@ function createExplosion(state, x, y, color) {
 // Apply effects for each picked power-up and update state accordingly.
 // - state: game state object (expected to contain goldStar, player, addScore, filterPowerUps, etc.)
 // - picked: array of power-up objects that were picked (each has at least { type, x, y })
-function processPickedPowerUps(state, picked = []) {
+export function processPickedPowerUps(state, picked = []) {
   if (!state || !Array.isArray(picked) || picked.length === 0) return;
 
   for (const pu of picked) {
@@ -93,18 +90,20 @@ function processPickedPowerUps(state, picked = []) {
   }
 
   // Remove picked power-ups from the active list using the state's mutator.
-  // This avoids reassigning `state.powerUps` (which may be an imported/immutable binding).
   if (typeof state.filterPowerUps === "function") {
     state.filterPowerUps(p => !picked.includes(p));
   } else if (Array.isArray(state.powerUps)) {
-    // Fallback: if no mutator is provided, mutate the array in-place.
-    // Keep only those not in picked.
     const remaining = state.powerUps.filter(p => !picked.includes(p));
     state.powerUps.length = 0;
     state.powerUps.push(...remaining);
   }
 }
 
-module.exports = {
-  processPickedPowerUps,
-};
+// Provide a named export updateGoldStar so game.js can import it.
+// Default implementation delegates to state's updateGoldStar if present.
+// Keep arguments flexible (e.g., dt) so callers can pass frame delta or other params.
+export function updateGoldStar(state, ...args) {
+  // If the engine provides an implementation on state, call it.
+  // Otherwise do nothing (safe no-op).
+  return safeCall(state && state.updateGoldStar, state, ...args);
+}
