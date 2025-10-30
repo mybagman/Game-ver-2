@@ -214,7 +214,8 @@ export function respawnGoldStar() {
   state.goldStar.health = state.goldStar.maxHealth;
   state.goldStar.alive = true;
   state.goldStar.redPunchLevel = 0;
-  state.goldStar.blueCannonnLevel = 0;
+  // fix typo: ensure blueCannonLevel matches drawing code (was blueCannonnLevel)
+  state.goldStar.blueCannonLevel = 0;
   state.goldStar.redKills = 0;
   state.goldStar.blueKills = 0;
   state.goldStar.collecting = false;
@@ -271,6 +272,18 @@ export function handleTunnelCollisionForEntity(entity, tunnel) {
   } else {
     entity.vx = 0;
     entity.vy = 0;
+  }
+
+  // If a drawing module exposes a tunnel collision trigger, call it so visuals play.
+  // We try multiple safe fallbacks and do not throw if absent.
+  try {
+    if (typeof state.triggerTunnelCollision === 'function') {
+      state.triggerTunnelCollision(entity.x, entity.y);
+    } else if (typeof globalThis !== 'undefined' && typeof globalThis.triggerTunnelCollision === 'function') {
+      globalThis.triggerTunnelCollision(entity.x, entity.y);
+    }
+  } catch (err) {
+    // swallow - visual trigger is optional
   }
 
   return true;
