@@ -328,34 +328,160 @@ export function updateWalkers() {
 
 export function updateMechs() {
   const groundY = state.canvas.height - 60;
+
   for (let i = state.mechs.length - 1; i >= 0; i--) {
     const mech = state.mechs[i];
 
-    const dx = state.player.x - mech.x;
-    const distX = Math.abs(dx) || 1;
-    mech.x += Math.sign(dx) * Math.min(mech.speed, distX);
+    // Backwards compatible: if mech.flying is undefined treat as false (ground mech)
+    mech.flying = mech.flying || false;
+    mech.dropTimer = (mech.dropTimer || 0);
+    mech.dropTimer++;
 
-    mech.y += (groundY - mech.y) * 0.15;
+    // Flying/drop-ship behavior
+    if (mech.flying) {
+      // Determine a fly height (above ground)
+      const flyHeight = Math.max(80, groundY - 180); // don't go too low
+      // Move horizontally to patrol or follow player, with some randomness
+      const targetX = (mech.patrolX !== undefined) ? mech.patrolX : state.player.x + (mech.patrolOffset || 0);
+      // periodically pick new patrolX to make mechs move across the screen
+      if (!mech.patrolX || Math.random() < 0.005) {
+        mech.patrolX = Math.random() * state.canvas.width;
+      }
 
-    mech.shootTimer = (mech.shootTimer || 0) + 1;
-    if (mech.shootTimer > 60) {
-      mech.shootTimer = 0;
-      const angles = [0, Math.PI/4, Math.PI/2, 3*Math.PI/4, Math.PI, -3*Math.PI/4, -Math.PI/2, -Math.PI/4];
-      angles.forEach(angle => {
-        state.pushLightning({
-          x: mech.x,
-          y: mech.y,
-          dx: Math.cos(angle) * 6,
-          dy: Math.sin(angle) * 6,
-          size: 8,
-          damage: 25
+      const dx = mech.patrolX - mech.x;
+      const distX = Math.abs(dx) || 1;
+      // flying mechs move a bit faster horizontally
+      mech.x += Math.sign(dx) * Math.min(mech.speed * 1.4, distX);
+
+      // smoothly move to flyHeight
+      mech.y += (flyHeight - mech.y) * 0.06;
+
+      // Slight bob for visual feel
+      mech.y += Math.sin((mech.bobPhase || 0) + (mech.x * 0.01)) * 0.4;
+      mech.bobPhase = (mech.bobPhase || 0) + 0.02;
+
+      // Drop logic: every ~180-260 frames, drop a tank near current x
+      const dropInterval = mech.dropInterval || 220;
+      if (mech.dropTimer > dropInterval) {
+        mech.dropTimer = 0;
+        // create a tank that will appear on the ground below the mech's x
+        const tankX = mech.x + (Math.random() - 0.5) * 40;
+        const tank = {
+          x: tankX,
+          y: mech.y + 8, // start slightly below the mech visually (they 'fall' to ground in tanks update)
+          speed: 1.6,
+          height: 20,
+          health: 50,
+          turretAngle: 0,
+          shootTimer: 0
+        };
+        // Give the tank an initial fall effect: store a small vy which updateTanks will naturally damp if needed.
+        tank.vy = 4;
+        // Insert tank onto the ground tanks list immediately so it will be managed by updateTanks().
+        state.tanks.push(tank);
+        // some visual feedback: small explosion/poof at drop location
+        for (let p = 0; p < 6; p++) {
+          state.pushExplosion({
+            x: tankX + (Math.random()-0.5)*12,
+            y: mech.y + 10 + (Math.random()-0.5)*8,
+            dx: (Math.random()-0.5)*1.5,
+            dy: (Math.random()*1.5),
+            radius: 3,
+            color: "rgba(200,200,255,0.9)",
+            life: 20
+          });
+        }
+      }
+
+      // Flying mechs still shoot but maybe less frequently
+      mech.shootTimer = (mech.shootTimer || 0) + 1;
+      if (mech.shootTimer > 90) {
+        mech.shootTimer = 0;
+        const angles = [ -0.2, 0, 0.2 ];
+        angles.forEach(angleOffset => {
+          const angle = Math.atan2(state.player.y - mech.y, state.player.x - mech.x) + angleOffset;
+          state.pushLightning({
+            x: mech.x,
+            y: mech.y,
+            dx: Math.cos(angle) * 6,
+            dy: Math.sin(angle) * 6,
+            size: 7,
+            damage: 18
+          });
         });
-      });
+      }
+
+      // Prevent flying mechs from lingering off-screen for too long
+      const offscreenMargin = 200;
+      if (mech.x < -offscreenMargin || mech.x > state.canvas.width + offscreenMargin) {
+        // wrap around horizontally for continuous drops
+        if (mech.x < -offscreenMargin) mech.x = state.canvas.width + offscreenMargin;
+        else mech.x = -offscreenMargin;
+      }
+
+      // collisions while flying: still vulnerable to bullets
+      for (let bi = state.bullets.length - 1; bi >= 0; bi--) {
+        const b = state.bullets[bi];
+        const dist = Math.hypot(b.x - mech.x, b.y - mech.y);
+        if (dist < (mech.size || 28)) {
+          state.bullets.splice(bi,1);
+          mech.health -= b.damage || 10;
+          state.pushExplosion({ x: b.x, y: b.y, dx: 0, dy: 0, radius: 3, color: "yellow", life: 12 });
+        }
+      }
+
+      // If mech crashed to ground or was forced to land (optional flag), fall back to ground behavior:
+      if (mech.crashToGround) {
+        mech.flying = false;
+        // ensure it has sensible y for ground behavior
+        mech.y = groundY;
+      }
+    } else {
+      // Grounded mech (legacy behavior)
+      const dx = state.player.x - mech.x;
+      const distX = Math.abs(dx) || 1;
+      mech.x += Math.sign(dx) * Math.min(mech.speed, distX);
+
+      mech.y += (groundY - mech.y) * 0.15;
+
+      mech.shootTimer = (mech.shootTimer || 0) + 1;
+      if (mech.shootTimer > 60) {
+        mech.shootTimer = 0;
+        const angles = [0, Math.PI/4, Math.PI/2, 3*Math.PI/4, Math.PI, -3*Math.PI/4, -Math.PI/2, -Math.PI/4];
+        angles.forEach(angle => {
+          state.pushLightning({
+            x: mech.x,
+            y: mech.y,
+            dx: Math.cos(angle) * 6,
+            dy: Math.sin(angle) * 6,
+            size: 8,
+            damage: 25
+          });
+        });
+      }
     }
 
+    // Death handling works for both flying and ground mechs
     if (mech.health <= 0) {
       createExplosion(mech.x, mech.y, "yellow");
       spawnDebris(mech.x, mech.y, 15);
+      // If flying, optionally drop a few tanks as wreckage
+      if (mech.flying) {
+        for (let d = 0; d < 2; d++) {
+          const tankX = mech.x + (Math.random()-0.5) * 60;
+          const tank = {
+            x: tankX,
+            y: mech.y + 8,
+            speed: 1.4,
+            height: 20,
+            health: 40,
+            turretAngle: 0,
+            shootTimer: 0,
+            vy: 4
+          };
+          state.tanks.push(tank);
+        }
+      }
       state.mechs.splice(i, 1);
       state.addScore(60);
       spawnPowerUp(mech.x, mech.y, "reflect");
