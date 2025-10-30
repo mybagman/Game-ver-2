@@ -1,19 +1,41 @@
 import * as state from './state.js';
-import { createExplosion, spawnPowerUp, spawnDebris } from './utils.js';
 
 export function updatePlayerMovement() {
-  let mx = 0, my = 0;
-  if (state.keys["w"]) my = -1;
-  if (state.keys["s"]) my = 1;
-  if (state.keys["a"]) mx = -1;
-  if (state.keys["d"]) mx = 1;
-  const mag = Math.hypot(mx, my) || 0;
-  if (mag > 0) {
-    state.player.x += (mx / mag) * state.player.speed;
-    state.player.y += (my / mag) * state.player.speed;
-    state.player.x = Math.max(state.player.size/2, Math.min(state.canvas.width - state.player.size/2, state.player.x));
-    state.player.y = Math.max(state.player.size/2, Math.min(state.canvas.height - state.player.size/2, state.player.y));
+  // existing movement handling expected to be above this (input handling etc.)
+  // this function should be called every frame after player position updates
+
+  // keep player within canvas
+  state.player.x = Math.max(state.player.size/2, Math.min(state.canvas.width - state.player.size/2, state.player.x));
+  state.player.y = Math.max(state.player.size/2, Math.min(state.canvas.height - state.player.size/2, state.player.y));
+
+  // TUNNEL DAMAGE: damage player while overlapping an active tunnel
+  // configurable damage per second
+  const TUNNEL_DAMAGE_PER_SECOND = 20; // adjust this value to tune how harmful tunnels are
+  const damagePerFrame = TUNNEL_DAMAGE_PER_SECOND / 60; // assuming ~60 FPS
+
+  for (let ti = 0; ti < state.tunnels.length; ti++) {
+    const t = state.tunnels[ti];
+    if (!t || !t.active) continue;
+
+    // Check overlap between the player's circle and the tunnel rectangle.
+    // We'll treat the player's hit area as a circle with radius = player.size/2.
+    const radius = state.player.size / 2;
+    const nearestX = Math.max(t.x, Math.min(state.player.x, t.x + t.width));
+    const nearestY = Math.max(t.y, Math.min(state.player.y, t.y + t.height));
+    const dx = state.player.x - nearestX;
+    const dy = state.player.y - nearestY;
+    const distSq = dx*dx + dy*dy;
+
+    if (distSq < radius * radius) {
+      // Player is overlapping the tunnel. Apply damage unless invulnerable.
+      if (!state.player.invulnerable) {
+        state.player.health -= damagePerFrame;
+        // Optional: small visual effect or hurt sound can be triggered here.
+      }
+    }
   }
+
+  // any other player movement end-of-frame logic...
 }
 
 export function handleShooting() {
