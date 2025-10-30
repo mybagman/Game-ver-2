@@ -116,6 +116,20 @@ export function setAuraSparks(val) { auraSparks = val; }
 export function setAuraShockwaves(val) { auraShockwaves = val; }
 export function incrementAuraPulseTimer() { auraPulseTimer++; }
 
+// New: explicit setters/getters for score and wave so other modules can update without reassigning imports
+export function setScore(value) {
+  score = value;
+}
+export function getScore() {
+  return score;
+}
+export function setWave(value) {
+  wave = value;
+}
+export function getWave() {
+  return wave;
+}
+
 // Array mutators
 export function clearBullets() { bullets.length = 0; }
 export function clearLightning() { lightning.length = 0; }
