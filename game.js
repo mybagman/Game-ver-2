@@ -26,7 +26,13 @@ import {
   drawDiamonds,
   drawLightning,
   drawExplosions,
-  updateAndDrawReflectionEffects
+  updateAndDrawReflectionEffects,
+  // newly added to match drawing.js exports used by game.js:
+  drawPowerUps,
+  drawRedPunchEffects,
+  drawPlayer,
+  // drawAll could be used instead of calling all draws individually if desired:
+  drawAll
 } from './drawing.js';
 
 import { respawnPlayer, respawnGoldStar } from './utils.js';
