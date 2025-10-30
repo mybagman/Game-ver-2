@@ -62,7 +62,7 @@ export function drawCityBackground() {
 }
 
 // New 8-bit style player sprite drawing
-function drawPlayer8Bit(ctx, player) {
+export function drawPlayer8Bit(ctx, player) {
   // Pixel-art 'canvas' is 9 x 9 logical pixels; scale with player.size
   const grid = [
     "001000100", // 0
@@ -195,7 +195,7 @@ export function drawPlayer() {
 }
 
 // Helper: draw a soft glowing trail for a bullet (if bullet has trail[]), otherwise just a subtle glow behind it.
-function drawBulletTrail(ctx, b) {
+export function drawBulletTrail(ctx, b) {
   if (!b) return;
   const trail = b.trail || [];
   // draw older trail particles first (more transparent)
@@ -214,7 +214,7 @@ function drawBulletTrail(ctx, b) {
 }
 
 // Draw boss-style bullet (big, glowing, possibly with an aura and pulse)
-function drawBossBullet(ctx, b) {
+export function drawBossBullet(ctx, b) {
   const x = b.x, y = b.y;
   const size = b.size || 10;
   const t = state.frameCount;
@@ -269,7 +269,7 @@ function drawBossBullet(ctx, b) {
 }
 
 // Draw mini-boss-style bullet: sharper, cyan/blue, with electric accents
-function drawMiniBossBullet(ctx, b) {
+export function drawMiniBossBullet(ctx, b) {
   const x = b.x, y = b.y;
   const size = b.size || 7;
   const t = state.frameCount;
@@ -930,7 +930,7 @@ export function drawRedPunchEffects() {
   state.ctx.restore();
 }
 
-function roundRect(ctx, x, y, w, h, r) {
+export function roundRect(ctx, x, y, w, h, r) {
   const radius = r || 6;
   ctx.beginPath();
   ctx.moveTo(x + radius, y);
