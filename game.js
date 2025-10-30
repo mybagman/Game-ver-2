@@ -5,7 +5,7 @@ import { updateLightning, checkBulletCollisions } from './collisions.js';
 import { updateGoldStar } from './goldstar.js';
 import { updateGoldStarAura } from './aura.js';
 import { tryAdvanceWave, spawnWave } from './waveManager.js';
-import { drawBackground, drawTunnels, drawDiamonds, drawEnemies, drawTanks, drawWalkers, drawMechs, drawDebris, drawBullets, drawLightning, drawExplosions, drawPowerUps, drawGoldStar, drawGoldStarAura, drawRedPunchEffects, drawPlayer, updateAndDrawReflectionEffects, drawUI } from './draws.js';
+import { drawBackground, drawTunnels, drawDiamonds, drawEnemies, drawTanks, drawWalkers, drawMechs, drawDebris, drawBullets, drawLightning, drawExplosions, drawPowerUps, drawGoldStar, drawGoldStarAura, drawRedPunchEffects, drawPlayer, updateAndDrawReflectionEffects, drawUI } from './drawing.js';
 import { respawnPlayer, respawnGoldStar } from './utils.js';
 import { resetAuraOnDeath } from './aura.js';
 
