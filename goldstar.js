@@ -1,7 +1,7 @@
 // goldstar.js
-// Resimport * as state from './state.js';
-import { createExplosion, spawnPowerUp, respawnGoldStar } from './utils.js';
-import { levelUpGoldStar } from './aura.js';
+import * as state from './state.js';
+import { createExplosion as utilsCreateExplosion, spawnPowerUp, respawnGoldStar } from './utils.js';
+import { levelUpGoldStar as auraLevelUp } from './aura.js';
 
 function safeCall(fn, ...args) {
   if (typeof fn === 'function') return fn(...args);
@@ -29,7 +29,7 @@ export function performRedPunch() {
   nearby.forEach(o => {
     if (!o.e) return;
     o.e.health = (o.e.health || 0) - damage;
-    safeCall(createExplosion, o.e.x, o.e.y, (level >= 3 ? "magenta" : "orange"));
+    safeCall(utilsCreateExplosion, o.e.x, o.e.y, (level >= 3 ? "magenta" : "orange"));
 
     if (knockbackForce > 0 && o.d > 0) {
       const dx = o.e.x - (gs.x || 0);
@@ -60,9 +60,11 @@ export function performRedPunch() {
   });
 
   // Visual / particle effects — guard calls so missing functions don't crash
-  if (gs.redPunchLevel <= 1) {
+  if ((gs.redPunchLevel || 0) <= 1) {
     safeCall(state.pushRedPunchEffect, { x: gs.x, y: gs.y, maxR: radius, r: 0, life: 18, maxLife: 18, color: "rgba(255,220,120,0.9)", fill: true });
-    for (let i = 0; i < 8; i++) safeCall(state.pushExplosion, { x: gs.x, y: gs.y, dx: (Math.random() - 0.5) * 8, dy: (Math.random() - 0.5) * 8, radius: Math.random() * 6 + 2, color: "rgba(255,200,100,0.9)", life: 12 });
+    for (let i = 0; i < 8; i++) {
+      safeCall(state.pushExplosion, { x: gs.x, y: gs.y, dx: (Math.random() - 0.5) * 8, dy: (Math.random() - 0.5) * 8, radius: Math.random() * 6 + 2, color: "rgba(255,200,100,0.9)" });
+    }
   } else if (gs.redPunchLevel === 2) {
     safeCall(state.pushRedPunchEffect, { x: gs.x, y: gs.y, maxR: radius + 30, r: 0, life: 24, maxLife: 24, color: "rgba(255,160,60,0.95)", fill: true });
     for (let i = 0; i < 14; i++) {
@@ -71,11 +73,13 @@ export function performRedPunch() {
   } else {
     safeCall(state.pushRedPunchEffect, { x: gs.x, y: gs.y, maxR: radius + 60, r: 0, life: 36, maxLife: 36, color: "rgba(255,60,255,0.95)", fill: false, ring: true });
     safeCall(state.pushExplosion, { x: gs.x, y: gs.y, dx: 0, dy: 0, radius: 40, color: "rgba(255,255,255,0.95)", life: 8 });
-    for (let i = 0; i < 20; i++) safeCall(state.pushExplosion, { x: gs.x, y: gs.y, dx: (Math.random() - 0.5) * 12, dy: (Math.random() - 0.5) * 12, radius: Math.random() * 6 + 2, color: "rgba(255,50,200,0.9)", life: 22 });
+    for (let i = 0; i < 20; i++) {
+      safeCall(state.pushExplosion, { x: gs.x, y: gs.y, dx: (Math.random() - 0.5) * 12, dy: (Math.random() - 0.5) * 12, radius: Math.random() * 6 + 2, color: "rgba(255,50,20,0.95)", life: 18 });
+    }
   }
 
-  if (gs.redPunchLevel >= 3) {
-    safeCall(createExplosion, gs.x, gs.y, "magenta");
+  if ((gs.redPunchLevel || 0) >= 3) {
+    safeCall(utilsCreateExplosion, gs.x, gs.y, "magenta");
   }
 }
 
@@ -101,35 +105,40 @@ export function updateGoldStar() {
         const picked = (state.powerUps || []).filter(p => Math.hypot((p.x || 0) - centerPU.x, (p.y || 0) - centerPU.y) <= (state.PICKUP_RADIUS || 50));
 
         for (const pu of picked) {
+          if (!pu || !pu.type) continue;
+
           if (pu.type === "red-punch") {
             gs.redKills = (gs.redKills || 0) + 1;
             if (gs.redKills % 5 === 0 && (gs.redPunchLevel || 0) < 5) {
               gs.redPunchLevel = (gs.redPunchLevel || 0) + 1;
-              safeCall(levelUpGoldStar, state);
+              safeCall(auraLevelUp, state);
             }
-            safeCall(createExplosion, pu.x, pu.y, "orange");
+            safeCall(utilsCreateExplosion, pu.x, pu.y, "orange");
             safeCall(state.addScore, 8);
           }
           else if (pu.type === "blue-cannon") {
             gs.blueKills = (gs.blueKills || 0) + 1;
             if (gs.blueKills % 5 === 0 && (gs.blueCannonLevel || 0) < 5) {
               gs.blueCannonLevel = (gs.blueCannonLevel || 0) + 1;
-              safeCall(levelUpGoldStar, state);
+              safeCall(auraLevelUp, state);
             }
-            safeCall(createExplosion, pu.x, pu.y, "cyan");
+            safeCall(utilsCreateExplosion, pu.x, pu.y, "cyan");
             safeCall(state.addScore, 8);
           }
           else if (pu.type === "health") {
             gs.health = Math.min(gs.maxHealth || 100, (gs.health || 0) + 30);
             state.player.health = Math.min(state.player.maxHealth || 100, (state.player.health || 0) + 30);
-            safeCall(createExplosion, pu.x, pu.y, "magenta");
+            safeCall(utilsCreateExplosion, pu.x, pu.y, "magenta");
             safeCall(state.addScore, 5);
           }
           else if (pu.type === "reflect") {
             gs.reflectAvailable = true;
             state.player.reflectAvailable = true;
-            safeCall(createExplosion, pu.x, pu.y, "magenta");
+            safeCall(utilsCreateExplosion, pu.x, pu.y, "magenta");
             safeCall(state.addScore, 12);
+          } else {
+            safeCall(utilsCreateExplosion, pu.x, pu.y, "white");
+            safeCall(state.addScore, 1);
           }
         }
 
@@ -219,7 +228,7 @@ export function updateGoldStar() {
     }
   }
 
-  // blue cannon firing logic (note: use consistent property name blueCannonLevel)
+  // blue cannon firing logic
   if ((gs.blueCannonLevel || 0) > 0) {
     gs.cannonCooldown = (gs.cannonCooldown || 0) + 1;
     if (gs.cannonCooldown > 50) {
@@ -245,116 +254,11 @@ export function updateGoldStar() {
           }
         }
         else if (gs.blueCannonLevel === 5) {
-          for (let i = 0; i < 5; i++) safeCall(state.pushBullet, { x: gs.x + (dx / mag) * i * 20, y: gs.y + (dy / mag) * i * 20, dx: (dx / mag) * 12, dy: (dy / mag) * 12, size: 10, owner: "gold" });
+          for (let i = 0; i < 5; i++) {
+            safeCall(state.pushBullet, { x: gs.x + (dx / mag) * i * 20, y: gs.y + (dy / mag) * i * 20, dx: (dx / mag) * 12, dy: (dy / mag) * 12, size: 10, owner: "gold" });
+          }
         }
       }
     }
   }
-}ponsible for Gold Star power-up handling and related logic.
-//
-// Exports:
-// - processPickedPowerUps(state, picked)
-// - updateGoldStar(state, ...args)  // safe delegator; calls state.updateGoldStar if provided
-
-function safeCall(fn, ...args) {
-  if (typeof fn === "function") return fn(...args);
-  // fallback: silently ignore if not provided
-  return undefined;
-}
-
-// Called whenever GoldStar levels up. Prefer to use a function supplied on state,
-// otherwise this is a no-op.
-function levelUpGoldStar(state) {
-  return safeCall(state && state.levelUpGoldStar, state);
-}
-
-// Create an explosion visual at x,y with color. Prefer state's implementation.
-function createExplosion(state, x, y, color) {
-  return safeCall(state && state.createExplosion, x, y, color);
-}
-
-// Apply effects for each picked power-up and update state accordingly.
-// - state: game state object (expected to contain goldStar, player, addScore, filterPowerUps, etc.)
-// - picked: array of power-up objects that were picked (each has at least { type, x, y })
-export function processPickedPowerUps(state, picked = []) {
-  if (!state || !Array.isArray(picked) || picked.length === 0) return;
-
-  for (const pu of picked) {
-    if (!pu || !pu.type) continue;
-
-    if (pu.type === "red-punch") {
-      state.goldStar = state.goldStar || {};
-      state.goldStar.redKills = (state.goldStar.redKills || 0) + 1;
-
-      if (state.goldStar.redKills % 5 === 0 && (state.goldStar.redPunchLevel || 0) < 5) {
-        state.goldStar.redPunchLevel = (state.goldStar.redPunchLevel || 0) + 1;
-        levelUpGoldStar(state);
-      }
-
-      createExplosion(state, pu.x, pu.y, "orange");
-      safeCall(state && state.addScore, 8);
-    }
-    else if (pu.type === "blue-cannon") {
-      // Note: corrected property name to `blueCannonLevel` (single 'n').
-      state.goldStar = state.goldStar || {};
-      state.goldStar.blueKills = (state.goldStar.blueKills || 0) + 1;
-
-      if (state.goldStar.blueKills % 5 === 0 && (state.goldStar.blueCannonLevel || 0) < 5) {
-        state.goldStar.blueCannonLevel = (state.goldStar.blueCannonLevel || 0) + 1;
-        levelUpGoldStar(state);
-      }
-
-      createExplosion(state, pu.x, pu.y, "cyan");
-      safeCall(state && state.addScore, 8);
-    }
-    else if (pu.type === "health") {
-      state.goldStar = state.goldStar || {};
-      state.player = state.player || {};
-
-      const gMax = state.goldStar.maxHealth || 100;
-      const pMax = state.player.maxHealth || 100;
-      const gHealth = state.goldStar.health || 0;
-      const pHealth = state.player.health || 0;
-
-      state.goldStar.health = Math.min(gMax, gHealth + 30);
-      state.player.health = Math.min(pMax, pHealth + 30);
-
-      createExplosion(state, pu.x, pu.y, "magenta");
-      safeCall(state && state.addScore, 5);
-    }
-    else if (pu.type === "reflect") {
-      state.goldStar = state.goldStar || {};
-      state.player = state.player || {};
-
-      state.goldStar.reflectAvailable = true;
-      state.player.reflectAvailable = true;
-
-      createExplosion(state, pu.x, pu.y, "magenta");
-      safeCall(state && state.addScore, 12);
-    }
-    else {
-      // Unknown power-up types can be handled here if needed
-      // create a small neutral effect to signal pickup
-      createExplosion(state, pu.x, pu.y, "white");
-      safeCall(state && state.addScore, 1);
-    }
-  }
-
-  // Remove picked power-ups from the active list using the state's mutator.
-  if (typeof state.filterPowerUps === "function") {
-    state.filterPowerUps(p => !picked.includes(p));
-  } else if (Array.isArray(state.powerUps)) {
-    const remaining = state.powerUps.filter(p => !picked.includes(p));
-    state.powerUps.length = 0;
-    state.powerUps.push(...remaining);
-  }
-}
-
-// Provide a named export updateGoldStar so game.js can import it.
-// Default implementation delegates to state's updateGoldStar if present.
-// Keep arguments flexible (e.g., dt) so callers can pass frame delta or other params.
-export function updateGoldStar(state, ...args) {
-  // If the engine provides an implementation on state, call it.
-  // Otherwise do nothing (safe no-op).
-  return safeCall(state && state.updateGoldStar, state, ...args);
 }
