@@ -1,7 +1,7 @@
 // goldstar.js
 import * as state from './state.js';
-import { createExplosion as utilsCreateExplosion, spawnPowerUp, respawnGoldStar } from './utils.js';
-import { levelUpGoldStar as auraLevelUp } from './aura.js';
+import { createExplosion, spawnPowerUp, respawnGoldStar } from './utils.js';
+import { levelUpGoldStar } from './aura.js';
 
 function safeCall(fn, ...args) {
   if (typeof fn === 'function') return fn(...args);
@@ -9,9 +9,12 @@ function safeCall(fn, ...args) {
 }
 
 export function performRedPunch() {
-  // Ensure goldStar object exists
-  state.goldStar = state.goldStar || {};
+  // Read the goldStar object from state. Do NOT reassign state.goldStar (exports are read-only).
   const gs = state.goldStar;
+  if (!gs) {
+    console.warn('performRedPunch: state.goldStar is undefined');
+    return;
+  }
 
   const baseRadius = 80;
   const level = Math.max(0, (gs.redPunchLevel || 0));
@@ -29,7 +32,7 @@ export function performRedPunch() {
   nearby.forEach(o => {
     if (!o.e) return;
     o.e.health = (o.e.health || 0) - damage;
-    safeCall(utilsCreateExplosion, o.e.x, o.e.y, (level >= 3 ? "magenta" : "orange"));
+    safeCall(createExplosion, o.e.x, o.e.y, (level >= 3 ? "magenta" : "orange"));
 
     if (knockbackForce > 0 && o.d > 0) {
       const dx = o.e.x - (gs.x || 0);
@@ -79,15 +82,18 @@ export function performRedPunch() {
   }
 
   if ((gs.redPunchLevel || 0) >= 3) {
-    safeCall(utilsCreateExplosion, gs.x, gs.y, "magenta");
+    safeCall(createExplosion, gs.x, gs.y, "magenta");
   }
 }
 
 export function updateGoldStar() {
-  // ensure goldStar object exists to avoid exceptions
-  state.goldStar = state.goldStar || {};
-  state.player = state.player || {};
+  // Read the goldStar and player objects from state; do NOT reassign exported bindings.
   const gs = state.goldStar;
+  if (!gs) {
+    console.warn('updateGoldStar: state.goldStar is undefined');
+    return;
+  }
+  const player = state.player || {};
 
   // respawn handling
   if (!gs.alive) {
@@ -111,42 +117,44 @@ export function updateGoldStar() {
             gs.redKills = (gs.redKills || 0) + 1;
             if (gs.redKills % 5 === 0 && (gs.redPunchLevel || 0) < 5) {
               gs.redPunchLevel = (gs.redPunchLevel || 0) + 1;
-              safeCall(auraLevelUp, state);
+              safeCall(levelUpGoldStar, state);
             }
-            safeCall(utilsCreateExplosion, pu.x, pu.y, "orange");
+            safeCall(createExplosion, pu.x, pu.y, "orange");
             safeCall(state.addScore, 8);
           }
           else if (pu.type === "blue-cannon") {
             gs.blueKills = (gs.blueKills || 0) + 1;
             if (gs.blueKills % 5 === 0 && (gs.blueCannonLevel || 0) < 5) {
               gs.blueCannonLevel = (gs.blueCannonLevel || 0) + 1;
-              safeCall(auraLevelUp, state);
+              safeCall(levelUpGoldStar, state);
             }
-            safeCall(utilsCreateExplosion, pu.x, pu.y, "cyan");
+            safeCall(createExplosion, pu.x, pu.y, "cyan");
             safeCall(state.addScore, 8);
           }
           else if (pu.type === "health") {
             gs.health = Math.min(gs.maxHealth || 100, (gs.health || 0) + 30);
             state.player.health = Math.min(state.player.maxHealth || 100, (state.player.health || 0) + 30);
-            safeCall(utilsCreateExplosion, pu.x, pu.y, "magenta");
+            safeCall(createExplosion, pu.x, pu.y, "magenta");
             safeCall(state.addScore, 5);
           }
           else if (pu.type === "reflect") {
             gs.reflectAvailable = true;
             state.player.reflectAvailable = true;
-            safeCall(utilsCreateExplosion, pu.x, pu.y, "magenta");
+            safeCall(createExplosion, pu.x, pu.y, "magenta");
             safeCall(state.addScore, 12);
           } else {
-            safeCall(utilsCreateExplosion, pu.x, pu.y, "white");
+            safeCall(createExplosion, pu.x, pu.y, "white");
             safeCall(state.addScore, 1);
           }
         }
 
-        // remove picked power-ups from global list, preserving any provided mutator
+        // remove picked power-ups from global list without reassigning the exported binding
         if (typeof state.filterPowerUps === "function") {
           state.filterPowerUps(p => !picked.includes(p));
-        } else {
-          state.powerUps = (state.powerUps || []).filter(p => !picked.includes(p));
+        } else if (Array.isArray(state.powerUps)) {
+          const remaining = state.powerUps.filter(p => !picked.includes(p));
+          state.powerUps.length = 0;
+          state.powerUps.push(...remaining);
         }
       }
       gs.collecting = false;
@@ -228,7 +236,7 @@ export function updateGoldStar() {
     }
   }
 
-  // blue cannon firing logic
+  // blue cannon firing logic (note: use consistent property name blueCannonLevel)
   if ((gs.blueCannonLevel || 0) > 0) {
     gs.cannonCooldown = (gs.cannonCooldown || 0) + 1;
     if (gs.cannonCooldown > 50) {
@@ -254,9 +262,7 @@ export function updateGoldStar() {
           }
         }
         else if (gs.blueCannonLevel === 5) {
-          for (let i = 0; i < 5; i++) {
-            safeCall(state.pushBullet, { x: gs.x + (dx / mag) * i * 20, y: gs.y + (dy / mag) * i * 20, dx: (dx / mag) * 12, dy: (dy / mag) * 12, size: 10, owner: "gold" });
-          }
+          for (let i = 0; i < 5; i++) safeCall(state.pushBullet, { x: gs.x + (dx / mag) * i * 20, y: gs.y + (dy / mag) * i * 20, dx: (dx / mag) * 12, dy: (dy / mag) * 12, size: 10, owner: "gold" });
         }
       }
     }
