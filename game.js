@@ -67,7 +67,13 @@ export function gameLoop(now) {
     if (state.player.lives > 0) {
       respawnPlayer();
     } else {
-      state.setGameOver(true);
+      // set game over via setter if available
+      if (typeof state.setGameOver === 'function') {
+        state.setGameOver(true);
+      } else {
+        state.gameOver = true;
+      }
+
       // Save/record high scores
       saveHighScoresOnGameOver();
       // Show the game over UI overlay
@@ -108,7 +114,9 @@ export function gameLoop(now) {
     ctx.restore();
   }
 
-  if (state.gameOver) {
+  // If gameOver, draw overlay on canvas and ensure DOM overlay is shown
+  const isGameOver = (typeof state.getGameOver === 'function') ? state.getGameOver() : state.gameOver;
+  if (isGameOver) {
     // We still draw the fullscreen dark overlay + GAME OVER text on the canvas as a fallback.
     state.ctx.save();
     state.ctx.fillStyle = "rgba(0,0,0,0.6)";
@@ -252,7 +260,11 @@ export function resetGame() {
   state.setWave(0);
   state.setWaveTransition(false);
   state.setWaveTransitionTimer(0);
-  state.setGameOver(false);
+  if (typeof state.setGameOver === 'function') {
+    state.setGameOver(false);
+  } else {
+    state.gameOver = false;
+  }
   state.setRecordedScoreThisRun(false);
 
   if (state.canvas) {
@@ -286,15 +298,23 @@ export function resetGame() {
    Below are helper functions and event handlers that use state.* functions and state.highScores.
 */
 
-// DOM elements expected to exist on the page (optional - graceful if absent)
-const overlayEl = document.getElementById('overlay');
-const finalScoreEl = document.getElementById('final-score');
-const continueBtn = document.getElementById('continue-btn');
-const restartBtn = document.getElementById('restart-btn');
-const highscoreList = document.getElementById('highscore-list');
-const newHighscorePanel = document.getElementById('new-highscore');
-const newHighscoreInput = document.getElementById('new-highscore-name');
-const saveHighscoreBtn = document.getElementById('save-highscore-btn');
+// NOTE: DOM elements are queried lazily inside helpers so this file works whether the script
+// runs before or after DOMContentLoaded. Querying once at module load time could capture null
+// while the element later exists in the DOM, causing the overlay to remain visible because it
+// was never hidden. This change fixes the "overlay visible at start" issue.
+
+function getOverlayElements() {
+  return {
+    overlayEl: document.getElementById('overlay'),
+    finalScoreEl: document.getElementById('final-score'),
+    continueBtn: document.getElementById('continue-btn'),
+    restartBtn: document.getElementById('restart-btn'),
+    highscoreList: document.getElementById('highscore-list'),
+    newHighscorePanel: document.getElementById('new-highscore'),
+    newHighscoreInput: document.getElementById('new-highscore-name'),
+    saveHighscoreBtn: document.getElementById('save-highscore-btn'),
+  };
+}
 
 // Utility: check whether a score would qualify as a high score (top 5)
 function isHighScore(score) {
@@ -307,6 +327,7 @@ function isHighScore(score) {
 
 // Render the high score list into the DOM if element exists
 function renderHighScoreList() {
+  const { highscoreList } = getOverlayElements();
   if (!highscoreList) return;
   const scores = state.highScores || [];
   highscoreList.innerHTML = '';
@@ -324,11 +345,17 @@ function renderHighScoreList() {
 // Show the game's overlay UI when the game ends (if overlay exists)
 export function showGameOverUI() {
   // Properly check gameOver state using getter if available
-  if (typeof state.getGameOver === 'function') {
-    if (!state.getGameOver()) return;
-  } else {
-    if (!state.gameOver) return;
-  }
+  const isGameOver = (typeof state.getGameOver === 'function') ? state.getGameOver() : state.gameOver;
+  if (!isGameOver) return;
+
+  const {
+    overlayEl,
+    finalScoreEl,
+    continueBtn,
+    newHighscorePanel,
+    newHighscoreInput,
+    saveHighscoreBtn
+  } = getOverlayElements();
 
   if (!overlayEl) return;
   overlayEl.classList.remove('hidden');
@@ -344,7 +371,7 @@ export function showGameOverUI() {
     if (isHighScore(state.score || 0)) {
       newHighscorePanel.classList.remove('hidden');
       newHighscoreInput.value = '';
-      newHighscoreInput.focus();
+      try { newHighscoreInput.focus(); } catch(e){}
     } else {
       newHighscorePanel.classList.add('hidden');
     }
@@ -358,6 +385,7 @@ export function showGameOverUI() {
 
 // Hide overlay and resume/continue (used by continue button)
 function hideGameOverUI() {
+  const { overlayEl, newHighscorePanel } = getOverlayElements();
   if (!overlayEl) return;
   overlayEl.classList.add('hidden');
   if (newHighscorePanel) newHighscorePanel.classList.add('hidden');
@@ -394,47 +422,52 @@ function startNewGame() {
   hideGameOverUI();
 }
 
-// Hook up DOM buttons if they exist
-if (continueBtn) {
-  continueBtn.addEventListener('click', () => {
-    continueFromCurrentWave();
-  });
-}
+// Hook up DOM buttons if they exist - this runs once but queries elements lazily
+(function hookUpButtons() {
+  const { continueBtn, restartBtn, saveHighscoreBtn, newHighscoreInput } = getOverlayElements();
 
-if (restartBtn) {
-  restartBtn.addEventListener('click', () => {
-    startNewGame();
-  });
-}
+  if (continueBtn) {
+    continueBtn.addEventListener('click', () => {
+      continueFromCurrentWave();
+    });
+  }
 
-if (saveHighscoreBtn && newHighscoreInput) {
-  saveHighscoreBtn.addEventListener('click', () => {
-    const raw = newHighscoreInput.value || '---';
-    const name = raw.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3).padEnd(3, '-');
-    // Add to state.highScores and persist
-    state.addHighScore({ name, score: state.score || 0 });
-    try {
-      localStorage.setItem("mybagman_highscores", JSON.stringify(state.highScores));
-      localStorage.setItem("mybagman_best", String(state.highScore));
-    } catch (e) {}
-    newHighscorePanel.classList.add('hidden');
-    renderHighScoreList();
-  });
+  if (restartBtn) {
+    restartBtn.addEventListener('click', () => {
+      startNewGame();
+    });
+  }
 
-  // allow Enter to submit
-  newHighscoreInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      saveHighscoreBtn.click();
-    }
-  });
+  if (saveHighscoreBtn && newHighscoreInput) {
+    saveHighscoreBtn.addEventListener('click', () => {
+      const raw = newHighscoreInput.value || '---';
+      const name = raw.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3).padEnd(3, '-');
+      // Add to state.highScores and persist
+      state.addHighScore({ name, score: state.score || 0 });
+      try {
+        localStorage.setItem("mybagman_highscores", JSON.stringify(state.highScores));
+        localStorage.setItem("mybagman_best", String(state.highScore));
+      } catch (e) {}
+      const { newHighscorePanel } = getOverlayElements();
+      if (newHighscorePanel) newHighscorePanel.classList.add('hidden');
+      renderHighScoreList();
+    });
 
-  // optional: enforce only letters, up to 3 chars
-  newHighscoreInput.addEventListener('input', (e) => {
-    const filtered = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
-    e.target.value = filtered.slice(0, 3);
-  });
-}
+    // allow Enter to submit
+    newHighscoreInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveHighscoreBtn.click();
+      }
+    });
+
+    // optional: enforce only letters, up to 3 chars
+    newHighscoreInput.addEventListener('input', (e) => {
+      const filtered = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+      e.target.value = filtered.slice(0, 3);
+    });
+  }
+})();
 
 // Expose some helpers for debugging in console (as in example)
 window.__gameState = state;
@@ -446,9 +479,10 @@ window.showGameOverUI = showGameOverUI;
 loadHighScores();
 
 // Ensure overlay is hidden at startup so it doesn't flash/appear before a game-over event.
-// This covers cases where the DOM element may start visible (e.g. non-hidden by default in markup or CSS)
+// Query elements lazily and hide them if present. This avoids the previous problem where the
+// overlay element was looked up too early (when DOM not yet ready) and never hidden.
 try {
-  if (overlayEl) hideGameOverUI();
+  hideGameOverUI();
 } catch (e) {
   // ignore if hideGameOverUI not available for some reason
 }
