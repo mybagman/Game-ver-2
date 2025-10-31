@@ -116,19 +116,11 @@ export function setAuraSparks(val) { auraSparks = val; }
 export function setAuraShockwaves(val) { auraShockwaves = val; }
 export function incrementAuraPulseTimer() { auraPulseTimer++; }
 
-// New: explicit setters/getters for score and wave so other modules can update without reassigning imports
-export function setScore(value) {
-  score = value;
-}
-export function getScore() {
-  return score;
-}
-export function setWave(value) {
-  wave = value;
-}
-export function getWave() {
-  return wave;
-}
+// Explicit setters/getters for primitives so callers don't accidentally capture import-time snapshots
+export function setScore(value) { score = value; }
+export function getScore() { return score; }
+export function setWave(value) { wave = value; }
+export function getWave() { return wave; }
 
 // Array mutators
 export function clearBullets() { bullets.length = 0; }
@@ -161,9 +153,9 @@ export function filterEnemies(fn) {
 }
 
 export function pushEnemy(e) { 
-  console.log('[pushEnemy] adding enemy:', e.type, 'at', e.x, e.y);
+  // keep minimal logging; useful during debugging
+  console.log('[pushEnemy] adding enemy:', e && e.type, 'at', e && e.x, e && e.y);
   enemies.push(e); 
-  console.log('[pushEnemy] enemies.length is now:', enemies.length);
 }
 export function pushBullet(b) { bullets.push(b); }
 export function pushLightning(l) { lightning.push(l); }
@@ -186,11 +178,11 @@ export function filterAuraShockwaves(fn) { auraShockwaves = auraShockwaves.filte
 
 export function pushMinion(m) { minionsToAdd.push(m); }
 export function flushMinions() { 
-  enemies.push(...minionsToAdd); 
-  minionsToAdd.length = 0;
+  if (minionsToAdd.length) {
+    enemies.push(...minionsToAdd); 
+    minionsToAdd.length = 0;
+  }
 }
-
-// --- Add these functions near the end of state.js ---
 
 // Call this to reset everything for a new run
 export function resetGame() {
@@ -279,33 +271,31 @@ export function shouldShowGameOver() {
   return gameOver || (player.lives <= 0) || (!goldStar.alive && wave > 0);
 }
 
-/*
-  Added getters to avoid callers accidentally reading a snapshot of the state
-  at import time. Prefer these functions in other modules:
-    import { getGameOver, getPlayer, setGameOver } from './state.js'
-  then call getGameOver() each frame or right before rendering the UI.
+// Getters for live access to objects/primitives
+export function getGameOver() { return gameOver; }
+export function getPlayer() { return player; }
+export function getPlayerLives() { return player.lives; }
+export function getPlayerHealth() { return player.health; }
 
-  Example:
-    if (getGameOver() || getPlayer().lives <= 0) {
-      showGameOverUI();
-    }
-*/
+// Add helper to reset animation state for live objects
+export function resetAllAnimationTimers() {
+  function resetList(list) {
+    if (!Array.isArray(list)) return;
+    list.forEach(obj => {
+      if (!obj) return;
+      if (typeof obj.animFrame !== 'undefined') obj.animFrame = 0;
+      if (typeof obj.animTimer !== 'undefined') obj.animTimer = 0;
+      if (obj.animation && typeof obj.animation.reset === 'function') {
+        try { obj.animation.reset(); } catch (e) { /* ignore animation reset errors */ }
+      }
+    });
+  }
 
-// New getters for live access to primitives/objects
-export function getGameOver() {
-  return gameOver;
-}
-
-// Return the player object reference — callers should read properties from it
-// (do not assign this to a local copy if you need live values)
-export function getPlayer() {
-  return player;
-}
-
-// Convenience getters for frequently checked numeric values
-export function getPlayerLives() {
-  return player.lives;
-}
-export function getPlayerHealth() {
-  return player.health;
+  resetList(enemies);
+  resetList(mechs);
+  resetList(tanks);
+  resetList(bullets);
+  resetList(walkers);
+  resetList(minionsToAdd);
+  // extend with other live lists as needed...
 }
