@@ -1263,24 +1263,32 @@ let tunnelCollisions = [];
 // ----------------------
 // Parallax Planet Render
 // ----------------------
-export function drawPlanetBackground() {
-  const ctx = state.ctx;
-  const { width, height, wave } = state;
-  if (wave < 5) return;
+export function drawPlanetBackground(wave) {
+  // Accept wave argument (from drawAll) or fallback to state.wave
+  const currentWave = (typeof wave === 'number') ? wave : state.wave;
 
-  const planetSize = Math.min(width, height) * (0.5 + Math.min((wave - 5) * 0.1, 1.5));
+  // don't draw planet until a later wave
+  if (currentWave < 5) return;
+
+  const ctx = state.ctx;
+  const { width, height } = state;
+
+  // prefer state.time, but fall back to frameCount-based time (millis approx)
+  const time = (typeof state.time === 'number') ? state.time : (state.frameCount * (1000/60));
+
+  const planetSize = Math.min(width, height) * (0.5 + Math.min((currentWave - 5) * 0.1, 1.5));
   const planetX = width / 2;
-  const planetY = height * (0.7 + Math.sin(state.time / 5000) * 0.01);
+  const planetY = height * (0.7 + Math.sin(time / 5000) * 0.01);
 
   planetLayers.forEach((layer) => {
-    const offset = Math.sin(state.time * layer.speed * 0.001) * 10;
+    const offset = Math.sin(time * layer.speed * 0.001) * 10;
     ctx.fillStyle = layer.color;
     ctx.beginPath();
     ctx.arc(planetX + offset, planetY, planetSize * layer.scale, 0, Math.PI * 2);
     ctx.fill();
   });
 
-  const pixelCount = 60 + wave * 2;
+  const pixelCount = 60 + currentWave * 2;
   for (let i = 0; i < pixelCount; i++) {
     const px = planetX + (Math.random() - 0.5) * planetSize;
     const py = planetY + (Math.random() - 0.5) * planetSize * 0.5;
@@ -1321,8 +1329,9 @@ export function drawReentryEffects() {
 // ----------------------
 export function drawDropship(mech) {
   const ctx = state.ctx;
-  const size = mech.size || 40;
-  const x = mech.x, y = mech.y;
+  const size = (mech && mech.size) || 40;
+  const x = (mech && mech.x) || state.canvas.width / 2;
+  const y = (mech && mech.y) || state.canvas.height / 2;
 
   ctx.fillStyle = '#222';
   ctx.fillRect(x - size/2, y - size/3, size, size/2);
@@ -1338,7 +1347,7 @@ export function drawDropship(mech) {
   ctx.arc(x, y + size/2, size/4, 0, Math.PI);
   ctx.fill();
 
-  if (mech.deploying) {
+  if (mech && mech.deploying) {
     ctx.fillStyle = '#888';
     ctx.fillRect(x - 10, y + size/2, 20, 10);
   }
@@ -1348,25 +1357,32 @@ export function drawDropship(mech) {
 // Tunnel collision effects
 // ----------------------
 export function triggerTunnelCollision(x, y) {
-  tunnelCollisions.push({ x, y, life: 20 });
+  // push a new collision with full life
+  tunnelCollisions.push({ x, y, life: 20, maxLife: 20 });
 }
 
 export function drawTunnelCollisions() {
   const ctx = state.ctx;
-  tunnelCollisions = tunnelCollisions.filter(c => c.life-- > 0);
 
-  tunnelCollisions.forEach(c => {
-    const alpha = c.life / 20;
+  // iterate backwards to handle splice safely
+  for (let i = tunnelCollisions.length - 1; i >= 0; i--) {
+    const c = tunnelCollisions[i];
+    // draw using current life
+    const alpha = (c.life / c.maxLife);
     ctx.strokeStyle = `rgba(255,255,200,${alpha})`;
     ctx.beginPath();
-    ctx.arc(c.x, c.y, 10 + (20 - c.life), 0, Math.PI * 2);
+    ctx.arc(c.x, c.y, 10 + (c.maxLife - c.life), 0, Math.PI * 2);
     ctx.stroke();
 
     ctx.fillStyle = `rgba(255,100,0,${alpha * 0.5})`;
     ctx.beginPath();
     ctx.arc(c.x, c.y, 4, 0, Math.PI * 2);
     ctx.fill();
-  });
+
+    // decrement life and remove if expired
+    c.life--;
+    if (c.life <= 0) tunnelCollisions.splice(i, 1);
+  }
 }
 
 
@@ -1392,7 +1408,8 @@ export function drawAll(waveNum) {
 
   // BACKGROUNDS & ENVIRONMENT (furthest first)
   call(drawBackground, wave);
-  call(drawPlanetBackground);
+  // pass wave to planet background so it knows when to draw
+  call(drawPlanetBackground, wave);
   call(drawReentryEffects);
 
   // Large environmental elements / parallax
@@ -1407,7 +1424,8 @@ export function drawAll(waveNum) {
   call(drawDiamonds);
   call(drawPowerUps);
   call(drawLightning);
-  call(drawDropship, { x: 0, y: 0, size: 0 }); // safe no-op signature - dropship normally expects a mech; calling is harmless if mech undefined
+  // safe to call dropship with undefined mech parameter; drawDropship handles missing mech
+  call(drawDropship, undefined);
   call(drawEnemies);
   call(drawTanks);
   call(drawWalkers);
