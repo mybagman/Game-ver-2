@@ -401,7 +401,9 @@ function startNewGame() {
 }
 
 // Hook up DOM buttons if they exist - this runs once but queries elements lazily
+// Only run if we're in a browser environment with document available
 (function hookUpButtons() {
+  if (typeof document === 'undefined') return;
   const { continueBtn, restartBtn, saveHighscoreBtn, newHighscoreInput } = getOverlayElements();
 
   if (continueBtn) {
@@ -448,10 +450,12 @@ function startNewGame() {
 })();
 
 // Expose some helpers for debugging in console (as in example)
-window.__gameState = state;
-window.startNewGame = startNewGame;
-window.continueFromCurrentWave = continueFromCurrentWave;
-window.showGameOverUI = showGameOverUI;
+if (typeof window !== 'undefined') {
+  window.__gameState = state;
+  window.startNewGame = startNewGame;
+  window.continueFromCurrentWave = continueFromCurrentWave;
+  window.showGameOverUI = showGameOverUI;
+}
 
 // Ensure highscores are loaded at startup
 loadHighScores();
@@ -459,9 +463,11 @@ loadHighScores();
 // Ensure overlay is hidden at startup so it doesn't flash/appear before a game-over event.
 // Query elements lazily and hide them if present. This avoids the previous problem where the
 // overlay element was looked up too early (when DOM not yet ready) and never hidden.
-try {
-  hideGameOverUI();
-} catch (e) {
-  // ignore if hideGameOverUI not available for some reason
+if (typeof document !== 'undefined') {
+  try {
+    hideGameOverUI();
+  } catch (e) {
+    // ignore if hideGameOverUI not available for some reason
+  }
 }
-```
+
