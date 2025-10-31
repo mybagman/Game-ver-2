@@ -95,7 +95,7 @@ export function gameLoop(now) {
 
       // Save/record high scores
       try { saveHighScoresOnGameOver(); } catch (e) {}
-      // Show the game over UI overlay (safe-guard)
+      // Show the game over UI overlay
       try { showGameOverUI(); } catch (e) {}
     }
   }
@@ -131,7 +131,7 @@ export function gameLoop(now) {
     } catch (e) {}
   }
 
-  // If gameOver, draw overlay on canvas and ensure DOM overlay is shown
+  // If gameOver, draw overlay on canvas
   const isGameOver = (typeof state.getGameOver === 'function') ? state.getGameOver() : Boolean(state.gameOver);
   if (isGameOver) {
     try {
@@ -148,8 +148,7 @@ export function gameLoop(now) {
         state.ctx.restore();
       }
     } catch (e) {}
-    // Ensure the DOM overlay (panel with Continue / Restart / Highscores) is shown when gameOver is true.
-    try { showGameOverUI(); } catch (e) {}
+    // Note: DOM overlay is already shown by showGameOverUI() call above when lives run out
     return;
   }
 
@@ -460,23 +459,17 @@ function renderHighScoreList() {
   }
 }
 
-// Only show overlay when game actually ended according to state.shouldShowGameOver()
+// Only show overlay when game actually ended - called ONLY from gameLoop when player dies
 export function showGameOverUI() {
-  // if undefined, default to showing overlay only when gameOver true
-  const shouldShow = (typeof state.shouldShowGameOver === 'function') ? state.shouldShowGameOver() : Boolean(state.gameOver);
-  if (!shouldShow) return;
+  // Critical fix: Only check if game is actually over, don't call shouldShowGameOver
+  const isGameOver = (typeof state.getGameOver === 'function') ? state.getGameOver() : Boolean(state.gameOver);
+  if (!isGameOver) return;
 
   const { overlayEl, finalScoreEl } = getOverlayElements();
   if (!overlayEl) return;
 
   overlayEl.classList.remove('hidden');
   if (finalScoreEl) finalScoreEl.textContent = String(state.score || 0);
-
-  if (typeof state.setGameOver === 'function') {
-    try { state.setGameOver(true); } catch (e) { state.gameOver = true; }
-  } else {
-    state.gameOver = true;
-  }
 
   // If new high score, show the panel
   if (isHighScore(state.score || 0)) {
@@ -502,6 +495,7 @@ function hideGameOverUI() {
 function continueFromCurrentWave() {
   if (!state.player) state.player = {};
   state.player.lives = 3;
+  state.player.health = 100;
   try { respawnPlayer(); } catch (e) {}
   state.player.invulnerable = true;
   state.player.invulnerableTimer = 180; // e.g., 3 seconds at 60fps
@@ -527,50 +521,54 @@ function startNewGame() {
 // Hook up DOM buttons if they exist - queries elements lazily
 (function hookUpButtons() {
   if (typeof document === 'undefined') return;
-  const { continueBtn, restartBtn, saveHighscoreBtn, newHighscoreInput } = getOverlayElements();
+  
+  // Use setTimeout to ensure DOM is ready
+  setTimeout(() => {
+    const { continueBtn, restartBtn, saveHighscoreBtn, newHighscoreInput } = getOverlayElements();
 
-  if (continueBtn) {
-    continueBtn.addEventListener('click', () => {
-      try { continueFromCurrentWave(); } catch (e) {}
-    });
-  }
+    if (continueBtn) {
+      continueBtn.addEventListener('click', () => {
+        try { continueFromCurrentWave(); } catch (e) {}
+      });
+    }
 
-  if (restartBtn) {
-    restartBtn.addEventListener('click', () => {
-      try { startNewGame(); } catch (e) {}
-    });
-  }
+    if (restartBtn) {
+      restartBtn.addEventListener('click', () => {
+        try { startNewGame(); } catch (e) {}
+      });
+    }
 
-  if (saveHighscoreBtn && newHighscoreInput) {
-    saveHighscoreBtn.addEventListener('click', () => {
-      const raw = newHighscoreInput.value || '---';
-      const name = raw.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3).padEnd(3, '-');
-      try {
-        state.addHighScore && state.addHighScore({ name, score: state.score || 0 });
-        localStorage.setItem("mybagman_highscores", JSON.stringify(state.highScores || []));
-        localStorage.setItem("mybagman_best", String(state.highScore || 0));
-      } catch (e) {}
-      const { newHighscorePanel } = getOverlayElements();
-      if (newHighscorePanel) newHighscorePanel.classList.add('hidden');
-      try { renderHighScoreList(); } catch (e) {}
-    });
+    if (saveHighscoreBtn && newHighscoreInput) {
+      saveHighscoreBtn.addEventListener('click', () => {
+        const raw = newHighscoreInput.value || '---';
+        const name = raw.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3).padEnd(3, '-');
+        try {
+          state.addHighScore && state.addHighScore({ name, score: state.score || 0 });
+          localStorage.setItem("mybagman_highscores", JSON.stringify(state.highScores || []));
+          localStorage.setItem("mybagman_best", String(state.highScore || 0));
+        } catch (e) {}
+        const { newHighscorePanel } = getOverlayElements();
+        if (newHighscorePanel) newHighscorePanel.classList.add('hidden');
+        try { renderHighScoreList(); } catch (e) {}
+      });
 
-    // allow Enter to submit
-    newHighscoreInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        try { saveHighscoreBtn.click(); } catch (err) {}
-      }
-    });
+      // allow Enter to submit
+      newHighscoreInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          try { saveHighscoreBtn.click(); } catch (err) {}
+        }
+      });
 
-    // optional: enforce only letters, up to 3 chars
-    newHighscoreInput.addEventListener('input', (e) => {
-      try {
-        const filtered = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
-        e.target.value = filtered.slice(0, 3);
-      } catch (err) {}
-    });
-  }
+      // optional: enforce only letters, up to 3 chars
+      newHighscoreInput.addEventListener('input', (e) => {
+        try {
+          const filtered = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+          e.target.value = filtered.slice(0, 3);
+        } catch (err) {}
+      });
+    }
+  }, 0);
 })();
 
 // Expose some helpers for debugging in console (as in example)
@@ -586,8 +584,15 @@ try {
 // Ensure highscores are loaded at startup
 try { loadHighScores(); } catch (e) {}
 
-// Ensure overlay is hidden at startup so it doesn't flash/appear before a game-over event.
-try { hideGameOverUI(); } catch (e) {}
+// CRITICAL FIX: Ensure overlay is hidden at startup and gameOver is false
+try { 
+  hideGameOverUI(); 
+  if (typeof state.setGameOver === 'function') {
+    state.setGameOver(false);
+  } else {
+    state.gameOver = false;
+  }
+} catch (e) {}
 
 export default {
   gameLoop,
