@@ -323,13 +323,10 @@ function renderHighScoreList() {
 
 // Show the game's overlay UI when the game ends (if overlay exists)
 export function showGameOverUI() {
-  // Guard: only show DOM overlay when the game is actually over.
-  // This prevents the overlay from appearing at startup due to initial state values.
-  if (!state.getGameOver && typeof state.getGameOver === 'function') {
-    // defensive: if getter exists, require it to be true
+  // Properly check gameOver state using getter if available
+  if (typeof state.getGameOver === 'function') {
     if (!state.getGameOver()) return;
   } else {
-    // fallback to checking the primitive directly
     if (!state.gameOver) return;
   }
 
@@ -354,6 +351,7 @@ export function showGameOverUI() {
   }
 
   if (continueBtn) {
+    // enable continue only when wave is a positive integer
     continueBtn.disabled = !(Number.isInteger(state.wave) && state.wave >= 1);
   }
 }
@@ -369,9 +367,24 @@ function hideGameOverUI() {
 function continueFromCurrentWave() {
   // give player 3 lives, keep score and wave, resume
   state.player.lives = 3;
-  state.setGameOver(false);
+  // respawn player so they don't immediately die on continue, and grant short invulnerability
+  respawnPlayer();
+  state.player.invulnerable = true;
+  state.player.invulnerableTimer = 180; // e.g., 3 seconds at 60fps; adjust as needed
+
+  // clear gameOver flag via setter if present
+  if (typeof state.setGameOver === 'function') {
+    state.setGameOver(false);
+  } else {
+    state.gameOver = false;
+  }
+
   hideGameOverUI();
+
+  // ensure current wave is active / re-spawn wave if needed
   spawnWave(state.wave || 1);
+
+  // resume game loop
   requestAnimationFrame(gameLoop);
 }
 
@@ -435,7 +448,7 @@ loadHighScores();
 // Ensure overlay is hidden at startup so it doesn't flash/appear before a game-over event.
 // This covers cases where the DOM element may start visible (e.g. non-hidden by default in markup or CSS)
 try {
-  hideGameOverUI();
+  if (overlayEl) hideGameOverUI();
 } catch (e) {
   // ignore if hideGameOverUI not available for some reason
 }
