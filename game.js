@@ -352,6 +352,8 @@ export function showGameOverUI() {
   const { overlayEl, finalScoreEl } = getOverlayElements();
   if (!overlayEl) return;
   overlayEl.classList.remove('hidden');
+  overlayEl.style.display = 'flex';
+  overlayEl.style.pointerEvents = 'auto';
   if (finalScoreEl) finalScoreEl.textContent = String(state.score || 0);
   // ensure we mark gameOver in state for other systems that check it
   if (typeof state.setGameOver === 'function') {
@@ -366,6 +368,8 @@ function hideGameOverUI() {
   const { overlayEl, newHighscorePanel } = getOverlayElements();
   if (!overlayEl) return;
   overlayEl.classList.add('hidden');
+  overlayEl.style.display = 'none';
+  overlayEl.style.pointerEvents = 'none';
   if (newHighscorePanel) newHighscorePanel.classList.add('hidden');
 }
 

@@ -240,6 +240,8 @@ window.addEventListener('load', () => {
 
   // inject overlay into DOM so the single page can show it when needed
   injectOverlay();
+  // Hide the overlay immediately after injection so it doesn't show on startup
+  hideOverlay();
   wireOverlayButtons();
 
   // start render loop
