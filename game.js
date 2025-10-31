@@ -342,48 +342,26 @@ function renderHighScoreList() {
   }
 }
 
-// Show the game's overlay UI when the game ends (if overlay exists)
+// Suggested change inside showGameOverUI:
+// Only show overlay when game actually ended according to state.shouldShowGameOver()
 export function showGameOverUI() {
-  // Properly check gameOver state using getter if available
-  const isGameOver = (typeof state.getGameOver === 'function') ? state.getGameOver() : state.gameOver;
-  if (!isGameOver) return;
-
-  const {
-    overlayEl,
-    finalScoreEl,
-    continueBtn,
-    newHighscorePanel,
-    newHighscoreInput,
-    saveHighscoreBtn
-  } = getOverlayElements();
-
+  if (!state.shouldShowGameOver()) {
+    // don't show the overlay if the game hasn't actually ended
+    return;
+  }
+  const { overlayEl, finalScoreEl } = getOverlayElements();
   if (!overlayEl) return;
   overlayEl.classList.remove('hidden');
-
-  if (finalScoreEl) {
-    finalScoreEl.textContent = 'Score: ' + (state.score || 0);
-  }
-
-  // populate list (we already saved via saveHighScoresOnGameOver)
-  renderHighScoreList();
-
-  if (newHighscorePanel && newHighscoreInput && saveHighscoreBtn) {
-    if (isHighScore(state.score || 0)) {
-      newHighscorePanel.classList.remove('hidden');
-      newHighscoreInput.value = '';
-      try { newHighscoreInput.focus(); } catch(e){}
-    } else {
-      newHighscorePanel.classList.add('hidden');
-    }
-  }
-
-  if (continueBtn) {
-    // enable continue only when wave is a positive integer
-    continueBtn.disabled = !(Number.isInteger(state.wave) && state.wave >= 1);
+  if (finalScoreEl) finalScoreEl.textContent = String(state.score || 0);
+  // ensure we mark gameOver in state for other systems that check it
+  if (typeof state.setGameOver === 'function') {
+    state.setGameOver(true);
+  } else {
+    state.gameOver = true;
   }
 }
 
-// Hide overlay and resume/continue (used by continue button)
+ // Hide overlay and resume/continue (used by continue button)
 function hideGameOverUI() {
   const { overlayEl, newHighscorePanel } = getOverlayElements();
   if (!overlayEl) return;
@@ -486,3 +464,4 @@ try {
 } catch (e) {
   // ignore if hideGameOverUI not available for some reason
 }
+```
