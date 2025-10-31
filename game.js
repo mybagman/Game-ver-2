@@ -1,9 +1,19 @@
 import * as state from './state.js';
-import { updatePlayerMovement, handleShooting, updateBullets, updatePowerUps, updateTunnels, updateExplosions, updateRedPunchEffects, updateDebris, updateCloudParticles } from './updates.js';
+import {
+  updatePlayerMovement,
+  handleShooting,
+  updateBullets,
+  updatePowerUps,
+  updateTunnels,
+  updateExplosions,
+  updateRedPunchEffects,
+  updateDebris,
+  updateCloudParticles
+} from './updates.js';
 import { updateEnemies } from './enemies.js';
 import { updateLightning, checkBulletCollisions } from './collisions.js';
 import { updateGoldStar } from './goldstar.js';
-import { updateGoldStarAura } from './aura.js';
+import { updateGoldStarAura, resetAuraOnDeath } from './aura.js';
 import { tryAdvanceWave, spawnWave } from './waveManager.js';
 /* patched imports: consolidated drawing helpers from drawing.js */
 import {
@@ -27,116 +37,119 @@ import {
   drawLightning,
   drawExplosions,
   updateAndDrawReflectionEffects,
-  // newly added to match drawing.js exports used by game.js:
   drawPowerUps,
   drawRedPunchEffects,
   drawPlayer,
-  // drawAll could be used instead of calling all draws individually if desired:
   drawAll
 } from './drawing.js';
 
 import { respawnPlayer, respawnGoldStar } from './utils.js';
-import { resetAuraOnDeath } from './aura.js';
 
 // --- Game loop and integration with high-score UI ---
 
 export function gameLoop(now) {
-  if (state.cinematic.playing) return;
+  // If cinematic is playing, skip frame
+  if (state.cinematic && state.cinematic.playing) return;
 
-  state.incrementFrameCount();
+  // Increment frame count if available
+  if (typeof state.incrementFrameCount === 'function') {
+    state.incrementFrameCount();
+  } else if (typeof state.frameCount === 'number') {
+    state.frameCount++;
+  }
 
-  updatePlayerMovement();
-  handleShooting();
-  updateBullets();
-  updateLightning();
-  updateExplosions();
-  updatePowerUps();
-  updateTunnels();
-  updateRedPunchEffects();
-  updateGoldStarAura();
-  updateGoldStar();
-  updateEnemies();
-  updateDebris();
-  updateCloudParticles();
-  checkBulletCollisions();
-  tryAdvanceWave();
+  // Updates (order preserved)
+  try { updatePlayerMovement(); } catch (e) {}
+  try { handleShooting(); } catch (e) {}
+  try { updateBullets(); } catch (e) {}
+  try { updateLightning(); } catch (e) {}
+  try { updateExplosions(); } catch (e) {}
+  try { updatePowerUps(); } catch (e) {}
+  try { updateTunnels(); } catch (e) {}
+  try { updateRedPunchEffects(); } catch (e) {}
+  try { updateGoldStarAura(); } catch (e) {}
+  try { updateGoldStar(); } catch (e) {}
+  try { updateEnemies(); } catch (e) {}
+  try { updateDebris(); } catch (e) {}
+  try { updateCloudParticles(); } catch (e) {}
+  try { checkBulletCollisions(); } catch (e) {}
+  try { tryAdvanceWave(); } catch (e) {}
 
   // Player death handling
-  if (state.player.health <= 0) {
-    state.player.lives--;
+  if (state.player && typeof state.player.health === 'number' && state.player.health <= 0) {
+    if (typeof state.player.lives === 'number') {
+      state.player.lives--;
+    } else {
+      state.player.lives = (state.player.lives || 1) - 1;
+    }
+
     if (state.player.lives > 0) {
-      respawnPlayer();
+      try { respawnPlayer(); } catch (e) {}
     } else {
       // set game over via setter if available
       if (typeof state.setGameOver === 'function') {
-        state.setGameOver(true);
+        try { state.setGameOver(true); } catch (e) {}
       } else {
         state.gameOver = true;
       }
 
       // Save/record high scores
-      saveHighScoresOnGameOver();
-      // Show the game over UI overlay
-      showGameOverUI();
+      try { saveHighScoresOnGameOver(); } catch (e) {}
+      // Show the game over UI overlay (safe-guard)
+      try { showGameOverUI(); } catch (e) {}
     }
   }
 
   if (!ensureCanvas()) return;
-  state.ctx.clearRect(0, 0, state.canvas.width, state.canvas.height);
+  if (state.ctx && state.canvas) {
+    state.ctx.clearRect(0, 0, state.canvas.width, state.canvas.height);
+  }
 
   // Use the new renderFrame sequence (order matters)
-  renderFrame();
+  try { renderFrame(); } catch (e) {}
 
   // Some effects / overlays that were previously drawn after main scene:
   // draw any red punch effects (screen flash / hit indicators)
   if (typeof drawRedPunchEffects === 'function') {
-    drawRedPunchEffects();
-  } else {
-    // fallback to existing update-based draw if drawing function isn't provided
-    // (original code used drawRedPunchEffects(); here we attempt to call it if available)
-    try {
-      // no-op if not present
-    } catch (e) {}
+    try { drawRedPunchEffects(); } catch (e) {}
   }
 
   // draw player on top of many world objects (keep original drawPlayer if present)
   if (typeof drawPlayer === 'function') {
-    drawPlayer();
+    try { drawPlayer(); } catch (e) {}
   } else if (state.player && state.ctx) {
     // fallback: simple player representation if drawPlayer helper isn't available.
-    const p = state.player;
-    const ctx = state.ctx;
-    ctx.save();
-    ctx.fillStyle = 'white';
-    ctx.beginPath();
-    ctx.arc(p.x || state.canvas.width/2, p.y || state.canvas.height/2, p.size || 12, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+    try {
+      const p = state.player;
+      const ctx = state.ctx;
+      ctx.save();
+      ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.arc(p.x || state.canvas.width / 2, p.y || state.canvas.height / 2, p.size || 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    } catch (e) {}
   }
 
   // If gameOver, draw overlay on canvas and ensure DOM overlay is shown
-  const isGameOver = (typeof state.getGameOver === 'function') ? state.getGameOver() : state.gameOver;
+  const isGameOver = (typeof state.getGameOver === 'function') ? state.getGameOver() : Boolean(state.gameOver);
   if (isGameOver) {
-    // We still draw the fullscreen dark overlay + GAME OVER text on the canvas as a fallback.
-    state.ctx.save();
-    state.ctx.fillStyle = "rgba(0,0,0,0.6)";
-    state.ctx.fillRect(0, 0, state.canvas.width, state.canvas.height);
-    state.ctx.fillStyle = "white";
-    state.ctx.font = "48px Arial";
-    state.ctx.textAlign = "center";
-    state.ctx.fillText("GAME OVER", state.canvas.width / 2, state.canvas.height / 2 - 20);
-    state.ctx.font = "20px Arial";
-    state.ctx.fillText("Press R to restart", state.canvas.width / 2, state.canvas.height / 2 + 30);
-    state.ctx.restore();
-    // Ensure the DOM overlay (panel with Continue / Restart / Highscores) is shown when gameOver is true.
-    // showGameOverUI() is a safe no-op if the overlay DOM isn't present.
     try {
-      showGameOverUI();
-    } catch (e) {
-      // If the function isn't available in this context (shouldn't happen in normal app),
-      // ignore and rely on the canvas fallback overlay.
-      // console.warn('showGameOverUI not available:', e);
-    }
+      if (state.ctx && state.canvas) {
+        state.ctx.save();
+        state.ctx.fillStyle = "rgba(0,0,0,0.6)";
+        state.ctx.fillRect(0, 0, state.canvas.width, state.canvas.height);
+        state.ctx.fillStyle = "white";
+        state.ctx.font = "48px Arial";
+        state.ctx.textAlign = "center";
+        state.ctx.fillText("GAME OVER", state.canvas.width / 2, state.canvas.height / 2 - 20);
+        state.ctx.font = "20px Arial";
+        state.ctx.fillText("Press R to restart", state.canvas.width / 2, state.canvas.height / 2 + 30);
+        state.ctx.restore();
+      }
+    } catch (e) {}
+    // Ensure the DOM overlay (panel with Continue / Restart / Highscores) is shown when gameOver is true.
+    try { showGameOverUI(); } catch (e) {}
     return;
   }
 
@@ -145,47 +158,91 @@ export function gameLoop(now) {
 
 /* New renderFrame() added per patch — this centralizes draw order */
 export function renderFrame() {
+  // Defensive no-op if ctx or canvas missing
+  if (!state.ctx || !state.canvas) return;
+
   // 1) Background (base)
-  drawBackground(state.wave);
+  if (typeof drawBackground === 'function') {
+    try { drawBackground(state.wave); } catch (e) {}
+  }
 
   // 2) Special planet / re-entry layers (if applicable)
-  if (typeof drawPlanetBackground === 'function') drawPlanetBackground();
-  if (typeof drawReentryEffects === 'function') drawReentryEffects();
+  if (typeof drawPlanetBackground === 'function') {
+    try { drawPlanetBackground(); } catch (e) {}
+  }
+  if (typeof drawReentryEffects === 'function') {
+    try { drawReentryEffects(); } catch (e) {}
+  }
 
   // 3) Environment/clouds/city
-  if (typeof drawClouds === 'function') drawClouds();
+  if (typeof drawClouds === 'function') {
+    try { drawClouds(); } catch (e) {}
+  }
 
   // 4) World objects: tunnels, planet colliders
-  if (typeof drawTunnels === 'function') drawTunnels();
-  if (typeof drawTunnelCollisions === 'function') drawTunnelCollisions();
+  if (typeof drawTunnels === 'function') {
+    try { drawTunnels(); } catch (e) {}
+  }
+  if (typeof drawTunnelCollisions === 'function') {
+    try { drawTunnelCollisions(); } catch (e) {}
+  }
 
   // 5) Enemies / bullets / dropships / mechs / tanks / walkers
-  if (typeof drawEnemies === 'function') drawEnemies();
-  if (typeof drawDropship === 'function') {
-    // if drawDropship exists, draw for mechs that are deploying or dropshipVisible
-    state.mechs.forEach(m => { if (m.deploying || m.dropshipVisible) drawDropship(m); });
+  if (typeof drawEnemies === 'function') {
+    try { drawEnemies(); } catch (e) {}
   }
-  if (typeof drawTanks === 'function') drawTanks();
-  if (typeof drawWalkers === 'function') drawWalkers();
-  if (typeof drawMechs === 'function') drawMechs();
+  if (typeof drawDropship === 'function' && Array.isArray(state.mechs)) {
+    try {
+      state.mechs.forEach(m => { if (m.deploying || m.dropshipVisible) drawDropship(m); });
+    } catch (e) {}
+  }
+  if (typeof drawTanks === 'function') {
+    try { drawTanks(); } catch (e) {}
+  }
+  if (typeof drawWalkers === 'function') {
+    try { drawWalkers(); } catch (e) {}
+  }
+  if (typeof drawMechs === 'function') {
+    try { drawMechs(); } catch (e) {}
+  }
 
   // 6) Bullets and related effects
-  if (typeof drawBullets === 'function') drawBullets();
-  if (typeof updateAndDrawReflectionEffects === 'function') updateAndDrawReflectionEffects();
+  if (typeof drawBullets === 'function') {
+    try { drawBullets(); } catch (e) {}
+  }
+  if (typeof updateAndDrawReflectionEffects === 'function') {
+    try { updateAndDrawReflectionEffects(); } catch (e) {}
+  }
 
   // 7) Items / diamonds / lightning / debris / explosions
-  if (typeof drawDiamonds === 'function') drawDiamonds();
-  if (typeof drawPowerUps === 'function') drawPowerUps();
-  if (typeof drawLightning === 'function') drawLightning();
-  if (typeof drawExplosions === 'function') drawExplosions();
-  if (typeof drawDebris === 'function') drawDebris();
+  if (typeof drawDiamonds === 'function') {
+    try { drawDiamonds(); } catch (e) {}
+  }
+  if (typeof drawPowerUps === 'function') {
+    try { drawPowerUps(); } catch (e) {}
+  }
+  if (typeof drawLightning === 'function') {
+    try { drawLightning(); } catch (e) {}
+  }
+  if (typeof drawExplosions === 'function') {
+    try { drawExplosions(); } catch (e) {}
+  }
+  if (typeof drawDebris === 'function') {
+    try { drawDebris(); } catch (e) {}
+  }
 
   // 8) Gold star aura & star itself (before UI so aura sits behind UI)
-  if (typeof drawGoldStarAura === 'function') drawGoldStarAura(state.ctx);
-  if (typeof drawGoldStar === 'function') drawGoldStar();
+  if (typeof drawGoldStarAura === 'function') {
+    try { drawGoldStarAura(state.ctx); } catch (e) {}
+  }
+  if (typeof drawGoldStar === 'function') {
+    try { drawGoldStar(); } catch (e) {}
+  }
 
   // 9) UI last (HUD)
-  if (typeof drawUI === 'function') drawUI();
+  if (typeof drawUI === 'function') {
+    try { drawUI(); } catch (e) {}
+  }
 }
 
 export function ensureCanvas() {
@@ -193,22 +250,37 @@ export function ensureCanvas() {
   if (!canvas) {
     return false;
   }
-  state.setCanvas(canvas);
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return false;
-  state.setCtx(ctx);
+  // set canvas in state using setter if available, otherwise assign
+  if (typeof state.setCanvas === 'function') {
+    try { state.setCanvas(canvas); } catch (e) { state.canvas = canvas; }
+  } else {
+    state.canvas = canvas;
+  }
 
+  const ctx = canvas.getContext && canvas.getContext("2d");
+  if (!ctx) return false;
+
+  if (typeof state.setCtx === 'function') {
+    try { state.setCtx(ctx); } catch (e) { state.ctx = ctx; }
+  } else {
+    state.ctx = ctx;
+  }
+
+  // Match canvas to window size
   if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
   }
 
-  if (!state.player.x || !state.player.y) {
+  // Initialize player/goldStar positions if missing
+  if (!state.player) state.player = {};
+  if (typeof state.player.x !== 'number' || typeof state.player.y !== 'number') {
     state.player.x = canvas.width / 2;
     state.player.y = canvas.height / 2;
   }
-  if (!state.goldStar.x || !state.goldStar.y) {
-    respawnGoldStar();
+  if (!state.goldStar) state.goldStar = {};
+  if (typeof state.goldStar.x !== 'number' || typeof state.goldStar.y !== 'number') {
+    try { respawnGoldStar(); } catch (e) {}
   }
 
   return true;
@@ -216,13 +288,28 @@ export function ensureCanvas() {
 
 export function saveHighScoresOnGameOver() {
   if (state.recordedScoreThisRun) return;
-  state.setHighScore(Math.max(state.highScore, state.score));
-  state.addHighScore({ name: state.cinematic.playerName || "Player", score: state.score });
+  // ensure we have setter fallbacks
+  const high = Math.max(Number(state.highScore || 0), Number(state.score || 0));
+  if (typeof state.setHighScore === 'function') {
+    try { state.setHighScore(high); } catch (e) { state.highScore = high; }
+  } else {
+    state.highScore = high;
+  }
+
   try {
-    localStorage.setItem("mybagman_highscores", JSON.stringify(state.highScores));
-    localStorage.setItem("mybagman_best", String(state.highScore));
+    state.addHighScore && state.addHighScore({ name: (state.cinematic && state.cinematic.playerName) || "Player", score: Number(state.score || 0) });
   } catch (e) {}
-  state.setRecordedScoreThisRun(true);
+
+  try {
+    localStorage.setItem("mybagman_highscores", JSON.stringify(state.highScores || []));
+    localStorage.setItem("mybagman_best", String(state.highScore || high));
+  } catch (e) {}
+
+  if (typeof state.setRecordedScoreThisRun === 'function') {
+    try { state.setRecordedScoreThisRun(true); } catch (e) { state.recordedScoreThisRun = true; }
+  } else {
+    state.recordedScoreThisRun = true;
+  }
 }
 
 export function loadHighScores() {
@@ -231,45 +318,81 @@ export function loadHighScores() {
     const best = localStorage.getItem("mybagman_best");
     if (raw) {
       const scores = JSON.parse(raw);
-      scores.forEach(s => state.addHighScore(s));
+      if (Array.isArray(scores)) {
+        scores.forEach(s => {
+          try {
+            state.addHighScore && state.addHighScore(s);
+          } catch (e) {}
+        });
+      }
     }
-    if (best) state.setHighScore(Number(best) || state.highScore);
+    if (best) {
+      const num = Number(best);
+      if (!Number.isNaN(num)) {
+        if (typeof state.setHighScore === 'function') {
+          try { state.setHighScore(num); } catch (e) { state.highScore = num; }
+        } else {
+          state.highScore = num;
+        }
+      }
+    }
   } catch (e) {}
 }
 
 export function resetGame() {
-  state.cloudParticles.length = 0;
-  state.bullets.length = 0;
-  state.enemies.length = 0;
-  state.diamonds.length = 0;
-  state.tunnels.length = 0;
-  state.tanks.length = 0;
-  state.walkers.length = 0;
-  state.mechs.length = 0;
-  state.debris.length = 0;
-  state.explosions.length = 0;
-  state.lightning.length = 0;
-  state.powerUps.length = 0;
-  state.reflectionEffects.length = 0;
-  state.redPunchEffects.length = 0;
-  state.minionsToAdd.length = 0;
+  // clear arrays defensively
+  const arrays = [
+    'cloudParticles', 'bullets', 'enemies', 'diamonds', 'tunnels',
+    'tanks', 'walkers', 'mechs', 'debris', 'explosions', 'lightning',
+    'powerUps', 'reflectionEffects', 'redPunchEffects', 'minionsToAdd'
+  ];
+  arrays.forEach(name => {
+    if (Array.isArray(state[name])) state[name].length = 0;
+    else state[name] = [];
+  });
 
-  // state.score = 0;
-  state.setScore(0);
-  // state.wave = 0;
-  state.setWave(0);
-  state.setWaveTransition(false);
-  state.setWaveTransitionTimer(0);
+  // reset scores/wave via setters if present
+  if (typeof state.setScore === 'function') {
+    try { state.setScore(0); } catch (e) { state.score = 0; }
+  } else {
+    state.score = 0;
+  }
+
+  if (typeof state.setWave === 'function') {
+    try { state.setWave(0); } catch (e) { state.wave = 0; }
+  } else {
+    state.wave = 0;
+  }
+
+  if (typeof state.setWaveTransition === 'function') {
+    try { state.setWaveTransition(false); } catch (e) { state.waveTransition = false; }
+  } else {
+    state.waveTransition = false;
+  }
+
+  if (typeof state.setWaveTransitionTimer === 'function') {
+    try { state.setWaveTransitionTimer(0); } catch (e) { state.waveTransitionTimer = 0; }
+  } else {
+    state.waveTransitionTimer = 0;
+  }
+
   if (typeof state.setGameOver === 'function') {
-    state.setGameOver(false);
+    try { state.setGameOver(false); } catch (e) { state.gameOver = false; }
   } else {
     state.gameOver = false;
   }
-  state.setRecordedScoreThisRun(false);
 
+  if (typeof state.setRecordedScoreThisRun === 'function') {
+    try { state.setRecordedScoreThisRun(false); } catch (e) { state.recordedScoreThisRun = false; }
+  } else {
+    state.recordedScoreThisRun = false;
+  }
+
+  // Reset player defaults
+  if (!state.player) state.player = {};
   if (state.canvas) {
-    state.player.x = state.canvas.width/2;
-    state.player.y = state.canvas.height/2;
+    state.player.x = state.canvas.width / 2;
+    state.player.y = state.canvas.height / 2;
   } else {
     state.player.x = 0;
     state.player.y = 0;
@@ -285,34 +408,30 @@ export function resetGame() {
   state.player.fireRateBoost = 1;
   state.player.healAccumulator = 0;
 
-  respawnGoldStar();
-  resetAuraOnDeath();
+  try { respawnGoldStar(); } catch (e) {}
+  try { resetAuraOnDeath(); } catch (e) {}
+
+  // Start wave 1
   state.wave = 1;
-  spawnWave(state.wave);
+  try { spawnWave(state.wave); } catch (e) {}
   requestAnimationFrame(gameLoop);
 }
 
 /* ---- Integration with simple high-score DOM overlay and UI from example ----
-   This integrates the overlay/highscore UI into the existing game file.
-   The project already persists highscores via localStorage in saveHighScoresOnGameOver/loadHighScores.
-   Below are helper functions and event handlers that use state.* functions and state.highScores.
+   Helper functions for overlay UI. Query elements lazily so this module can run
+   before or after DOMContentLoaded.
 */
-
-// NOTE: DOM elements are queried lazily inside helpers so this file works whether the script
-// runs before or after DOMContentLoaded. Querying once at module load time could capture null
-// while the element later exists in the DOM, causing the overlay to remain visible because it
-// was never hidden. This change fixes the "overlay visible at start" issue.
 
 function getOverlayElements() {
   return {
-    overlayEl: document.getElementById('overlay'),
-    finalScoreEl: document.getElementById('final-score'),
-    continueBtn: document.getElementById('continue-btn'),
-    restartBtn: document.getElementById('restart-btn'),
-    highscoreList: document.getElementById('highscore-list'),
-    newHighscorePanel: document.getElementById('new-highscore'),
-    newHighscoreInput: document.getElementById('new-highscore-name'),
-    saveHighscoreBtn: document.getElementById('save-highscore-btn'),
+    overlayEl: typeof document !== 'undefined' ? document.getElementById('overlay') : null,
+    finalScoreEl: typeof document !== 'undefined' ? document.getElementById('final-score') : null,
+    continueBtn: typeof document !== 'undefined' ? document.getElementById('continue-btn') : null,
+    restartBtn: typeof document !== 'undefined' ? document.getElementById('restart-btn') : null,
+    highscoreList: typeof document !== 'undefined' ? document.getElementById('highscore-list') : null,
+    newHighscorePanel: typeof document !== 'undefined' ? document.getElementById('new-highscore') : null,
+    newHighscoreInput: typeof document !== 'undefined' ? document.getElementById('new-highscore-name') : null,
+    saveHighscoreBtn: typeof document !== 'undefined' ? document.getElementById('save-highscore-btn') : null
   };
 }
 
@@ -320,8 +439,7 @@ function getOverlayElements() {
 function isHighScore(score) {
   const scores = state.highScores || [];
   if (!Array.isArray(scores) || scores.length < 5) return true;
-  // assume scores sorted desc; if not, compute lowest of top 5
-  const lowest = scores.slice(0,5).reduce((min, s) => Math.min(min, s.score), Infinity);
+  const lowest = scores.slice(0, 5).reduce((min, s) => Math.min(min, s.score), Infinity);
   return score > lowest;
 }
 
@@ -342,26 +460,37 @@ function renderHighScoreList() {
   }
 }
 
-// Suggested change inside showGameOverUI:
 // Only show overlay when game actually ended according to state.shouldShowGameOver()
 export function showGameOverUI() {
-  if (!state.shouldShowGameOver()) {
-    // don't show the overlay if the game hasn't actually ended
-    return;
-  }
+  // if undefined, default to showing overlay only when gameOver true
+  const shouldShow = (typeof state.shouldShowGameOver === 'function') ? state.shouldShowGameOver() : Boolean(state.gameOver);
+  if (!shouldShow) return;
+
   const { overlayEl, finalScoreEl } = getOverlayElements();
   if (!overlayEl) return;
+
   overlayEl.classList.remove('hidden');
   if (finalScoreEl) finalScoreEl.textContent = String(state.score || 0);
-  // ensure we mark gameOver in state for other systems that check it
+
   if (typeof state.setGameOver === 'function') {
-    state.setGameOver(true);
+    try { state.setGameOver(true); } catch (e) { state.gameOver = true; }
   } else {
     state.gameOver = true;
   }
+
+  // If new high score, show the panel
+  if (isHighScore(state.score || 0)) {
+    const { newHighscorePanel, newHighscoreInput } = getOverlayElements();
+    if (newHighscorePanel) newHighscorePanel.classList.remove('hidden');
+    if (newHighscoreInput) {
+      newHighscoreInput.value = ((state.cinematic && state.cinematic.playerName) || '').slice(0, 3).toUpperCase();
+    }
+  }
+
+  // render list
+  try { renderHighScoreList(); } catch (e) {}
 }
 
- // Hide overlay and resume/continue (used by continue button)
 function hideGameOverUI() {
   const { overlayEl, newHighscorePanel } = getOverlayElements();
   if (!overlayEl) return;
@@ -371,48 +500,44 @@ function hideGameOverUI() {
 
 // Continue from current wave with new lives (maps to example continueFromCurrentWave)
 function continueFromCurrentWave() {
-  // give player 3 lives, keep score and wave, resume
+  if (!state.player) state.player = {};
   state.player.lives = 3;
-  // respawn player so they don't immediately die on continue, and grant short invulnerability
-  respawnPlayer();
+  try { respawnPlayer(); } catch (e) {}
   state.player.invulnerable = true;
-  state.player.invulnerableTimer = 180; // e.g., 3 seconds at 60fps; adjust as needed
+  state.player.invulnerableTimer = 180; // e.g., 3 seconds at 60fps
 
-  // clear gameOver flag via setter if present
   if (typeof state.setGameOver === 'function') {
-    state.setGameOver(false);
+    try { state.setGameOver(false); } catch (e) { state.gameOver = false; }
   } else {
     state.gameOver = false;
   }
 
   hideGameOverUI();
 
-  // ensure current wave is active / re-spawn wave if needed
-  spawnWave(state.wave || 1);
-
-  // resume game loop
+  try { spawnWave(state.wave || 1); } catch (e) {}
   requestAnimationFrame(gameLoop);
 }
 
 // Start a fresh new game (maps to example startNewGame)
 function startNewGame() {
-  resetGame();
+  try { resetGame(); } catch (e) { }
   hideGameOverUI();
 }
 
-// Hook up DOM buttons if they exist - this runs once but queries elements lazily
+// Hook up DOM buttons if they exist - queries elements lazily
 (function hookUpButtons() {
+  if (typeof document === 'undefined') return;
   const { continueBtn, restartBtn, saveHighscoreBtn, newHighscoreInput } = getOverlayElements();
 
   if (continueBtn) {
     continueBtn.addEventListener('click', () => {
-      continueFromCurrentWave();
+      try { continueFromCurrentWave(); } catch (e) {}
     });
   }
 
   if (restartBtn) {
     restartBtn.addEventListener('click', () => {
-      startNewGame();
+      try { startNewGame(); } catch (e) {}
     });
   }
 
@@ -420,48 +545,59 @@ function startNewGame() {
     saveHighscoreBtn.addEventListener('click', () => {
       const raw = newHighscoreInput.value || '---';
       const name = raw.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3).padEnd(3, '-');
-      // Add to state.highScores and persist
-      state.addHighScore({ name, score: state.score || 0 });
       try {
-        localStorage.setItem("mybagman_highscores", JSON.stringify(state.highScores));
-        localStorage.setItem("mybagman_best", String(state.highScore));
+        state.addHighScore && state.addHighScore({ name, score: state.score || 0 });
+        localStorage.setItem("mybagman_highscores", JSON.stringify(state.highScores || []));
+        localStorage.setItem("mybagman_best", String(state.highScore || 0));
       } catch (e) {}
       const { newHighscorePanel } = getOverlayElements();
       if (newHighscorePanel) newHighscorePanel.classList.add('hidden');
-      renderHighScoreList();
+      try { renderHighScoreList(); } catch (e) {}
     });
 
     // allow Enter to submit
     newHighscoreInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        saveHighscoreBtn.click();
+        try { saveHighscoreBtn.click(); } catch (err) {}
       }
     });
 
     // optional: enforce only letters, up to 3 chars
     newHighscoreInput.addEventListener('input', (e) => {
-      const filtered = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
-      e.target.value = filtered.slice(0, 3);
+      try {
+        const filtered = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+        e.target.value = filtered.slice(0, 3);
+      } catch (err) {}
     });
   }
 })();
 
 // Expose some helpers for debugging in console (as in example)
-window.__gameState = state;
-window.startNewGame = startNewGame;
-window.continueFromCurrentWave = continueFromCurrentWave;
-window.showGameOverUI = showGameOverUI;
+try {
+  if (typeof window !== 'undefined') {
+    window.__gameState = state;
+    window.startNewGame = startNewGame;
+    window.continueFromCurrentWave = continueFromCurrentWave;
+    window.showGameOverUI = showGameOverUI;
+  }
+} catch (e) {}
 
 // Ensure highscores are loaded at startup
-loadHighScores();
+try { loadHighScores(); } catch (e) {}
 
 // Ensure overlay is hidden at startup so it doesn't flash/appear before a game-over event.
-// Query elements lazily and hide them if present. This avoids the previous problem where the
-// overlay element was looked up too early (when DOM not yet ready) and never hidden.
-try {
-  hideGameOverUI();
-} catch (e) {
-  // ignore if hideGameOverUI not available for some reason
-}
-```
+try { hideGameOverUI(); } catch (e) {}
+
+export default {
+  gameLoop,
+  renderFrame,
+  ensureCanvas,
+  saveHighScoresOnGameOver,
+  loadHighScores,
+  resetGame,
+  showGameOverUI,
+  hideGameOverUI,
+  continueFromCurrentWave,
+  startNewGame
+};
