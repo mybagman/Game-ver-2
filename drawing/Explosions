@@ -1,8 +1,0 @@
-export function drawExplosions(){ 
-  state.explosions.forEach(ex => { 
-    state.ctx.fillStyle = ex.color; 
-    state.ctx.beginPath(); 
-    state.ctx.arc(ex.x, ex.y, ex.radius, 0, Math.PI*2); 
-    state.ctx.fill();
-  }); 
-}

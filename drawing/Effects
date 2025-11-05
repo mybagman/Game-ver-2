@@ -1,0 +1,27 @@
+export function drawExplosions(){ 
+  state.explosions.forEach(ex => { 
+    state.ctx.fillStyle = ex.color; 
+    state.ctx.beginPath(); 
+    state.ctx.arc(ex.x, ex.y, ex.radius, 0, Math.PI*2); 
+    state.ctx.fill();
+  }); 
+}
+
+
+
+
+
+export function updateAndDrawReflectionEffects() {
+  for (let i = state.reflectionEffects.length - 1; i >= 0; i--) {
+    const r = state.reflectionEffects[i];
+    r.life--;
+    state.ctx.save();
+    state.ctx.globalCompositeOperation = 'lighter';
+    state.ctx.fillStyle = "rgba(180,240,255," + (r.life / (r.maxLife || 20)) + ")";
+    state.ctx.beginPath();
+    state.ctx.arc(r.x, r.y, Math.max(1, r.life / 3), 0, Math.PI*2);
+    state.ctx.fill();
+    state.ctx.restore();
+    if (r.life <= 0) state.reflectionEffects.splice(i, 1);
+  }
+}
