@@ -315,3 +315,29 @@ export function drawDiamonds() {
     });
   });
 }
+
+export function drawDropship(mech) {
+  const ctx = state.ctx;
+  const size = (mech && mech.size) || 40;
+  const x = (mech && mech.x) || state.canvas.width / 2;
+  const y = (mech && mech.y) || state.canvas.height / 2;
+
+  ctx.fillStyle = '#222';
+  ctx.fillRect(x - size/2, y - size/3, size, size/2);
+
+  ctx.fillStyle = '#555';
+  ctx.fillRect(x - size/3, y - size/2, size/1.5, size/3);
+
+  ctx.fillStyle = '#00aaff';
+  ctx.fillRect(x - size/4, y - size/2.2, size/2, size/5);
+
+  ctx.fillStyle = `rgba(255,120,0,${0.3 + Math.random() * 0.5})`;
+  ctx.beginPath();
+  ctx.arc(x, y + size/2, size/4, 0, Math.PI);
+  ctx.fill();
+
+  if (mech && mech.deploying) {
+    ctx.fillStyle = '#888';
+    ctx.fillRect(x - 10, y + size/2, 20, 10);
+  }
+}
