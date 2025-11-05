@@ -21,3 +21,32 @@ export function updateAndDrawReflectionEffects() {
     if (r.life <= 0) state.reflectionEffects.splice(i, 1);
   }
 }
+
+export function triggerTunnelCollision(x, y) {
+  // push a new collision with full life
+  tunnelCollisions.push({ x, y, life: 20, maxLife: 20 });
+}
+
+export function drawTunnelCollisions() {
+  const ctx = state.ctx;
+
+  // iterate backwards to handle splice safely
+  for (let i = tunnelCollisions.length - 1; i >= 0; i--) {
+    const c = tunnelCollisions[i];
+    // draw using current life
+    const alpha = (c.life / c.maxLife);
+    ctx.strokeStyle = `rgba(255,255,200,${alpha})`;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, 10 + (c.maxLife - c.life), 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = `rgba(255,100,0,${alpha * 0.5})`;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // decrement life and remove if expired
+    c.life--;
+    if (c.life <= 0) tunnelCollisions.splice(i, 1);
+  }
+}
