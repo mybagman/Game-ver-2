@@ -16,32 +16,22 @@ import { updateGoldStar } from './goldstar.js';
 import { updateGoldStarAura, resetAuraOnDeath } from './aura.js';
 import { tryAdvanceWave, spawnWave } from './waveManager.js';
 /* patched imports: consolidated drawing helpers from drawing.js */
-import {
-  drawBackground,
-  drawPlanetBackground,
-  drawReentryEffects,
-  drawClouds,
-  drawBullets,
-  drawEnemies,
-  drawTunnels,
-  drawTunnelCollisions,
-  drawGoldStarAura,
-  drawGoldStar,
-  drawUI,
-  drawDropship,
-  drawTanks,
-  drawWalkers,
-  drawMechs,
-  drawDebris,
-  drawDiamonds,
-  drawLightning,
-  drawExplosions,
-  updateAndDrawReflectionEffects,
-  drawPowerUps,
-  drawRedPunchEffects,
-  drawPlayer,
-  drawAll
-} from './drawing.js';
+// Replace the single `from './drawing.js'` import with these direct imports:
+import { drawBackground, drawPlanetBackground, drawClouds } from './drawing/background.js';
+import { drawReentryEffects, drawDebris, drawLightning, drawExplosions, updateAndDrawReflectionEffects, drawRedPunchEffects } from './drawing/Effects.js';
+import { drawBullets } from './drawing/bullets.js';
+import { drawDiamonds, drawEnemies, drawDropship, drawTanks, drawWalkers, drawMechs } from './drawing/Enemies.js';
+import { drawGoldStarAura, drawGoldStar } from './drawing/goldstar.js';
+import { drawUI } from './drawing/UI.js';
+import { drawPlayer } from './drawing/player.js';
+import { drawPowerUps } from './drawing/powerups.js';
+import { drawTunnels } from './drawing/Effects.js';
+import { drawTunnelCollisions } from './drawing/Effects.js';
+import { drawExplosions } from './drawing/Effects.js';
+import { updateAndDrawReflectionEffects } from './drawing/Effects.js';
+import { triggerTunnelCollision } from './drawing/Effects.js';
+ // import { drawDiamonds } from './drawing/Enemies.js';
+ // import { drawDiamonds } from './drawing/diamonds.js';
 
 import { respawnPlayer, respawnGoldStar } from './utils.js';
 
