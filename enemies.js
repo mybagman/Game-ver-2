@@ -185,7 +185,7 @@ export function updateDiamond(d) {
     }
   }
 
-  for (let i = 0; i < d.attachments.length; i++) {
+  for (let i = d.attachments.length - 1; i >= 0; i--) {
     const a = d.attachments[i];
     a.orbitAngle = (a.orbitAngle||0) + 0.06 + (a.type === "reflector" ? 0.02 : 0);
     const orbitRadius = d.size/2 + 28 + (a.type === "reflector" ? 14 : 0);
@@ -200,15 +200,41 @@ export function updateDiamond(d) {
       state.pushLightning({x: a.x, y: a.y, dx: (dxp/mag)*5, dy: (dyp/mag)*5, size: 6, damage: 15});
     }
 
-    if (a.type === "reflector") {
-      for (let bi = state.bullets.length-1; bi >= 0; bi--) {
-        const b = state.bullets[bi], distB = Math.hypot(b.x-a.x, b.y-a.y);
-        if (distB < 40) {
-          state.pushLightning({x: b.x, y: b.y, dx: -b.dx, dy: -b.dy, size: 6, damage: 15});
-          state.pushReflectionEffect({x: b.x, y: b.y, dx: -b.dx, dy: -b.dy, life: 22, maxLife: 22});
-          state.bullets.splice(bi,1);
-        }
+    // Attached enemies can take damage from bullets
+    for (let bi = state.bullets.length-1; bi >= 0; bi--) {
+      const b = state.bullets[bi];
+      const aSize = a.size || (a.width && a.height ? Math.max(a.width, a.height) : 20);
+      const distB = Math.hypot(b.x-a.x, b.y-a.y);
+      
+      if (a.type === "reflector" && distB < 40) {
+        // Reflectors still reflect bullets
+        state.pushLightning({x: b.x, y: b.y, dx: -b.dx, dy: -b.dy, size: 6, damage: 15});
+        state.pushReflectionEffect({x: b.x, y: b.y, dx: -b.dx, dy: -b.dy, life: 22, maxLife: 22});
+        state.bullets.splice(bi,1);
+        a.health = (a.health || 200) - 5; // Reflectors take reduced damage when reflecting
+      } else if (distB < aSize/2) {
+        // Non-reflector attached enemies take full bullet damage
+        state.bullets.splice(bi,1);
+        a.health = (a.health || 30) - (b.damage || 10);
+        state.pushExplosion({ x: b.x, y: b.y, dx: 0, dy: 0, radius: 3, color: "yellow", life: 12 });
       }
+    }
+
+    // Remove destroyed attached enemies
+    if (a.health <= 0) {
+      createExplosion(a.x, a.y, a.type === "triangle" ? "cyan" : (a.type === "reflector" ? "purple" : "red"));
+      spawnDebris(a.x, a.y, 5);
+      d.attachments.splice(i, 1);
+      // Recalculate canReflect based on remaining attachments
+      d.canReflect = d.attachments.some(att => att.type === "reflector");
+      state.addScore(5); // Small score for destroying attached enemy
+    }
+
+    // Attached enemies still damage player on collision
+    const distToPlayer = Math.hypot(a.x-state.player.x, a.y-state.player.y);
+    if (distToPlayer < (aSize/2 + state.player.size/2)) {
+      if (!state.player.invulnerable) state.player.health -= 20;
+      createExplosion(a.x, a.y, "orange");
     }
   }
 
@@ -235,7 +261,7 @@ export function updateDiamond(d) {
   if (distToPlayer < (d.size/2 + state.player.size/2)) {
     if (!state.player.invulnerable) state.player.health -= 30;
     createExplosion(d.x, d.y, "white");
-    d.health -= 100;
+    // Diamond itself doesn't take damage from player collision
   }
 
   const distToGoldStar = Math.hypot(d.x-state.goldStar.x, d.y-state.goldStar.y);
@@ -331,6 +357,38 @@ export function updateMechs() {
 
   for (let i = state.mechs.length - 1; i >= 0; i--) {
     const mech = state.mechs[i];
+
+    // Dropship deployment animation
+    if (mech.deploying) {
+      mech.deployProgress = (mech.deployProgress || 0) + 1;
+      const deployDuration = 120; // 2 seconds at 60fps
+      
+      if (mech.deployProgress < deployDuration) {
+        // Descend from top
+        const targetY = groundY - 100; // Deploy height above ground
+        mech.y += (targetY - mech.y) * 0.05;
+        
+        // Add deployment particles
+        if (mech.deployProgress % 5 === 0) {
+          for (let p = 0; p < 2; p++) {
+            state.pushExplosion({
+              x: mech.x + (Math.random() - 0.5) * 40,
+              y: mech.y + mech.size/2,
+              dx: (Math.random() - 0.5) * 2,
+              dy: Math.random() * 2 + 1,
+              radius: 3,
+              color: "rgba(100, 150, 255, 0.8)",
+              life: 20
+            });
+          }
+        }
+      } else {
+        // Deployment complete
+        mech.deploying = false;
+        mech.dropshipVisible = false;
+        mech.flying = false; // Land on ground after deployment
+      }
+    }
 
     // Backwards compatible: if mech.flying is undefined treat as false (ground mech)
     mech.flying = mech.flying || false;

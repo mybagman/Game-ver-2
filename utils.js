@@ -132,7 +132,7 @@ export function spawnDiamondEnemy() {
     releaseTimer: 0,
     releaseChargeNeeded: 600,
     releaseCooldown: 0,
-    releaseCooldownMax: 900
+    releaseCooldownMax: 1800
   });
 }
 
@@ -173,7 +173,8 @@ export function spawnWalker(count) {
 export function spawnMech(count) {
   for (let i = 0; i < count; i++) {
     const x = Math.random() * state.canvas.width;
-    const y = state.canvas.height - (50 + Math.random() * 100);
+    // Start high up for dropship deployment animation
+    const y = -50;
     state.pushMech({
       x: x,
       y: y,
@@ -182,7 +183,10 @@ export function spawnMech(count) {
       speed: 1.5,
       shootTimer: 0,
       shieldActive: true,
-      shieldHealth: 150
+      shieldHealth: 150,
+      deploying: true,
+      dropshipVisible: true,
+      deployProgress: 0 // Track deployment animation progress
     });
   }
 }
@@ -299,7 +303,7 @@ export function attachEnemyToDiamond(diamond, enemy) {
   diamond.attachments.push(enemy);
 }
 
-export function detachAndLaunchEnemy(diamond, enemy, launchSpeed = 12) {
+export function detachAndLaunchEnemy(diamond, enemy, launchSpeed = 20) {
   enemy.attached = false;
   enemy.attachedTo = null;
   const dx = (enemy.x) - (diamond.x);
@@ -318,13 +322,52 @@ export function diamondReleaseAttachedEnemies(diamond) {
   diamond.vulnerable = true;
   diamond.vulnerableTimer = 360;
 
+  // Fire massive beam cannon at player's current position
+  const dx = state.player.x - diamond.x;
+  const dy = state.player.y - diamond.y;
+  const dist = Math.hypot(dx, dy) || 1;
+  const beamSpeed = 8;
+  
+  // Create multiple large lightning projectiles for a "beam" effect
+  for (let i = 0; i < 8; i++) {
+    setTimeout(() => {
+      state.pushLightning({
+        x: diamond.x,
+        y: diamond.y,
+        dx: (dx / dist) * beamSpeed,
+        dy: (dy / dist) * beamSpeed,
+        size: 20 + i * 2, // Increasing size for wave effect
+        damage: 40
+      });
+    }, i * 25); // Stagger the projectiles slightly
+  }
+  
+  // Create visual beam effect with particles
+  for (let j = 0; j < 30; j++) {
+    const progress = j / 30;
+    const beamX = diamond.x + (dx * progress);
+    const beamY = diamond.y + (dy * progress);
+    const spreadX = (Math.random() - 0.5) * 15;
+    const spreadY = (Math.random() - 0.5) * 15;
+    
+    state.pushExplosion({
+      x: beamX + spreadX,
+      y: beamY + spreadY,
+      dx: (dx / dist) * 2,
+      dy: (dy / dist) * 2,
+      radius: 8 + Math.random() * 6,
+      color: `rgba(255, ${200 + Math.random() * 55}, 100, 0.9)`,
+      life: 40
+    });
+  }
+
   const attachedCopy = diamond.attachments.slice();
   attachedCopy.forEach(a => {
     const idx = diamond.attachments.indexOf(a);
     if (idx >= 0) diamond.attachments.splice(idx, 1);
     a.x = diamond.x + (Math.cos(a.orbitAngle || 0) * (diamond.size/2 + 20));
     a.y = diamond.y + (Math.sin(a.orbitAngle || 0) * (diamond.size/2 + 20));
-    detachAndLaunchEnemy(diamond, a, 12);
+    detachAndLaunchEnemy(diamond, a, 20);
     delete a.orbitAngle;
     a.speed = a.speed || 1.5;
     a.state = 'launched';
