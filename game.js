@@ -84,6 +84,13 @@ export function gameLoop(now) {
     if (state.player.lives > 0) {
       try { respawnPlayer(); } catch (e) {}
     } else {
+      // Store the current wave before game over
+      if (typeof state.setLastDeathWave === 'function') {
+        try { state.setLastDeathWave(state.wave); } catch (e) { state.lastDeathWave = state.wave; }
+      } else {
+        state.lastDeathWave = state.wave;
+      }
+
       // set game over via setter if available
       if (typeof state.setGameOver === 'function') {
         try { state.setGameOver(true); } catch (e) {}
@@ -466,7 +473,11 @@ export function showGameOverUI() {
   const { overlayEl, finalScoreEl } = getOverlayElements();
   if (!overlayEl) return;
 
+  // Properly set display properties
   overlayEl.classList.remove('hidden');
+  overlayEl.style.display = 'flex';
+  overlayEl.style.pointerEvents = 'auto';
+  
   if (finalScoreEl) finalScoreEl.textContent = String(state.score || 0);
 
   // If new high score, show the panel
@@ -486,6 +497,8 @@ function hideGameOverUI() {
   const { overlayEl, newHighscorePanel } = getOverlayElements();
   if (!overlayEl) return;
   overlayEl.classList.add('hidden');
+  overlayEl.style.display = 'none';
+  overlayEl.style.pointerEvents = 'none';
   if (newHighscorePanel) newHighscorePanel.classList.add('hidden');
 }
 
@@ -493,7 +506,7 @@ function hideGameOverUI() {
 function continueFromCurrentWave() {
   if (!state.player) state.player = {};
   state.player.lives = 3;
-  state.player.health = 100;
+  state.player.health = state.player.maxHealth || 100;
   try { respawnPlayer(); } catch (e) {}
   state.player.invulnerable = true;
   state.player.invulnerableTimer = 180; // e.g., 3 seconds at 60fps
@@ -506,14 +519,29 @@ function continueFromCurrentWave() {
 
   hideGameOverUI();
 
-  try { spawnWave(state.wave || 1); } catch (e) {}
+  // Use the stored death wave instead of current wave
+  const waveToSpawn = state.lastDeathWave || 1;
+  try { spawnWave(waveToSpawn); } catch (e) {}
   requestAnimationFrame(gameLoop);
 }
 
 // Start a fresh new game (maps to example startNewGame)
 function startNewGame() {
   try { resetGame(); } catch (e) { }
+  
+  // Clear enemies that were spawned by resetGame (which spawns wave 1)
+  if (Array.isArray(state.enemies)) state.enemies.length = 0;
+  
+  // Set wave to 0 and spawn wave 0
+  if (typeof state.setWave === 'function') {
+    try { state.setWave(0); } catch (e) { state.wave = 0; }
+  } else {
+    state.wave = 0;
+  }
+  
+  try { spawnWave(0); } catch (e) {}
   hideGameOverUI();
+  requestAnimationFrame(gameLoop);
 }
 
 // Hook up DOM buttons if they exist - queries elements lazily
