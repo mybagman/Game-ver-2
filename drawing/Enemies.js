@@ -220,6 +220,40 @@ export function drawWalkers() {
 
 export function drawMechs() {
   state.mechs.forEach(mech => {
+    // Draw dropship if visible
+    if (mech.dropshipVisible) {
+      state.ctx.save();
+      state.ctx.translate(mech.x, mech.y - mech.size);
+      
+      // Dropship body
+      state.ctx.fillStyle = '#333';
+      state.ctx.fillRect(-mech.size/1.5, -mech.size/2, mech.size*1.3, mech.size/1.5);
+      
+      // Dropship cockpit
+      state.ctx.fillStyle = '#555';
+      state.ctx.fillRect(-mech.size/2.5, -mech.size/1.8, mech.size/1.2, mech.size/2.5);
+      
+      // Cockpit windows
+      state.ctx.fillStyle = '#00aaff';
+      state.ctx.fillRect(-mech.size/3.5, -mech.size/2, mech.size/1.8, mech.size/4);
+      
+      // Engine glow
+      const flicker = 0.4 + Math.random() * 0.4;
+      state.ctx.fillStyle = `rgba(255,120,0,${flicker})`;
+      state.ctx.beginPath();
+      state.ctx.arc(0, mech.size/2, mech.size/3, 0, Math.PI);
+      state.ctx.fill();
+      
+      // Deployment bay door (opening during deploy)
+      if (mech.deploying) {
+        const doorOpen = Math.min(1, (mech.deployProgress || 0) / 60);
+        state.ctx.fillStyle = '#666';
+        state.ctx.fillRect(-mech.size/4, mech.size/3, mech.size/2 * (1 - doorOpen), mech.size/6);
+      }
+      
+      state.ctx.restore();
+    }
+    
     state.ctx.save();
     state.ctx.translate(mech.x, mech.y);
 
@@ -268,6 +302,52 @@ export function drawDiamonds() {
       state.ctx.beginPath();
       state.ctx.arc(0, 0, d.size/2 + 30, 0, Math.PI * 2);
       state.ctx.stroke();
+    }
+
+    // Power-up charge animation: particles drawn into diamond before release
+    if (d.releaseTimer > 0 && d.releaseTimer < d.releaseChargeNeeded && d.attachments && d.attachments.length > 0) {
+      const chargeProgress = d.releaseTimer / d.releaseChargeNeeded;
+      const particleCount = Math.floor(chargeProgress * 15) + 3;
+      
+      for (let p = 0; p < particleCount; p++) {
+        const angle = (p / particleCount) * Math.PI * 2 + state.frameCount * 0.05;
+        const distance = 150 * (1 - chargeProgress) + 20;
+        const px = Math.cos(angle) * distance;
+        const py = Math.sin(angle) * distance;
+        
+        const particleSize = 2 + chargeProgress * 3;
+        const opacity = 0.4 + chargeProgress * 0.6;
+        
+        state.ctx.beginPath();
+        state.ctx.fillStyle = `rgba(255, 255, 100, ${opacity})`;
+        state.ctx.arc(px, py, particleSize, 0, Math.PI * 2);
+        state.ctx.fill();
+        
+        // Add glow effect to particles
+        state.ctx.shadowBlur = 10 + chargeProgress * 20;
+        state.ctx.shadowColor = "rgba(255, 255, 100, 0.8)";
+        state.ctx.beginPath();
+        state.ctx.arc(px, py, particleSize * 0.5, 0, Math.PI * 2);
+        state.ctx.fill();
+        state.ctx.shadowBlur = 0;
+      }
+      
+      // Add energy lines from particles to center
+      if (chargeProgress > 0.3) {
+        for (let l = 0; l < 8; l++) {
+          const angle = (l / 8) * Math.PI * 2 + state.frameCount * 0.03;
+          const startDist = 120 * (1 - chargeProgress) + 30;
+          const startX = Math.cos(angle) * startDist;
+          const startY = Math.sin(angle) * startDist;
+          
+          state.ctx.beginPath();
+          state.ctx.strokeStyle = `rgba(255, 200, 100, ${chargeProgress * 0.6})`;
+          state.ctx.lineWidth = 1 + chargeProgress * 2;
+          state.ctx.moveTo(startX, startY);
+          state.ctx.lineTo(0, 0);
+          state.ctx.stroke();
+        }
+      }
     }
 
     if (d.vulnerable) {
