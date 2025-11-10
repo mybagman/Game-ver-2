@@ -36,6 +36,7 @@ export let highScores = [];
 
 export let gameOver = false;
 export let recordedScoreThisRun = false;
+export let lastDeathWave = 0;
 
 export let cinematic = {
   playing: false,
@@ -109,6 +110,7 @@ export function incrementWaveTransitionTimer() { waveTransitionTimer++; }
 export function incrementWave() { wave++; }
 export function setGameOver(val) { gameOver = val; }
 export function setRecordedScoreThisRun(val) { recordedScoreThisRun = val; }
+export function setLastDeathWave(val) { lastDeathWave = val; }
 export function addScore(val) { score += val; }
 export function setHighScore(val) { highScore = val; }
 export function addHighScore(entry) { highScores.push(entry); }
@@ -218,6 +220,7 @@ export function resetGame() {
   waveTransitionTimer = 0;
   gameOver = false;
   recordedScoreThisRun = false;
+  lastDeathWave = 0;
   auraPulseTimer = 0;
   backgroundOffset = 0;
 
