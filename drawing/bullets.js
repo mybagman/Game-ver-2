@@ -168,13 +168,3 @@ export function drawBullets() {
     }
   }
 }
-
-export function drawLightning() { 
-  state.lightning.forEach(l => {
-    state.ctx.shadowBlur = 8;
-    state.ctx.shadowColor = "cyan";
-    state.ctx.fillStyle = "cyan"; 
-    state.ctx.fillRect(l.x-(l.size||6)/2, l.y-(l.size||6)/2, l.size||6, l.size||6);
-    state.ctx.shadowBlur = 0;
-  });
-}

@@ -2,6 +2,84 @@ import * as state from '../state.js';
 
 let tunnelCollisions = [];
 
+export function drawDebris() {
+  state.debris.forEach(d => {
+    const alpha = d.life / d.maxLife;
+    state.ctx.save();
+    state.ctx.translate(d.x, d.y);
+    state.ctx.rotate(d.rotation);
+    state.ctx.fillStyle = `rgba(150,150,150,${alpha})`;
+    state.ctx.fillRect(-d.size/2, -d.size/2, d.size, d.size);
+    state.ctx.restore();
+  });
+}
+
+export function drawTunnels() { 
+  state.tunnels.forEach(t => { 
+    if (t.active) { 
+      state.ctx.fillStyle = "rgba(0,255,255,0.5)"; 
+      state.ctx.fillRect(t.x, t.y, t.width, t.height); 
+    }
+  }); 
+}
+
+export function drawLightning() { 
+  state.lightning.forEach(l => {
+    state.ctx.shadowBlur = 8;
+    state.ctx.shadowColor = "cyan";
+    state.ctx.fillStyle = "cyan"; 
+    state.ctx.fillRect(l.x-(l.size||6)/2, l.y-(l.size||6)/2, l.size||6, l.size||6);
+    state.ctx.shadowBlur = 0;
+  });
+}
+
+export function drawRedPunchEffects() {
+  state.ctx.save();
+  state.ctx.globalCompositeOperation = 'lighter';
+  state.redPunchEffects.forEach(e => {
+    const lifeFactor = Math.max(0, e.life / e.maxLife);
+    if (e.fill) {
+      state.ctx.beginPath();
+      state.ctx.fillStyle = e.color;
+      state.ctx.globalAlpha = lifeFactor * 0.9;
+      state.ctx.arc(e.x, e.y, Math.max(2, e.r), 0, Math.PI*2);
+      state.ctx.fill();
+      state.ctx.globalAlpha = 1;
+    } else {
+      state.ctx.beginPath();
+      state.ctx.strokeStyle = e.color;
+      state.ctx.lineWidth = 6 * lifeFactor;
+      state.ctx.arc(e.x, e.y, Math.max(2, e.r), 0, Math.PI*2);
+      state.ctx.stroke();
+    }
+  });
+  state.ctx.restore();
+}
+
+export function drawReentryEffects() {
+  const ctx = state.ctx;
+  const { width, height, wave } = state;
+  if (wave < 12) return;
+
+  const intensity = Math.min((wave - 11) / 2, 1);
+  const gradient = ctx.createLinearGradient(0, 0, 0, height);
+  gradient.addColorStop(0, `rgba(255, 100, 0, ${0.1 * intensity})`);
+  gradient.addColorStop(1, `rgba(0, 0, 0, 0.7)`);
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+
+  for (let i = 0; i < 40 * intensity; i++) {
+    const x = Math.random() * width;
+    const y = Math.random() * height;
+    ctx.strokeStyle = `rgba(255,${120 + Math.random() * 80},0,${Math.random() * 0.6})`;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + (Math.random() - 0.5) * 6, y + 20 + Math.random() * 30);
+    ctx.stroke();
+  }
+}
+
 export function drawExplosions(){ 
   state.explosions.forEach(ex => { 
     state.ctx.fillStyle = ex.color; 

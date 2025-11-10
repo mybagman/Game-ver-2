@@ -74,26 +74,3 @@ export function drawGoldStarAura() {
 
   state.ctx.restore();
 }
-
-export function drawRedPunchEffects() {
-  state.ctx.save();
-  state.ctx.globalCompositeOperation = 'lighter';
-  state.redPunchEffects.forEach(e => {
-    const lifeFactor = Math.max(0, e.life / e.maxLife);
-    if (e.fill) {
-      state.ctx.beginPath();
-      state.ctx.fillStyle = e.color;
-      state.ctx.globalAlpha = lifeFactor * 0.9;
-      state.ctx.arc(e.x, e.y, Math.max(2, e.r), 0, Math.PI*2);
-      state.ctx.fill();
-      state.ctx.globalAlpha = 1;
-    } else {
-      state.ctx.beginPath();
-      state.ctx.strokeStyle = e.color;
-      state.ctx.lineWidth = 6 * lifeFactor;
-      state.ctx.arc(e.x, e.y, Math.max(2, e.r), 0, Math.PI*2);
-      state.ctx.stroke();
-    }
-  });
-  state.ctx.restore();
-}
