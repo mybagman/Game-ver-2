@@ -524,9 +524,8 @@ function continueFromCurrentWave() {
 
   hideGameOverUI();
 
-  // Use the stored death wave instead of current wave
-  const waveToSpawn = state.lastDeathWave || 1;
-  try { spawnWave(waveToSpawn); } catch (e) {}
+  // Don't respawn enemies - keep existing ones alive
+  // This makes continuing feel like gaining an extra life
   requestAnimationFrame(gameLoop);
 }
 
