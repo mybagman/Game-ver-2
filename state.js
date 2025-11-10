@@ -55,7 +55,12 @@ export let player = {
   invulnerableTimer: 0,
   reflectAvailable: false,
   fireRateBoost: 1,
-  healAccumulator: 0
+  healAccumulator: 0,
+  rotation: -Math.PI / 2, // Start pointing up (0 degrees in game coordinates)
+  targetRotation: -Math.PI / 2,
+  vx: 0, // velocity x
+  vy: 0, // velocity y
+  thrusterParticles: [] // engine particles
 };
 
 export let goldStar = {
@@ -236,6 +241,11 @@ export function resetGame() {
   player.reflectAvailable = false;
   player.fireRateBoost = 1;
   player.healAccumulator = 0;
+  player.rotation = -Math.PI / 2;
+  player.targetRotation = -Math.PI / 2;
+  player.vx = 0;
+  player.vy = 0;
+  player.thrusterParticles = [];
 
   // reset gold star
   goldStar.x = 0;

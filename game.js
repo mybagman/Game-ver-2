@@ -411,6 +411,11 @@ export function resetGame() {
   state.player.reflectAvailable = false;
   state.player.fireRateBoost = 1;
   state.player.healAccumulator = 0;
+  state.player.rotation = -Math.PI / 2;
+  state.player.targetRotation = -Math.PI / 2;
+  state.player.vx = 0;
+  state.player.vy = 0;
+  if (!state.player.thrusterParticles) state.player.thrusterParticles = [];
 
   try { respawnGoldStar(); } catch (e) {}
   try { resetAuraOnDeath(); } catch (e) {}

@@ -70,7 +70,10 @@ function hs_clearScores() {
    --------------------------- */
 
 const overlayHTML = `
-  <div id="overlay" class="hidden" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+  <style>
+    .hidden { display: none !important; }
+  </style>
+  <div id="overlay" class="hidden" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;">
     <div id="gameover-screen" class="panel" style="pointer-events:auto;background:rgba(20,20,20,0.95);color:#fff;padding:24px;border-radius:8px;min-width:320px;max-width:90%;">
       <h1 style="margin-top:0">Game Over</h1>
       <p id="final-score">Score: 0</p>
