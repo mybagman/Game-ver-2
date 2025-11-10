@@ -235,7 +235,7 @@ export function updateDiamond(d) {
   if (distToPlayer < (d.size/2 + state.player.size/2)) {
     if (!state.player.invulnerable) state.player.health -= 30;
     createExplosion(d.x, d.y, "white");
-    d.health -= 100;
+    // Diamond itself doesn't take damage from player collision
   }
 
   const distToGoldStar = Math.hypot(d.x-state.goldStar.x, d.y-state.goldStar.y);

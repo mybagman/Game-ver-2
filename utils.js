@@ -132,7 +132,7 @@ export function spawnDiamondEnemy() {
     releaseTimer: 0,
     releaseChargeNeeded: 600,
     releaseCooldown: 0,
-    releaseCooldownMax: 900
+    releaseCooldownMax: 1800
   });
 }
 
@@ -299,7 +299,7 @@ export function attachEnemyToDiamond(diamond, enemy) {
   diamond.attachments.push(enemy);
 }
 
-export function detachAndLaunchEnemy(diamond, enemy, launchSpeed = 12) {
+export function detachAndLaunchEnemy(diamond, enemy, launchSpeed = 20) {
   enemy.attached = false;
   enemy.attachedTo = null;
   const dx = (enemy.x) - (diamond.x);
@@ -324,7 +324,7 @@ export function diamondReleaseAttachedEnemies(diamond) {
     if (idx >= 0) diamond.attachments.splice(idx, 1);
     a.x = diamond.x + (Math.cos(a.orbitAngle || 0) * (diamond.size/2 + 20));
     a.y = diamond.y + (Math.sin(a.orbitAngle || 0) * (diamond.size/2 + 20));
-    detachAndLaunchEnemy(diamond, a, 12);
+    detachAndLaunchEnemy(diamond, a, 20);
     delete a.orbitAngle;
     a.speed = a.speed || 1.5;
     a.state = 'launched';
