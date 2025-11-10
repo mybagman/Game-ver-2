@@ -1,3 +1,7 @@
+import * as state from '../state.js';
+
+let tunnelCollisions = [];
+
 export function drawExplosions(){ 
   state.explosions.forEach(ex => { 
     state.ctx.fillStyle = ex.color; 

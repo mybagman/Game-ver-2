@@ -1,3 +1,5 @@
+import * as state from '../state.js';
+
 // Helper: draw a soft glowing trail for a bullet (if bullet has trail[]), otherwise just a subtle glow behind it.
 function drawBulletTrail(ctx, b) {
   if (!b) return;

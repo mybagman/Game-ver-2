@@ -1,3 +1,5 @@
+import * as state from '../state.js';
+
 export function drawClouds() {
   // Three-layer parallax clouds with depth
   const layers = [
@@ -48,27 +50,6 @@ export function drawCityBackground() {
     const height = 100 + Math.sin(i) * 50;
     state.ctx.fillRect(x, state.canvas.height - height, state.canvas.width / 20 - 5, height);
   }
-}
-
-export function drawDebris() {
-  state.debris.forEach(d => {
-    const alpha = d.life / d.maxLife;
-    state.ctx.save();
-    state.ctx.translate(d.x, d.y);
-    state.ctx.rotate(d.rotation);
-    state.ctx.fillStyle = `rgba(150,150,150,${alpha})`;
-    state.ctx.fillRect(-d.size/2, -d.size/2, d.size, d.size);
-    state.ctx.restore();
-  });
-}
-
-export function drawTunnels() { 
-  state.tunnels.forEach(t => { 
-    if (t.active) { 
-      state.ctx.fillStyle = "rgba(0,255,255,0.5)"; 
-      state.ctx.fillRect(t.x, t.y, t.width, t.height); 
-    }
-  }); 
 }
 
 export function drawBackground(waveNum) {
