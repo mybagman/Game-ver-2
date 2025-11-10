@@ -528,7 +528,9 @@ function continueFromCurrentWave() {
 // Start a fresh new game (maps to example startNewGame)
 function startNewGame() {
   try { resetGame(); } catch (e) { }
-  hideGameOverUI();
+  
+  // Clear enemies that were spawned by resetGame (which spawns wave 1)
+  if (Array.isArray(state.enemies)) state.enemies.length = 0;
   
   // Set wave to 0 and spawn wave 0
   if (typeof state.setWave === 'function') {
@@ -538,6 +540,7 @@ function startNewGame() {
   }
   
   try { spawnWave(0); } catch (e) {}
+  hideGameOverUI();
   requestAnimationFrame(gameLoop);
 }
 
