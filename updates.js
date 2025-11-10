@@ -10,12 +10,44 @@ export function updatePlayerMovement() {
   if (state.keys["a"]) dirX = -1;
   if (state.keys["d"]) dirX = 1;
 
-  if (dirX !== 0 || dirY !== 0) {
+  // Track if player is moving
+  const isMoving = dirX !== 0 || dirY !== 0;
+  
+  if (isMoving) {
     const mag = Math.hypot(dirX, dirY) || 1;
     // Normalize so diagonal movement isn't faster, then scale by player speed.
-    state.player.x += (dirX / mag) * state.player.speed;
-    state.player.y += (dirY / mag) * state.player.speed;
+    const normalizedDirX = dirX / mag;
+    const normalizedDirY = dirY / mag;
+    
+    state.player.x += normalizedDirX * state.player.speed;
+    state.player.y += normalizedDirY * state.player.speed;
+    
+    // Update velocity for effects
+    state.player.vx = normalizedDirX * state.player.speed;
+    state.player.vy = normalizedDirY * state.player.speed;
+    
+    // Calculate target rotation based on movement direction
+    state.player.targetRotation = Math.atan2(normalizedDirY, normalizedDirX);
+    
+    // Add thruster particles when moving
+    addThrusterParticles();
+  } else {
+    state.player.vx = 0;
+    state.player.vy = 0;
   }
+  
+  // Smoothly interpolate rotation towards target
+  const rotationSpeed = 0.15; // How fast the ship rotates
+  let rotationDiff = state.player.targetRotation - state.player.rotation;
+  
+  // Normalize rotation difference to [-PI, PI] for shortest path
+  while (rotationDiff > Math.PI) rotationDiff -= 2 * Math.PI;
+  while (rotationDiff < -Math.PI) rotationDiff += 2 * Math.PI;
+  
+  state.player.rotation += rotationDiff * rotationSpeed;
+  
+  // Update thruster particles
+  updateThrusterParticles();
 
   // keep player within canvas
   state.player.x = Math.max(state.player.size/2, Math.min(state.canvas.width - state.player.size/2, state.player.x));
@@ -126,4 +158,65 @@ export function updateCloudParticles() {
       c.x = state.canvas.width + c.size;
     }
   });
+}
+
+// Thruster particle system for engine effects
+function addThrusterParticles() {
+  if (!state.player.thrusterParticles) state.player.thrusterParticles = [];
+  
+  // Add particles less frequently for better performance
+  if (state.frameCount % 2 !== 0) return;
+  
+  // Calculate the back of the ship (opposite to movement direction)
+  const rotation = state.player.rotation;
+  const thrusterOffset = state.player.size * 0.4; // Position behind the ship
+  
+  // Create 1-2 particles per frame when moving
+  const particleCount = Math.random() > 0.5 ? 2 : 1;
+  
+  for (let i = 0; i < particleCount; i++) {
+    // Position particles at the back of the ship
+    const offsetX = -Math.cos(rotation) * thrusterOffset;
+    const offsetY = -Math.sin(rotation) * thrusterOffset;
+    
+    // Add some randomness to particle spawn position
+    const spread = state.player.size * 0.15;
+    const perpX = -Math.sin(rotation) * (Math.random() - 0.5) * spread;
+    const perpY = Math.cos(rotation) * (Math.random() - 0.5) * spread;
+    
+    state.player.thrusterParticles.push({
+      x: state.player.x + offsetX + perpX,
+      y: state.player.y + offsetY + perpY,
+      vx: -Math.cos(rotation) * (2 + Math.random() * 2) - state.player.vx * 0.3,
+      vy: -Math.sin(rotation) * (2 + Math.random() * 2) - state.player.vy * 0.3,
+      life: 15 + Math.random() * 10,
+      maxLife: 25,
+      size: 2 + Math.random() * 3,
+      hue: 20 + Math.random() * 40 // Orange to yellow
+    });
+  }
+}
+
+function updateThrusterParticles() {
+  if (!state.player.thrusterParticles) state.player.thrusterParticles = [];
+  
+  for (let i = state.player.thrusterParticles.length - 1; i >= 0; i--) {
+    const p = state.player.thrusterParticles[i];
+    
+    // Update position
+    p.x += p.vx;
+    p.y += p.vy;
+    
+    // Reduce velocity (friction)
+    p.vx *= 0.95;
+    p.vy *= 0.95;
+    
+    // Decrease life
+    p.life--;
+    
+    // Remove dead particles
+    if (p.life <= 0) {
+      state.player.thrusterParticles.splice(i, 1);
+    }
+  }
 }

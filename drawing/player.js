@@ -1,6 +1,6 @@
 import * as state from '../state.js';
 
-// New 8-bit style player sprite drawing
+// New 8-bit style player sprite drawing with rotation
 function drawPlayer8Bit(ctx, player) {
   // Pixel-art 'canvas' is 9 x 9 logical pixels; scale with player.size
   const grid = [
@@ -12,33 +12,32 @@ function drawPlayer8Bit(ctx, player) {
     "001111100", // fuselage taper
     "001101100", // tail stabilizers
     "010000010", // dual thruster base
-    "010010010"  // exhaust glow for l
+    "010010010"  // exhaust glow
   ];
-  // Colors for different pixel values:
-  // 0 -> transparent
-  // 1 -> hull color
-  // 2 -> cockpit (we'll mark cockpit with '2' in grid if needed)
-  // For simplicity use hull and accent mapped from player state (atmospheric/space)
-  const hullColor = player.hullColor || "#88ff88"; // default lime-ish
+  
+  const hullColor = player.hullColor || "#88ff88";
   const accentColor = player.accentColor || "#00e0ff";
   const cockpitColor = player.cockpitColor || "#ffffff";
   const exhaustColor = player.exhaustColor || "rgba(255,120,40,0.9)";
 
-  // Patch: ensure pixel scale is at least 1 so tiny players still draw
-  // Replace the px/remainder/offset section inside drawPlayer8Bit with the following:
-
   const size = player.size || 24;
   const pixels = grid.length;
-  // ensure we always have at least 1 device pixel per 'logical pixel'
-  const px = Math.max(1, Math.floor(size / pixels)); // integer pixel scale, never 0
+  const px = Math.max(1, Math.floor(size / pixels));
   const totalPixelSize = px * pixels;
   const remainder = Math.max(0, size - totalPixelSize);
-  // center offset so sprite matches player.x,y center
-  const offsetX = Math.round(player.x - (totalPixelSize + remainder) / 2);
-  const offsetY = Math.round(player.y - (totalPixelSize + remainder) / 2);
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
+  
+  // Apply rotation transformation
+  ctx.translate(player.x, player.y);
+  ctx.rotate(player.rotation + Math.PI / 2); // +90 degrees because sprite points up by default
+  ctx.translate(-player.x, -player.y);
+  
+  // Center offset so sprite matches player.x,y center
+  const offsetX = Math.round(player.x - (totalPixelSize + remainder) / 2);
+  const offsetY = Math.round(player.y - (totalPixelSize + remainder) / 2);
+
   ctx.fillStyle = hullColor;
 
   for (let gy = 0; gy < pixels; gy++) {
@@ -46,30 +45,20 @@ function drawPlayer8Bit(ctx, player) {
     for (let gx = 0; gx < row.length; gx++) {
       const v = row[gx];
       if (v === "0") continue;
-      // choose color by row/col to add detail
+      
       let color = hullColor;
-      // cockpit center approx
+      // cockpit center
       if (gy >= 2 && gy <= 3 && gx >= 3 && gx <= 5) color = cockpitColor;
       // accent on wing tips
       if (gx === 0 || gx === row.length - 1) color = accentColor;
-      // tail/exhaust rows: make exhaust glow
+      // tail/exhaust rows
       if (gy === 8) color = exhaustColor;
+      
       ctx.fillStyle = color;
       const drawX = offsetX + gx * px + Math.floor(remainder / 2);
       const drawY = offsetY + gy * px + Math.floor(remainder / 2);
-      // draw sharp rectangle pixel
       ctx.fillRect(Math.round(drawX), Math.round(drawY), px, px);
     }
-  }
-
-  // Thruster glow / movement indication
-  if (player.thrusting) {
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.fillStyle = "rgba(255,140,60,0.6)";
-    ctx.beginPath();
-    ctx.ellipse(player.x, player.y + size / 2.6, size / 4, size / 6, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalCompositeOperation = 'source-over';
   }
 
   // invulnerability flicker overlay
@@ -80,6 +69,32 @@ function drawPlayer8Bit(ctx, player) {
     ctx.globalAlpha = 1;
   }
 
+  ctx.restore();
+}
+
+// Draw thruster particles
+function drawThrusterParticles(ctx, player) {
+  if (!player.thrusterParticles || player.thrusterParticles.length === 0) return;
+  
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter'; // Additive blending for glow effect
+  
+  for (const p of player.thrusterParticles) {
+    const alpha = p.life / p.maxLife;
+    const size = p.size * (0.5 + alpha * 0.5); // Shrink as they fade
+    
+    // Draw particle with gradient for better effect
+    const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size);
+    gradient.addColorStop(0, `hsla(${p.hue}, 100%, 70%, ${alpha * 0.9})`);
+    gradient.addColorStop(0.5, `hsla(${p.hue}, 100%, 50%, ${alpha * 0.6})`);
+    gradient.addColorStop(1, `hsla(${p.hue}, 100%, 30%, 0)`);
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
   ctx.restore();
 }
 
@@ -97,6 +112,9 @@ export function drawPlayer() {
   state.player.accentColor = state.player.accentColor || (state.inAtmosphere ? "#ffcc66" : "#00e0ff");
   state.player.cockpitColor = state.player.cockpitColor || "#222222";
   state.player.exhaustColor = state.player.exhaustColor || (state.inAtmosphere ? "rgba(255,200,100,0.85)" : "rgba(255,90,90,0.9)");
+
+  // Draw thruster particles BEFORE the ship so they appear behind
+  drawThrusterParticles(state.ctx, state.player);
 
   // draw 8-bit sprite centered on player.x, player.y
   drawPlayer8Bit(state.ctx, state.player);
