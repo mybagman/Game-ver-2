@@ -1,3 +1,16 @@
+import * as state from '../state.js';
+
+function roundRect(ctx, x, y, w, h, r) {
+  const radius = r || 6;
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + w, y, x + w, y + h, radius);
+  ctx.arcTo(x + w, y + h, x, y + h, radius);
+  ctx.arcTo(x, y + h, x, y, radius);
+  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.closePath();
+}
+
 // Modified drawUI: removed high score, and spread out Gold Star UI content inside same-sized box
 export function drawUI() {
   const pad = 12;

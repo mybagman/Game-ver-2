@@ -1,3 +1,4 @@
+import * as state from '../state.js';
 
 export function drawEnemies() {
   state.enemies.forEach(e => {

@@ -1,3 +1,5 @@
+import * as state from '../state.js';
+
 export function drawClouds() {
   // Three-layer parallax clouds with depth
   const layers = [
@@ -48,27 +50,6 @@ export function drawCityBackground() {
     const height = 100 + Math.sin(i) * 50;
     state.ctx.fillRect(x, state.canvas.height - height, state.canvas.width / 20 - 5, height);
   }
-}
-
-export function drawDebris() {
-  state.debris.forEach(d => {
-    const alpha = d.life / d.maxLife;
-    state.ctx.save();
-    state.ctx.translate(d.x, d.y);
-    state.ctx.rotate(d.rotation);
-    state.ctx.fillStyle = `rgba(150,150,150,${alpha})`;
-    state.ctx.fillRect(-d.size/2, -d.size/2, d.size, d.size);
-    state.ctx.restore();
-  });
-}
-
-export function drawTunnels() { 
-  state.tunnels.forEach(t => { 
-    if (t.active) { 
-      state.ctx.fillStyle = "rgba(0,255,255,0.5)"; 
-      state.ctx.fillRect(t.x, t.y, t.width, t.height); 
-    }
-  }); 
 }
 
 export function drawBackground(waveNum) {
@@ -210,28 +191,5 @@ export function drawPlanetBackground(wave) {
 }
 
 // ----------------------
-// Re-entry visual effects
+// Re-entry visual effects have been moved to Effects.js
 // ----------------------
-export function drawReentryEffects() {
-  const ctx = state.ctx;
-  const { width, height, wave } = state;
-  if (wave < 12) return;
-
-  const intensity = Math.min((wave - 11) / 2, 1);
-  const gradient = ctx.createLinearGradient(0, 0, 0, height);
-  gradient.addColorStop(0, `rgba(255, 100, 0, ${0.1 * intensity})`);
-  gradient.addColorStop(1, `rgba(0, 0, 0, 0.7)`);
-
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
-
-  for (let i = 0; i < 40 * intensity; i++) {
-    const x = Math.random() * width;
-    const y = Math.random() * height;
-    ctx.strokeStyle = `rgba(255,${120 + Math.random() * 80},0,${Math.random() * 0.6})`;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + (Math.random() - 0.5) * 6, y + 20 + Math.random() * 30);
-    ctx.stroke();
-  }
-}

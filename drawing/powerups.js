@@ -1,3 +1,5 @@
+import * as state from '../state.js';
+
 export function drawPowerUps() {
   state.powerUps.forEach(p => {
     state.ctx.save();

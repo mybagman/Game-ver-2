@@ -1,3 +1,5 @@
+import * as state from '../state.js';
+
 export function drawGoldStar() {
   if (!state.goldStar.alive) return;
   if (state.goldStar.collecting) {
@@ -71,38 +73,4 @@ export function drawGoldStarAura() {
   state.ctx.stroke();
 
   state.ctx.restore();
-}
-
-export function drawRedPunchEffects() {
-  state.ctx.save();
-  state.ctx.globalCompositeOperation = 'lighter';
-  state.redPunchEffects.forEach(e => {
-    const lifeFactor = Math.max(0, e.life / e.maxLife);
-    if (e.fill) {
-      state.ctx.beginPath();
-      state.ctx.fillStyle = e.color;
-      state.ctx.globalAlpha = lifeFactor * 0.9;
-      state.ctx.arc(e.x, e.y, Math.max(2, e.r), 0, Math.PI*2);
-      state.ctx.fill();
-      state.ctx.globalAlpha = 1;
-    } else {
-      state.ctx.beginPath();
-      state.ctx.strokeStyle = e.color;
-      state.ctx.lineWidth = 6 * lifeFactor;
-      state.ctx.arc(e.x, e.y, Math.max(2, e.r), 0, Math.PI*2);
-      state.ctx.stroke();
-    }
-  });
-  state.ctx.restore();
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  const radius = r || 6;
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.arcTo(x + w, y, x + w, y + h, radius);
-  ctx.arcTo(x + w, y + h, x, y + h, radius);
-  ctx.arcTo(x, y + h, x, y, radius);
-  ctx.arcTo(x, y, x + w, y, radius);
-  ctx.closePath();
 }

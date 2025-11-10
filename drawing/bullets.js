@@ -1,3 +1,5 @@
+import * as state from '../state.js';
+
 // Helper: draw a soft glowing trail for a bullet (if bullet has trail[]), otherwise just a subtle glow behind it.
 function drawBulletTrail(ctx, b) {
   if (!b) return;
@@ -165,14 +167,4 @@ export function drawBullets() {
       state.ctx.restore();
     }
   }
-}
-
-export function drawLightning() { 
-  state.lightning.forEach(l => {
-    state.ctx.shadowBlur = 8;
-    state.ctx.shadowColor = "cyan";
-    state.ctx.fillStyle = "cyan"; 
-    state.ctx.fillRect(l.x-(l.size||6)/2, l.y-(l.size||6)/2, l.size||6, l.size||6);
-    state.ctx.shadowBlur = 0;
-  });
 }

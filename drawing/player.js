@@ -1,3 +1,5 @@
+import * as state from '../state.js';
+
 // New 8-bit style player sprite drawing
 function drawPlayer8Bit(ctx, player) {
   // Pixel-art 'canvas' is 9 x 9 logical pixels; scale with player.size
