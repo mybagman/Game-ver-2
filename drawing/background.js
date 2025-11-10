@@ -1,10 +1,10 @@
 import * as state from '../state.js';
 
 export function drawClouds() {
-  // Three-layer parallax clouds with depth
+  // Three-layer parallax clouds with depth - optimized to reduce blur usage
   const layers = [
-    { speed: 0.3, scale: 0.6, alpha: 0.3, blur: 8 },
-    { speed: 0.6, scale: 0.8, alpha: 0.5, blur: 4 },
+    { speed: 0.3, scale: 0.6, alpha: 0.3, blur: 0 }, // Removed blur
+    { speed: 0.6, scale: 0.8, alpha: 0.5, blur: 0 }, // Removed blur
     { speed: 1.0, scale: 1.0, alpha: 0.7, blur: 0 }
   ];
   
@@ -16,28 +16,19 @@ export function drawClouds() {
       const x = (c.x + layerOffset) % state.canvas.width;
       
       state.ctx.save();
-      if (layer.blur > 0) {
-        state.ctx.filter = `blur(${layer.blur}px)`;
-      } else {
-        // ensure filter is cleared when blur is 0
-        state.ctx.filter = 'none';
-      }
-      
       state.ctx.globalAlpha = c.opacity * layer.alpha;
       state.ctx.fillStyle = `rgba(220,230,240,1)`;
       state.ctx.beginPath();
       state.ctx.arc(x, c.y, c.size * layer.scale, 0, Math.PI * 2);
       state.ctx.fill();
       
-      // Add wispy edges
+      // Simplified wispy edges
       state.ctx.globalAlpha = c.opacity * layer.alpha * 0.4;
       state.ctx.beginPath();
       state.ctx.arc(x + c.size * 0.3, c.y, c.size * layer.scale * 0.7, 0, Math.PI * 2);
       state.ctx.fill();
       
       state.ctx.restore();
-      // very important: reset filter after restore in case some browsers keep it
-      state.ctx.filter = 'none';
       state.ctx.globalAlpha = 1;
     });
   });
@@ -45,10 +36,11 @@ export function drawClouds() {
 
 export function drawCityBackground() {
   state.ctx.fillStyle = "rgba(20,20,30,0.8)";
-  for (let i = 0; i < 20; i++) {
-    const x = i * (state.canvas.width / 20);
+  // Reduced from 20 to 10 buildings for better performance
+  for (let i = 0; i < 10; i++) {
+    const x = i * (state.canvas.width / 10);
     const height = 100 + Math.sin(i) * 50;
-    state.ctx.fillRect(x, state.canvas.height - height, state.canvas.width / 20 - 5, height);
+    state.ctx.fillRect(x, state.canvas.height - height, state.canvas.width / 10 - 5, height);
   }
 }
 
@@ -62,10 +54,13 @@ export function drawBackground(waveNum) {
       state.ctx.fillStyle = grad;
       state.ctx.fillRect(0, 0, state.canvas.width, state.canvas.height);
 
-      for (let i = 0; i < 30; i++) {
-        const x = Math.random() * state.canvas.width;
+      // Reduced from 30 to 15 particles, use deterministic positions
+      for (let i = 0; i < 15; i++) {
+        const x = (i * 73 + i * i * 17) % state.canvas.width; // deterministic x position
         const y = (state.frameCount * 3 + i * 50) % state.canvas.height;
-        state.ctx.fillStyle = `rgba(255,${100 + Math.random() * 100},0,${Math.random() * 0.5})`;
+        const colorVariation = ((i * 37) % 100);
+        const alphaVariation = ((i * 13) % 50) / 100;
+        state.ctx.fillStyle = `rgba(255,${100 + colorVariation},0,${alphaVariation})`;
         state.ctx.fillRect(x, y, 3, 10);
       }
     } else if (waveNum === 13) {
@@ -181,11 +176,18 @@ export function drawPlanetBackground(wave) {
     ctx.fill();
   });
 
-  const pixelCount = 60 + currentWave * 2;
+  // Reduced from 60+wave*2 to 30+wave (max capped) with deterministic positions
+  const pixelCount = Math.min(30 + currentWave, 50);
   for (let i = 0; i < pixelCount; i++) {
-    const px = planetX + (Math.random() - 0.5) * planetSize;
-    const py = planetY + (Math.random() - 0.5) * planetSize * 0.5;
-    ctx.fillStyle = `rgba(${80 + Math.random() * 50},${80 + Math.random() * 50},${80 + Math.random() * 50},0.3)`;
+    // Use deterministic positions based on index
+    const angleBase = (i * 137.5) % 360; // golden angle for even distribution
+    const radiusFactor = ((i * 73) % 100) / 100;
+    const px = planetX + Math.cos(angleBase) * planetSize * radiusFactor * 0.5;
+    const py = planetY + Math.sin(angleBase) * planetSize * radiusFactor * 0.25;
+    const r = 80 + ((i * 37) % 50);
+    const g = 80 + ((i * 53) % 50);
+    const b = 80 + ((i * 71) % 50);
+    ctx.fillStyle = `rgba(${r},${g},${b},0.3)`;
     ctx.fillRect(px, py, 2, 2);
   }
 }

@@ -58,7 +58,7 @@ export function drawRedPunchEffects() {
 
 export function drawReentryEffects() {
   const ctx = state.ctx;
-  const { width, height, wave } = state;
+  const { width, height, wave, frameCount } = state;
   if (wave < 12) return;
 
   const intensity = Math.min((wave - 11) / 2, 1);
@@ -69,13 +69,20 @@ export function drawReentryEffects() {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  for (let i = 0; i < 40 * intensity; i++) {
-    const x = Math.random() * width;
-    const y = Math.random() * height;
-    ctx.strokeStyle = `rgba(255,${120 + Math.random() * 80},0,${Math.random() * 0.6})`;
+  // Reduced from 40*intensity to 15*intensity particles
+  const particleCount = Math.floor(15 * intensity);
+  for (let i = 0; i < particleCount; i++) {
+    // Use deterministic positions based on particle index and frameCount
+    const x = ((i * 127 + frameCount * 2) % width);
+    const y = ((i * 83 + frameCount * 3) % height);
+    const colorVar = ((i * 53) % 80);
+    const alphaVar = ((i * 17) % 60) / 100;
+    ctx.strokeStyle = `rgba(255,${120 + colorVar},0,${alphaVar})`;
     ctx.beginPath();
     ctx.moveTo(x, y);
-    ctx.lineTo(x + (Math.random() - 0.5) * 6, y + 20 + Math.random() * 30);
+    const endX = x + ((i % 2 === 0 ? 1 : -1) * 3);
+    const endY = y + 20 + ((i * 7) % 30);
+    ctx.lineTo(endX, endY);
     ctx.stroke();
   }
 }

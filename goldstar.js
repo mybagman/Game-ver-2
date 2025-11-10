@@ -241,8 +241,10 @@ export function updateGoldStar() {
     gs.cannonCooldown = (gs.cannonCooldown || 0) + 1;
     if (gs.cannonCooldown > 50) {
       gs.cannonCooldown = 0;
-      if ((state.enemies || []).length > 0) {
-        const target = state.enemies[0];
+      // Filter out reflector enemies to avoid shooting at them
+      const nonReflectorEnemies = (state.enemies || []).filter(e => e.type !== "reflector");
+      if (nonReflectorEnemies.length > 0) {
+        const target = nonReflectorEnemies[0];
         const dx = (target.x || 0) - (gs.x || 0), dy = (target.y || 0) - (gs.y || 0), mag = Math.hypot(dx, dy) || 1;
         if (gs.blueCannonLevel === 1) safeCall(state.pushBullet, { x: gs.x, y: gs.y, dx: (dx / mag) * 8, dy: (dy / mag) * 8, size: 8, owner: "gold" });
         else if (gs.blueCannonLevel === 2) {
