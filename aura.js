@@ -19,7 +19,10 @@ export function updateAuraStats() {
     const dx = state.player.x - state.goldStar.x;
     const dy = state.player.y - state.goldStar.y;
     const dist = Math.sqrt(dx*dx + dy*dy);
-    state.goldStarAura.active = dist < state.goldStarAura.radius;
+    // Match the visual radius calculation including level factor and average pulse
+    const levelFactor = Math.max(0, state.goldStarAura.level || 0);
+    const activationRadius = state.goldStarAura.radius + (levelFactor * 4) + 4;
+    state.goldStarAura.active = dist < activationRadius;
   } else {
     state.goldStarAura.active = false;
   }
