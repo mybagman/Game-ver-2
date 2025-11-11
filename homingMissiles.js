@@ -2,7 +2,7 @@
 import * as state from './state.js';
 import { createExplosion } from './utils.js';
 
-const MISSILE_FIRE_INTERVAL = 90; // frames (~1.5 seconds at 60fps)
+const MISSILE_FIRE_INTERVAL = 180; // frames (~3 seconds at 60fps) - Reduced fire rate
 const MISSILE_SPEED = 6;
 const MISSILE_TURN_RATE = 0.08;
 const MISSILE_LIFETIME = 180; // frames (~3 seconds)
