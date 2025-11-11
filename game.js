@@ -20,7 +20,7 @@ import { updateReflectorSystem, updateHomingMissiles, drawHomingMissiles } from 
 // Replace the single `from './drawing.js'` import with these direct imports:
 import { drawBackground, drawPlanetBackground, drawClouds } from './drawing/background.js';
 import { drawBullets } from './drawing/bullets.js';
-import { drawDiamonds, drawEnemies, drawDropship, drawTanks, drawWalkers, drawMechs } from './drawing/Enemies.js';
+import { drawDiamonds, drawEnemies, drawDropship, drawDropships, drawTanks, drawWalkers, drawMechs } from './drawing/Enemies.js';
 import { drawGoldStarAura, drawGoldStar } from './drawing/goldstar.js';
 import { drawUI } from './drawing/UI.js';
 import { drawPlayer } from './drawing/player.js';
@@ -203,6 +203,9 @@ export function renderFrame() {
       state.mechs.forEach(m => { if (m.deploying || m.dropshipVisible) drawDropship(m); });
     } catch (e) {}
   }
+  if (typeof drawDropships === 'function') {
+    try { drawDropships(); } catch (e) {}
+  }
   if (typeof drawTanks === 'function') {
     try { drawTanks(); } catch (e) {}
   }
@@ -353,7 +356,7 @@ export function resetGame() {
   // clear arrays defensively
   const arrays = [
     'cloudParticles', 'bullets', 'enemies', 'diamonds', 'tunnels',
-    'tanks', 'walkers', 'mechs', 'debris', 'explosions', 'lightning',
+    'tanks', 'walkers', 'mechs', 'dropships', 'debris', 'explosions', 'lightning',
     'powerUps', 'reflectionEffects', 'redPunchEffects', 'minionsToAdd'
   ];
   arrays.forEach(name => {
