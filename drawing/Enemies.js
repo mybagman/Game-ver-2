@@ -116,90 +116,75 @@ export function drawEnemies() {
       state.ctx.restore();
     }
     else if (e.type === "triangle") { 
-      // 8-bit TIE Fighter design
+      // 8-bit TIE Fighter design - Optimized for performance
       state.ctx.save();
       state.ctx.translate(e.x, e.y);
       
-      state.ctx.shadowBlur = 15;
-      state.ctx.shadowColor = "cyan";
+      // Removed expensive shadowBlur for performance
       
       const wingWidth = e.size / 2;
       const wingHeight = e.size * 0.8;
       const cockpitSize = e.size / 3;
       const pulse = Math.sin(state.frameCount * 0.08 + e.x) * 0.4 + 0.6;
       
-      // Left solar panel wing
+      // Batch wing fills and strokes together to reduce draw calls
       state.ctx.fillStyle = "#333";
       state.ctx.fillRect(-wingWidth - cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
-      
-      // Left wing grid lines
-      state.ctx.strokeStyle = "#555";
-      state.ctx.lineWidth = 1;
-      for (let i = 1; i < 3; i++) {
-        state.ctx.beginPath();
-        state.ctx.moveTo(-wingWidth - cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
-        state.ctx.lineTo(-cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
-        state.ctx.stroke();
-      }
-      
-      // Right solar panel wing
-      state.ctx.fillStyle = "#333";
       state.ctx.fillRect(cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
       
-      // Right wing grid lines
+      // Draw all wing grid lines in one path
       state.ctx.strokeStyle = "#555";
       state.ctx.lineWidth = 1;
+      state.ctx.beginPath();
       for (let i = 1; i < 3; i++) {
-        state.ctx.beginPath();
+        // Left wing lines
+        state.ctx.moveTo(-wingWidth - cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
+        state.ctx.lineTo(-cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
+        // Right wing lines
         state.ctx.moveTo(cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
         state.ctx.lineTo(wingWidth + cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
-        state.ctx.stroke();
       }
+      state.ctx.stroke();
       
-      // Central cockpit pod (hexagonal)
+      // Central cockpit pod (hexagonal) - cached calculation
       state.ctx.fillStyle = "#555";
       state.ctx.beginPath();
-      for (let i = 0; i < 6; i++) {
-        const angle = (i / 6) * Math.PI * 2;
-        const px = Math.cos(angle) * cockpitSize/2;
-        const py = Math.sin(angle) * cockpitSize/2;
-        if (i === 0) state.ctx.moveTo(px, py);
-        else state.ctx.lineTo(px, py);
-      }
+      // Hexagon points pre-calculated for efficiency
+      const r = cockpitSize/2;
+      state.ctx.moveTo(r, 0);
+      state.ctx.lineTo(r * 0.5, r * 0.866);
+      state.ctx.lineTo(-r * 0.5, r * 0.866);
+      state.ctx.lineTo(-r, 0);
+      state.ctx.lineTo(-r * 0.5, -r * 0.866);
+      state.ctx.lineTo(r * 0.5, -r * 0.866);
       state.ctx.closePath();
       state.ctx.fill();
       
-      // Cockpit window (cyan glow)
+      // Cockpit window and engine in one fill operation
       state.ctx.fillStyle = `rgba(0,255,255,${pulse})`;
       state.ctx.fillRect(-cockpitSize/4, -cockpitSize/8, cockpitSize/2, cockpitSize/4);
       
-      // Engine glow at back
+      // Engine glow
       state.ctx.fillStyle = `rgba(100,200,255,${pulse * 0.8})`;
       state.ctx.beginPath();
       state.ctx.arc(0, cockpitSize/3, cockpitSize/6, 0, Math.PI * 2);
       state.ctx.fill();
       
-      state.ctx.shadowBlur = 0;
-      
-      // Outline glow
+      // Outline glow - batch all outline strokes together
       state.ctx.strokeStyle = `rgba(100,255,255,${pulse})`;
       state.ctx.lineWidth = 2;
-      
-      // Left wing outline
-      state.ctx.strokeRect(-wingWidth - cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
-      
-      // Right wing outline
-      state.ctx.strokeRect(cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
-      
-      // Cockpit outline
       state.ctx.beginPath();
-      for (let i = 0; i < 6; i++) {
-        const angle = (i / 6) * Math.PI * 2;
-        const px = Math.cos(angle) * cockpitSize/2;
-        const py = Math.sin(angle) * cockpitSize/2;
-        if (i === 0) state.ctx.moveTo(px, py);
-        else state.ctx.lineTo(px, py);
-      }
+      // Left wing outline
+      state.ctx.rect(-wingWidth - cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
+      // Right wing outline
+      state.ctx.rect(cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
+      // Cockpit outline (hexagon)
+      state.ctx.moveTo(r, 0);
+      state.ctx.lineTo(r * 0.5, r * 0.866);
+      state.ctx.lineTo(-r * 0.5, r * 0.866);
+      state.ctx.lineTo(-r, 0);
+      state.ctx.lineTo(-r * 0.5, -r * 0.866);
+      state.ctx.lineTo(r * 0.5, -r * 0.866);
       state.ctx.closePath();
       state.ctx.stroke();
       
