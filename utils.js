@@ -317,8 +317,17 @@ export function detachAndLaunchEnemy(diamond, enemy, launchSpeed = 20) {
   // Restore original speed
   enemy.speed = enemy.originalSpeed || 1.5;
   enemy.canReattach = false;
+  
+  // Clean up diamond-specific properties that shouldn't persist
+  delete enemy.attachOffset;
+  delete enemy.orbitAngle;
+  delete enemy.orbitSpeed;
+  delete enemy.state;
+  
   setTimeout(() => { enemy.canReattach = true; }, 1200);
-  state.pushEnemy(enemy);
+  
+  // Don't re-add to state.enemies - the enemy should already be there
+  // state.pushEnemy(enemy);  // REMOVED - causes duplication
 }
 
 export function diamondReleaseAttachedEnemies(diamond) {
@@ -328,23 +337,28 @@ export function diamondReleaseAttachedEnemies(diamond) {
   diamond.vulnerableTimer = 360;
 
   // Fire massive beam cannon at player's current position
+  // Lock the beam direction at fire time
   const dx = state.player.x - diamond.x;
   const dy = state.player.y - diamond.y;
   const dist = Math.hypot(dx, dy) || 1;
   const beamSpeed = 8;
   
-  // Create multiple large lightning projectiles for a "beam" effect - waterfall style
+  // Store locked direction in closure
+  const lockedDx = (dx / dist) * beamSpeed;
+  const lockedDy = (dy / dist) * beamSpeed;
+  
+  // Create multiple large lightning projectiles for a "beam" effect - quick succession
   for (let i = 0; i < 35; i++) {
     setTimeout(() => {
       state.pushLightning({
         x: diamond.x,
         y: diamond.y,
-        dx: (dx / dist) * beamSpeed,
-        dy: (dy / dist) * beamSpeed,
+        dx: lockedDx,
+        dy: lockedDy,
         size: 20 + i * 2, // Increasing size for wave effect
         damage: 40
       });
-    }, i * 60); // Increased stagger for waterfall effect (total ~2.1 seconds)
+    }, i * 15); // Reduced delay for more cohesive beam (total ~0.5 seconds)
   }
   
   // Create visual beam effect with particles
