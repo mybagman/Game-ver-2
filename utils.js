@@ -240,6 +240,9 @@ export function respawnGoldStar() {
   state.goldStar.cannonCooldown = 0;
   state.goldStar.reflectAvailable = false;
   state.goldStar.healAccumulator = 0;
+  // Reset homing missile state
+  state.goldStar.homingMissileLevel = 0;
+  state.goldStar.homingMissileCooldown = 0;
 }
 
 export function respawnPlayer() {

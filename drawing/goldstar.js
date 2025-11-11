@@ -72,18 +72,44 @@ export function drawGoldStar() {
     ctx.fillRect(podOffsetX - 2, podOffsetY + 1, 4, 2);
   }
   
-  // === BASE GOLD STAR (8-bit metallic style) ===
-  // Outer metallic gold star shape
-  const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, gs.size/2);
-  gradient.addColorStop(0, "rgba(255, 230, 100, 1)");
-  gradient.addColorStop(0.7, "rgba(218, 165, 32, 1)");
-  gradient.addColorStop(1, "rgba(184, 134, 11, 1)");
+  // === BASE GOLD STAR (Gundam-style futuristic drone) ===
   
-  ctx.fillStyle = gradient;
+  // Rotating outer ring (mechanical)
+  const ringRotation = state.frameCount * 0.02;
+  ctx.rotate(ringRotation);
+  
+  // Outer mechanical ring with energy glow
+  ctx.shadowBlur = 15;
+  ctx.shadowColor = "rgba(255, 215, 0, 0.8)";
+  ctx.strokeStyle = "rgba(218, 165, 32, 0.9)";
+  ctx.lineWidth = 3;
   ctx.beginPath();
-  for (let i = 0; i < 10; i++) {
-    const angle = (i * Math.PI) / 5 - Math.PI / 2;
-    const radius = i % 2 === 0 ? gs.size / 2 : gs.size / 4;
+  ctx.arc(0, 0, gs.size/2 + 2, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  
+  // Mechanical segments on ring (4 parts)
+  for (let i = 0; i < 4; i++) {
+    const angle = (i * Math.PI / 2);
+    const x = Math.cos(angle) * (gs.size/2 + 2);
+    const y = Math.sin(angle) * (gs.size/2 + 2);
+    
+    ctx.fillStyle = "rgba(255, 215, 0, 1)";
+    ctx.fillRect(x - 3, y - 3, 6, 6);
+    
+    // Energy nodes
+    ctx.fillStyle = "rgba(100, 200, 255, 0.9)";
+    ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
+  }
+  
+  ctx.rotate(-ringRotation); // Reset rotation for core
+  
+  // Main drone core (metallic hexagon)
+  ctx.fillStyle = "rgba(218, 165, 32, 1)";
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const angle = (i * Math.PI / 3) - Math.PI / 2;
+    const radius = gs.size / 2.5;
     const x = Math.cos(angle) * radius;
     const y = Math.sin(angle) * radius;
     if (i === 0) ctx.moveTo(x, y);
@@ -92,18 +118,64 @@ export function drawGoldStar() {
   ctx.closePath();
   ctx.fill();
   
-  // Central glow (enhanced when red punch active)
-  const glowIntensity = gs.redPunchCharging ? 0.8 + 0.2 * Math.sin(state.frameCount * 0.3) : 0.4;
-  const glowSize = gs.redPunchCharging ? 8 : 6;
-  const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, glowSize);
-  glowGradient.addColorStop(0, `rgba(255, 255, 200, ${glowIntensity})`);
-  glowGradient.addColorStop(0.5, `rgba(255, 220, 100, ${glowIntensity * 0.5})`);
-  glowGradient.addColorStop(1, "rgba(255, 200, 50, 0)");
-  
-  ctx.fillStyle = glowGradient;
+  // Metallic sheen on core
+  const shineGradient = ctx.createLinearGradient(-gs.size/4, -gs.size/4, gs.size/4, gs.size/4);
+  shineGradient.addColorStop(0, "rgba(255, 245, 150, 0.6)");
+  shineGradient.addColorStop(0.5, "rgba(218, 165, 32, 0.3)");
+  shineGradient.addColorStop(1, "rgba(184, 134, 11, 0.6)");
+  ctx.fillStyle = shineGradient;
   ctx.beginPath();
-  ctx.arc(0, 0, glowSize, 0, Math.PI * 2);
+  for (let i = 0; i < 6; i++) {
+    const angle = (i * Math.PI / 3) - Math.PI / 2;
+    const radius = gs.size / 2.5;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
   ctx.fill();
+  
+  // Central energy core (pulsing)
+  const glowIntensity = gs.redPunchCharging ? 0.8 + 0.2 * Math.sin(state.frameCount * 0.3) : 0.6;
+  const glowSize = gs.redPunchCharging ? 10 : 8;
+  const pulseSize = glowSize + Math.sin(state.frameCount * 0.1) * 2;
+  
+  // Outer glow
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = "rgba(100, 200, 255, 0.8)";
+  const coreGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, pulseSize);
+  coreGradient.addColorStop(0, `rgba(255, 255, 255, ${glowIntensity})`);
+  coreGradient.addColorStop(0.3, `rgba(100, 200, 255, ${glowIntensity})`);
+  coreGradient.addColorStop(0.7, `rgba(255, 215, 0, ${glowIntensity * 0.5})`);
+  coreGradient.addColorStop(1, "rgba(255, 200, 50, 0)");
+  
+  ctx.fillStyle = coreGradient;
+  ctx.beginPath();
+  ctx.arc(0, 0, pulseSize, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  
+  // Energy trails (4 directional trails)
+  for (let i = 0; i < 4; i++) {
+    const angle = (i * Math.PI / 2) + state.frameCount * 0.05;
+    const trailLength = 8 + Math.sin(state.frameCount * 0.15 + i) * 3;
+    const x1 = Math.cos(angle) * (gs.size/2.5);
+    const y1 = Math.sin(angle) * (gs.size/2.5);
+    const x2 = Math.cos(angle) * (gs.size/2.5 + trailLength);
+    const y2 = Math.sin(angle) * (gs.size/2.5 + trailLength);
+    
+    const trailGradient = ctx.createLinearGradient(x1, y1, x2, y2);
+    trailGradient.addColorStop(0, "rgba(100, 200, 255, 0.8)");
+    trailGradient.addColorStop(1, "rgba(100, 200, 255, 0)");
+    
+    ctx.strokeStyle = trailGradient;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
   
   ctx.restore();
   
