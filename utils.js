@@ -22,13 +22,15 @@ export function spawnTunnel() {
 }
 
 export function spawnCloudParticles(count = 50) {
+  // Create lofi-style fluffy clouds inspired by Dragon Ball Z Nimbus
   for (let i = 0; i < count; i++) {
     state.pushCloudParticle({
       x: Math.random() * state.canvas.width,
       y: Math.random() * state.canvas.height,
-      size: Math.random() * 60 + 20,
-      opacity: Math.random() * 0.3 + 0.1,
-      speed: Math.random() * 0.5 + 0.2
+      size: Math.random() * 80 + 30, // Larger, fluffier clouds
+      opacity: Math.random() * 0.4 + 0.2, // More visible
+      speed: Math.random() * 0.8 + 0.3, // Varied speeds for depth
+      layer: Math.floor(Math.random() * 3) // 0=background, 1=mid, 2=foreground
     });
   }
 }
@@ -99,7 +101,7 @@ export function spawnReflectors(c) {
     state.pushEnemy({
       x: pos.x,
       y: pos.y,
-      width: 40, height: 20, angle: 0, speed: 1.2, health: 200, type: "reflector", shieldActive: false, fromBoss: false,
+      width: 40, height: 20, angle: 0, speed: 1.2, health: 120, type: "reflector", shieldActive: false, fromBoss: false,
       attachImmunityTimer: 120  // Short immunity period on spawn
     });
   }
@@ -155,7 +157,7 @@ export function spawnTank(count) {
       y: y,
       width: 50,
       height: 35,
-      health: 150,
+      health: 90,
       speed: 0.8,
       shootTimer: 0,
       turretAngle: 0
@@ -172,7 +174,7 @@ export function spawnWalker(count) {
       y: y,
       width: 40,
       height: 60,
-      health: 200,
+      health: 120,
       speed: 1.2,
       shootTimer: 0,
       legPhase: 0

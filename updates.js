@@ -324,10 +324,14 @@ export function updateDebris() {
 }
 
 export function updateCloudParticles() {
+  // Clouds move from bottom to top (creating descending effect like Dragon Ball Z Nimbus)
   state.cloudParticles.forEach(c => {
-    c.x -= c.speed;
-    if (c.x + c.size < 0) {
-      c.x = state.canvas.width + c.size;
+    c.y -= c.speed * 0.5; // Move upward (bottom to top)
+    // Wrap around when cloud goes off top
+    if (c.y + c.size < 0) {
+      c.y = state.canvas.height + c.size;
+      // Randomize x position when wrapping for variety
+      c.x = Math.random() * state.canvas.width;
     }
   });
 }

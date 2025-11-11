@@ -31,13 +31,12 @@ export function drawGoldStar() {
         const px = gs.x + Math.cos(angle) * orbitRadius;
         const py = gs.y + Math.sin(angle) * orbitRadius;
         
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = 'rgba(255, 100, 100, 0.8)';
+        // shadowBlur removed for performance
         ctx.fillStyle = 'rgba(255, 50, 50, 0.9)';
         ctx.beginPath();
         ctx.arc(px, py, 4, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
+        // shadowBlur removed for performance
       }
     }
     
@@ -153,8 +152,7 @@ export function drawGoldStar() {
     if (gs.blueCannonLevel >= 3) {
       // Cyan glow aura
       ctx.save();
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = 'rgba(100, 200, 255, 0.8)';
+      // shadowBlur removed for performance
       ctx.strokeStyle = 'rgba(100, 200, 255, 0.4)';
       ctx.lineWidth = 4;
       ctx.beginPath();
@@ -206,11 +204,10 @@ export function drawGoldStar() {
       ctx.fillRect(podX - 3, podY - 4, 6, 8);
       
       // Pod glow
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = 'rgba(255, 150, 50, 0.8)';
+      // shadowBlur removed for performance
       ctx.fillStyle = 'rgba(255, 200, 100, 0.9)';
       ctx.fillRect(podX - 2, podY - 3, 4, 6);
-      ctx.shadowBlur = 0;
+      // shadowBlur removed for performance
     }
     
     // Level 2: Orange targeting reticles that briefly flash
@@ -287,8 +284,7 @@ export function drawGoldStar() {
     const hue = (state.frameCount * 2) % 360;
     
     ctx.save();
-    ctx.shadowBlur = 30;
-    ctx.shadowColor = `hsl(${hue}, 100%, 50%)`;
+    // shadowBlur removed for performance
     ctx.strokeStyle = `hsla(${hue}, 100%, 60%, 0.6)`;
     ctx.lineWidth = 4;
     ctx.beginPath();
@@ -336,13 +332,12 @@ export function drawGoldStar() {
     // Brighter thrusters
     const thrusterGlow = 0.7 * deployProgress;
     ctx.shadowBlur = 15 * deployProgress;
-    ctx.shadowColor = `rgba(100, 200, 255, ${thrusterGlow})`;
     ctx.fillStyle = `rgba(150, 220, 255, ${thrusterGlow})`;
     ctx.beginPath();
     ctx.arc(-8, 8, 3, 0, Math.PI * 2);
     ctx.arc(8, 8, 3, 0, Math.PI * 2);
     ctx.fill();
-    ctx.shadowBlur = 0;
+    // shadowBlur removed for performance
   }
   
   // === HOMING MISSILE SUPPORT DRONES ===
@@ -420,11 +415,10 @@ export function drawGoldStar() {
     ctx.fillRect(-3, turretY - 8, 6, 8);
     
     // Turret tip with energy glow
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = "rgba(100, 200, 255, 0.8)";
+    // shadowBlur removed for performance
     ctx.fillStyle = "rgba(150, 220, 255, 0.9)";
     ctx.fillRect(-2, turretY - 10, 4, 2);
-    ctx.shadowBlur = 0;
+    // shadowBlur removed for performance
     
     // Level indicators
     for (let i = 0; i < gs.blueCannonLevel; i++) {
@@ -455,14 +449,13 @@ export function drawGoldStar() {
     const shieldHealthRatio = state.player.shieldHealth / state.player.maxShieldHealth;
     const pulseIntensity = 0.5 + Math.sin(state.frameCount * 0.15) * 0.3;
     
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = `rgba(100, 200, 255, ${pulseIntensity * shieldHealthRatio})`;
+    // shadowBlur removed for performance
     ctx.fillStyle = `rgba(150, 220, 255, ${0.8 * shieldHealthRatio})`;
     ctx.beginPath();
     ctx.arc(-podOffsetX - 2, podOffsetY, 3, 0, Math.PI * 2);
     ctx.arc(podOffsetX + 2, podOffsetY, 3, 0, Math.PI * 2);
     ctx.fill();
-    ctx.shadowBlur = 0;
+    // shadowBlur removed for performance
   }
   
   // Rotating outer ring (mechanical) - Only show when upgraded
@@ -472,14 +465,13 @@ export function drawGoldStar() {
     ctx.rotate(ringRotation);
     
     // Outer mechanical ring with energy glow
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = "rgba(255, 215, 0, 0.8)";
+    // shadowBlur removed for performance
     ctx.strokeStyle = "rgba(218, 165, 32, 0.9)";
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(0, 0, effectiveSize/2 + 2, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.shadowBlur = 0;
+    // shadowBlur removed for performance
     
     // Mechanical segments on ring (4 parts)
     for (let i = 0; i < 4; i++) {
@@ -536,8 +528,7 @@ export function drawGoldStar() {
   const pulseSize = glowSize + Math.sin(state.frameCount * 0.1) * 2;
   
   // Outer glow
-  ctx.shadowBlur = 20;
-  ctx.shadowColor = "rgba(100, 200, 255, 0.8)";
+  // shadowBlur removed for performance
   const coreGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, pulseSize);
   coreGradient.addColorStop(0, `rgba(255, 255, 255, ${glowIntensity})`);
   coreGradient.addColorStop(0.3, `rgba(100, 200, 255, ${glowIntensity})`);
@@ -548,7 +539,7 @@ export function drawGoldStar() {
   ctx.beginPath();
   ctx.arc(0, 0, pulseSize, 0, Math.PI * 2);
   ctx.fill();
-  ctx.shadowBlur = 0;
+  // shadowBlur removed for performance
   
   // Energy trails (4 directional trails)
   for (let i = 0; i < 4; i++) {

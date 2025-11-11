@@ -38,13 +38,12 @@ function drawBossBullet(ctx, b) {
   ctx.fill();
 
   // core
-  ctx.shadowBlur = 20;
-  ctx.shadowColor = "orange";
+  // shadowBlur removed for performance
   ctx.fillStyle = b.color || "orange";
   ctx.beginPath();
   ctx.arc(x, y, size, 0, Math.PI * 2);
   ctx.fill();
-  ctx.shadowBlur = 0;
+  // shadowBlur removed for performance
 
   // rotating spikes to emphasize menace
   ctx.save();
@@ -84,13 +83,12 @@ function drawMiniBossBullet(ctx, b) {
   ctx.globalCompositeOperation = 'lighter';
 
   // halo
-  ctx.shadowBlur = 14;
-  ctx.shadowColor = "cyan";
+  // shadowBlur removed for performance
   ctx.fillStyle = b.color || "cyan";
   ctx.beginPath();
   ctx.arc(x, y, size + 4 + Math.sin(t * 0.2) * 1.5, 0, Math.PI * 2);
   ctx.fill();
-  ctx.shadowBlur = 0;
+  // shadowBlur removed for performance
 
   // core diamond shape
   ctx.save();
@@ -136,7 +134,54 @@ export function drawBullets() {
       drawBulletTrail(state.ctx, b);
     }
 
-    if (isBoss) {
+    if (b.kamehameha) {
+      // Kamehameha beam style (Dragon Ball Z energy wave)
+      state.ctx.save();
+      state.ctx.globalCompositeOperation = 'lighter';
+      
+      const beamPulse = Math.sin(state.frameCount * 0.15) * 0.3 + 0.7;
+      const beamSize = (b.size || 12) * beamPulse;
+      
+      // Outer energy glow (cyan/blue)
+      const outerGrad = state.ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, beamSize * 2);
+      outerGrad.addColorStop(0, `rgba(100, 200, 255, ${0.8 * beamPulse})`);
+      outerGrad.addColorStop(0.5, `rgba(50, 150, 255, ${0.4 * beamPulse})`);
+      outerGrad.addColorStop(1, 'rgba(0, 100, 200, 0)');
+      state.ctx.fillStyle = outerGrad;
+      state.ctx.beginPath();
+      state.ctx.arc(b.x, b.y, beamSize * 2, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Middle energy layer (bright cyan)
+      const midGrad = state.ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, beamSize * 1.2);
+      midGrad.addColorStop(0, `rgba(150, 220, 255, ${0.9 * beamPulse})`);
+      midGrad.addColorStop(0.7, `rgba(100, 180, 255, ${0.5 * beamPulse})`);
+      midGrad.addColorStop(1, 'rgba(50, 140, 255, 0)');
+      state.ctx.fillStyle = midGrad;
+      state.ctx.beginPath();
+      state.ctx.arc(b.x, b.y, beamSize * 1.2, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Core (bright white)
+      state.ctx.fillStyle = `rgba(255, 255, 255, ${0.9 * beamPulse})`;
+      state.ctx.beginPath();
+      state.ctx.arc(b.x, b.y, beamSize * 0.6, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Energy sparks around the beam
+      if (state.frameCount % 3 === 0) {
+        for (let s = 0; s < 3; s++) {
+          const sparkAngle = Math.random() * Math.PI * 2;
+          const sparkDist = beamSize * (1 + Math.random() * 0.5);
+          const sparkX = b.x + Math.cos(sparkAngle) * sparkDist;
+          const sparkY = b.y + Math.sin(sparkAngle) * sparkDist;
+          state.ctx.fillStyle = `rgba(200, 240, 255, ${0.6 * beamPulse})`;
+          state.ctx.fillRect(sparkX - 1, sparkY - 1, 2, 2);
+        }
+      }
+      
+      state.ctx.restore();
+    } else if (isBoss) {
       drawBossBullet(state.ctx, b);
     } else if (isMiniBoss) {
       drawMiniBossBullet(state.ctx, b);
@@ -195,13 +240,12 @@ export function drawEmpProjectiles() {
     state.ctx.fill();
     
     // Core sphere
-    state.ctx.shadowBlur = 20;
-    state.ctx.shadowColor = "rgba(100, 200, 255, 0.9)";
+    state.// shadowBlur removed for performance
     state.ctx.fillStyle = `rgba(150, 220, 255, ${pulse})`;
     state.ctx.beginPath();
     state.ctx.arc(x, y, size, 0, Math.PI * 2);
     state.ctx.fill();
-    state.ctx.shadowBlur = 0;
+    state.// shadowBlur removed for performance
     
     // Electric arcs rotating around core
     state.ctx.save();

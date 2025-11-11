@@ -8,7 +8,7 @@ export function drawEnemies() {
     if (!e) return;
 
     if (e.type === "red-square") { 
-      // 8-bit Kamikaze Fighter Craft (Futuristic Japanese Zero)
+      // Raiden-style enemy fighter (aggressive red variant)
       state.ctx.save();
       state.ctx.translate(e.x, e.y);
       
@@ -18,175 +18,122 @@ export function drawEnemies() {
       const angle = Math.atan2(dy, dx);
       state.ctx.rotate(angle);
       
-      // Removed expensive shadowBlur for performance - visual style remains clear without it
-      
       const size = e.size;
       const pulse = redSquarePulse;
       
-      // Main fuselage (angular, aggressive design)
-      state.ctx.fillStyle = "#8B0000"; // Dark red
+      // Main fuselage (dark red military)
+      state.ctx.fillStyle = "#8B0000";
+      state.ctx.fillRect(-size/3, -size/8, size*0.66, size/4);
+      
+      // Nose cone
+      state.ctx.fillStyle = "#A00000";
       state.ctx.beginPath();
-      state.ctx.moveTo(size/2, 0); // Nose (pointed right)
-      state.ctx.lineTo(size/6, -size/6);
-      state.ctx.lineTo(-size/3, -size/6);
-      state.ctx.lineTo(-size/2.5, -size/8);
-      state.ctx.lineTo(-size/2.5, size/8);
-      state.ctx.lineTo(-size/3, size/6);
-      state.ctx.lineTo(size/6, size/6);
+      state.ctx.moveTo(size/3, 0);
+      state.ctx.lineTo(size/6, -size/8);
+      state.ctx.lineTo(size/6, size/8);
       state.ctx.closePath();
       state.ctx.fill();
       
-      // Wings (swept back, Zero-style)
-      state.ctx.fillStyle = "#A00000"; // Slightly lighter red
-      
-      // Top wing
+      // Delta wings (Raiden enemy style)
+      state.ctx.fillStyle = "#700000";
       state.ctx.beginPath();
-      state.ctx.moveTo(size/8, -size/6);
-      state.ctx.lineTo(size/5, -size/2.5);
-      state.ctx.lineTo(-size/8, -size/3);
-      state.ctx.lineTo(-size/6, -size/6);
+      state.ctx.moveTo(-size/6, -size/8);
+      state.ctx.lineTo(-size/4, -size/3);
+      state.ctx.lineTo(size/12, -size/6);
+      state.ctx.closePath();
+      state.ctx.fill();
+      state.ctx.beginPath();
+      state.ctx.moveTo(-size/6, size/8);
+      state.ctx.lineTo(-size/4, size/3);
+      state.ctx.lineTo(size/12, size/6);
       state.ctx.closePath();
       state.ctx.fill();
       
-      // Bottom wing
-      state.ctx.beginPath();
-      state.ctx.moveTo(size/8, size/6);
-      state.ctx.lineTo(size/5, size/2.5);
-      state.ctx.lineTo(-size/8, size/3);
-      state.ctx.lineTo(-size/6, size/6);
-      state.ctx.closePath();
-      state.ctx.fill();
+      // Cockpit window (glowing)
+      state.ctx.fillStyle = `rgba(255, 80, 80, ${pulse})`;
+      state.ctx.fillRect(size/12, -size/16, size/8, size/8);
       
-      // Cockpit (glowing red)
-      state.ctx.fillStyle = `rgba(255, 50, 50, ${pulse})`;
-      state.ctx.fillRect(size/8, -size/12, size/6, size/6);
+      // Twin engines at rear
+      state.ctx.fillStyle = `rgba(255, 100, 0, ${pulse * 0.8})`;
+      state.ctx.fillRect(-size/3, -size/12, size/12, size/6);
       
-      // Cockpit canopy detail
-      state.ctx.strokeStyle = `rgba(255, 100, 100, ${pulse})`;
-      state.ctx.lineWidth = 1;
-      state.ctx.strokeRect(size/8, -size/12, size/6, size/6);
-      
-      // Engine exhausts (back of craft)
-      const engineGlow = `rgba(255, 100, 0, ${pulse * 0.8})`;
-      state.ctx.fillStyle = engineGlow;
-      state.ctx.fillRect(-size/2.5, -size/16, size/12, size/8);
-      
-      // Engine flame trail
-      if (Math.random() > 0.5) {
-        state.ctx.fillStyle = `rgba(255, 150, 0, ${pulse * 0.6})`;
-        state.ctx.fillRect(-size/2.5 - size/8, -size/24, size/8, size/12);
+      // Engine glow effect
+      if (state.frameCount % 3 === 0) {
+        state.ctx.fillStyle = `rgba(255, 150, 50, ${pulse * 0.6})`;
+        state.ctx.fillRect(-size/2.5, -size/16, size/8, size/8);
       }
       
-      // Panel lines (8-bit detailing)
-      state.ctx.strokeStyle = "#600000";
+      // Panel lines
+      state.ctx.strokeStyle = "#500000";
       state.ctx.lineWidth = 1;
       state.ctx.beginPath();
-      state.ctx.moveTo(size/6, -size/8);
-      state.ctx.lineTo(-size/4, -size/8);
-      state.ctx.moveTo(size/6, size/8);
-      state.ctx.lineTo(-size/4, size/8);
+      state.ctx.moveTo(0, -size/10);
+      state.ctx.lineTo(-size/4, -size/10);
+      state.ctx.moveTo(0, size/10);
+      state.ctx.lineTo(-size/4, size/10);
       state.ctx.stroke();
       
-      // Rising sun emblem on fuselage (Japanese Zero homage)
-      const emblemRadius = size/8;
-      state.ctx.fillStyle = `rgba(255, 255, 255, 0.3)`;
-      state.ctx.beginPath();
-      state.ctx.arc(-size/12, 0, emblemRadius, 0, Math.PI * 2);
-      state.ctx.fill();
-      
-      state.ctx.fillStyle = `rgba(255, 0, 0, 0.5)`;
-      state.ctx.beginPath();
-      state.ctx.arc(-size/12, 0, emblemRadius * 0.6, 0, Math.PI * 2);
-      state.ctx.fill();
-      
-      // Outline glow
-      state.ctx.strokeStyle = `rgba(255, 100, 100, ${pulse})`;
-      state.ctx.lineWidth = 1.5;
-      state.ctx.beginPath();
-      state.ctx.moveTo(size/2, 0);
-      state.ctx.lineTo(size/6, -size/6);
-      state.ctx.lineTo(-size/3, -size/6);
-      state.ctx.lineTo(-size/2.5, -size/8);
-      state.ctx.lineTo(-size/2.5, size/8);
-      state.ctx.lineTo(-size/3, size/6);
-      state.ctx.lineTo(size/6, size/6);
-      state.ctx.closePath();
-      state.ctx.stroke();
+      // Weapons hardpoints
+      state.ctx.fillStyle = "#600000";
+      state.ctx.fillRect(-size/5, -size/4, size/20, size/12);
+      state.ctx.fillRect(-size/5, size/4 - size/12, size/20, size/12);
       
       state.ctx.restore();
     }
     else if (e.type === "triangle") { 
-      // 8-bit TIE Fighter design - Optimized for performance
+      // Raiden-style blue support bomber (heavier enemy aircraft)
       state.ctx.save();
       state.ctx.translate(e.x, e.y);
       
-      // Removed expensive shadowBlur for performance
-      
-      const wingWidth = e.size / 2;
-      const wingHeight = e.size * 0.8;
-      const cockpitSize = e.size / 3;
+      const size = e.size;
       const pulse = Math.sin(state.frameCount * 0.08 + e.x) * 0.4 + 0.6;
       
-      // Batch wing fills and strokes together to reduce draw calls
-      state.ctx.fillStyle = "#333";
-      state.ctx.fillRect(-wingWidth - cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
-      state.ctx.fillRect(cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
+      // Main body (blue-gray military bomber)
+      state.ctx.fillStyle = "#2a4a6a";
+      state.ctx.fillRect(-size/3, -size/6, size*0.75, size/3);
       
-      // Draw all wing grid lines in one path
-      state.ctx.strokeStyle = "#555";
+      // Nose section
+      state.ctx.fillStyle = "#3a5a7a";
+      state.ctx.beginPath();
+      state.ctx.moveTo(size*0.42, 0);
+      state.ctx.lineTo(size/4, -size/6);
+      state.ctx.lineTo(size/4, size/6);
+      state.ctx.closePath();
+      state.ctx.fill();
+      
+      // Wide bomber wings
+      state.ctx.fillStyle = "#1a3a5a";
+      state.ctx.fillRect(-size/4, -size/2.5, size/2, size/12);
+      state.ctx.fillRect(-size/4, size/2.5 - size/12, size/2, size/12);
+      
+      // Wing-mounted weapons pods
+      state.ctx.fillStyle = "#0a2a4a";
+      state.ctx.fillRect(-size/6, -size/2.2, size/12, size/8);
+      state.ctx.fillRect(-size/6, size/2.2 - size/8, size/12, size/8);
+      
+      // Cockpit (glowing cyan)
+      state.ctx.fillStyle = `rgba(0,200,255,${pulse})`;
+      state.ctx.fillRect(size/8, -size/12, size/6, size/6);
+      
+      // Twin engines with glow
+      state.ctx.fillStyle = "#1a2a3a";
+      state.ctx.fillRect(-size/3, -size/10, size/10, size/5);
+      state.ctx.fillStyle = `rgba(100,180,255,${pulse * 0.8})`;
+      state.ctx.fillRect(-size/2.8, -size/14, size/12, size/7);
+      
+      // Panel lines
+      state.ctx.strokeStyle = "#0a2a4a";
       state.ctx.lineWidth = 1;
       state.ctx.beginPath();
-      for (let i = 1; i < 3; i++) {
-        // Left wing lines
-        state.ctx.moveTo(-wingWidth - cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
-        state.ctx.lineTo(-cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
-        // Right wing lines
-        state.ctx.moveTo(cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
-        state.ctx.lineTo(wingWidth + cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
-      }
+      state.ctx.moveTo(0, -size/8);
+      state.ctx.lineTo(-size/3, -size/8);
+      state.ctx.moveTo(0, size/8);
+      state.ctx.lineTo(-size/3, size/8);
       state.ctx.stroke();
       
-      // Central cockpit pod (hexagonal) - cached calculation
-      state.ctx.fillStyle = "#555";
-      state.ctx.beginPath();
-      // Hexagon points pre-calculated for efficiency
-      const r = cockpitSize/2;
-      state.ctx.moveTo(r, 0);
-      state.ctx.lineTo(r * 0.5, r * 0.866);
-      state.ctx.lineTo(-r * 0.5, r * 0.866);
-      state.ctx.lineTo(-r, 0);
-      state.ctx.lineTo(-r * 0.5, -r * 0.866);
-      state.ctx.lineTo(r * 0.5, -r * 0.866);
-      state.ctx.closePath();
-      state.ctx.fill();
-      
-      // Cockpit window and engine in one fill operation
-      state.ctx.fillStyle = `rgba(0,255,255,${pulse})`;
-      state.ctx.fillRect(-cockpitSize/4, -cockpitSize/8, cockpitSize/2, cockpitSize/4);
-      
-      // Engine glow
-      state.ctx.fillStyle = `rgba(100,200,255,${pulse * 0.8})`;
-      state.ctx.beginPath();
-      state.ctx.arc(0, cockpitSize/3, cockpitSize/6, 0, Math.PI * 2);
-      state.ctx.fill();
-      
-      // Outline glow - batch all outline strokes together
-      state.ctx.strokeStyle = `rgba(100,255,255,${pulse})`;
-      state.ctx.lineWidth = 2;
-      state.ctx.beginPath();
-      // Left wing outline
-      state.ctx.rect(-wingWidth - cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
-      // Right wing outline
-      state.ctx.rect(cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
-      // Cockpit outline (hexagon)
-      state.ctx.moveTo(r, 0);
-      state.ctx.lineTo(r * 0.5, r * 0.866);
-      state.ctx.lineTo(-r * 0.5, r * 0.866);
-      state.ctx.lineTo(-r, 0);
-      state.ctx.lineTo(-r * 0.5, -r * 0.866);
-      state.ctx.lineTo(r * 0.5, -r * 0.866);
-      state.ctx.closePath();
-      state.ctx.stroke();
+      // Vertical stabilizer
+      state.ctx.fillStyle = "#2a4a6a";
+      state.ctx.fillRect(-size/4, -size/3, size/20, size/8);
       
       state.ctx.restore();
 
@@ -216,51 +163,167 @@ export function drawEnemies() {
       } catch (err) {}
     }
     else if (e.type === "boss") { 
-      const pulse = Math.sin(state.frameCount * 0.05) * 10 + e.size/2;
-      state.ctx.shadowBlur = 30;
-      state.ctx.shadowColor = "yellow";
-      state.ctx.fillStyle = "yellow"; 
-      state.ctx.beginPath(); 
-      state.ctx.arc(e.x, e.y, pulse, 0, Math.PI*2); 
-      state.ctx.fill();
-      state.ctx.shadowBlur = 0;
-
-      state.ctx.strokeStyle = "rgba(255,255,0,0.5)";
-      state.ctx.lineWidth = 3;
-      state.ctx.beginPath();
-      state.ctx.arc(e.x, e.y, pulse + 10, 0, Math.PI*2);
-      state.ctx.stroke();
+      // Raiden-style massive battleship/mothership boss
+      state.ctx.save();
+      state.ctx.translate(e.x, e.y);
+      
+      const size = e.size;
+      const pulse = Math.sin(state.frameCount * 0.05) * 0.2 + 0.8;
+      
+      // Main hull (massive fortress-like structure)
+      state.ctx.fillStyle = "#4a4a3a";
+      state.ctx.fillRect(-size/2, -size/3, size, size*0.66);
+      
+      // Bridge tower
+      state.ctx.fillStyle = "#5a5a4a";
+      state.ctx.fillRect(-size/6, -size/2, size/3, size/4);
+      
+      // Command deck windows (glowing yellow)
+      state.ctx.fillStyle = `rgba(255, 220, 100, ${pulse})`;
+      state.ctx.fillRect(-size/8, -size/2.2, size/4, size/12);
+      
+      // Multiple turret emplacements
+      const turretPositions = [
+        [-size/3, -size/4], [size/3, -size/4],
+        [-size/3, size/4], [size/3, size/4],
+        [-size/6, 0], [size/6, 0]
+      ];
+      
+      turretPositions.forEach(([tx, ty]) => {
+        state.ctx.fillStyle = "#3a3a2a";
+        state.ctx.fillRect(tx - size/12, ty - size/12, size/6, size/6);
+        state.ctx.fillStyle = "#5a5a4a";
+        state.ctx.fillRect(tx - size/16, ty - size/16, size/8, size/8);
+      });
+      
+      // Engine banks (glowing)
+      state.ctx.fillStyle = `rgba(255, 150, 50, ${pulse * 0.9})`;
+      state.ctx.fillRect(-size/2.5, size/3, size/8, size/4);
+      state.ctx.fillRect(size/2.5 - size/8, size/3, size/8, size/4);
+      
+      // Armor plating detail
+      state.ctx.strokeStyle = "#2a2a1a";
+      state.ctx.lineWidth = 2;
+      for (let i = -2; i <= 2; i++) {
+        state.ctx.beginPath();
+        state.ctx.moveTo(-size/2, i * size/10);
+        state.ctx.lineTo(size/2, i * size/10);
+        state.ctx.stroke();
+      }
+      
+      // Warning lights
+      if (state.frameCount % 30 < 15) {
+        state.ctx.fillStyle = "#ff3333";
+        state.ctx.fillRect(-size/2.2, -size/3, size/20, size/20);
+        state.ctx.fillRect(size/2.2 - size/20, -size/3, size/20, size/20);
+      }
+      
+      state.ctx.restore();
     }
     else if (e.type === "mini-boss") { 
-      const pulse = Math.sin(state.frameCount * 0.07) * 5 + e.size/2;
-      state.ctx.shadowBlur = 25;
-      state.ctx.shadowColor = "orange";
-      state.ctx.fillStyle = "orange"; 
-      state.ctx.beginPath(); 
-      state.ctx.arc(e.x, e.y, pulse, 0, Math.PI * 2); 
-      state.ctx.fill();
-      state.ctx.shadowBlur = 0;
+      // Raiden-style heavy cruiser mini-boss
+      state.ctx.save();
+      state.ctx.translate(e.x, e.y);
+      
+      const size = e.size;
+      const pulse = Math.sin(state.frameCount * 0.07) * 0.2 + 0.8;
+      
+      // Main hull (military gray)
+      state.ctx.fillStyle = "#5a5a5a";
+      state.ctx.fillRect(-size/2.5, -size/4, size*0.9, size/2);
+      
+      // Command bridge
+      state.ctx.fillStyle = "#6a6a6a";
+      state.ctx.fillRect(-size/8, -size/3, size/4, size/6);
+      
+      // Bridge windows (orange glow)
+      state.ctx.fillStyle = `rgba(255, 160, 80, ${pulse})`;
+      state.ctx.fillRect(-size/12, -size/3.5, size/6, size/12);
+      
+      // Wing cannons
+      state.ctx.fillStyle = "#4a4a4a";
+      state.ctx.fillRect(-size/2, -size/3.5, size/6, size/8);
+      state.ctx.fillRect(size/2 - size/6, -size/3.5, size/6, size/8);
+      
+      // Main guns
+      state.ctx.fillStyle = "#3a3a3a";
+      state.ctx.fillRect(-size/4, -size/8, size/2, size/12);
+      state.ctx.fillRect(-size/4, size/8 - size/12, size/2, size/12);
+      
+      // Engine cluster (glowing)
+      state.ctx.fillStyle = `rgba(255, 120, 50, ${pulse * 0.9})`;
+      state.ctx.fillRect(-size/2.2, size/4 - size/12, size/6, size/6);
+      
+      // Armor panels
+      state.ctx.strokeStyle = "#3a3a3a";
+      state.ctx.lineWidth = 1;
+      state.ctx.beginPath();
+      state.ctx.moveTo(-size/3, -size/6);
+      state.ctx.lineTo(size/3, -size/6);
+      state.ctx.moveTo(-size/3, size/6);
+      state.ctx.lineTo(size/3, size/6);
+      state.ctx.stroke();
+      
+      state.ctx.restore();
     }
     else if (e.type === "reflector") {
+      // 8-bit Gundam-style support ship with shield generator
       state.ctx.save();
       state.ctx.translate(e.x, e.y);
       state.ctx.rotate(e.angle||0);
 
-      if (e.shieldActive) {
-        state.ctx.shadowBlur = 20;
-        state.ctx.shadowColor = "purple";
-      }
-      state.ctx.fillStyle = e.shieldActive ? "rgba(138,43,226,0.8)" : "purple";
+      // Main hull (angular military design)
+      state.ctx.fillStyle = "#3a3a50";
       state.ctx.fillRect(-e.width/2, -e.height/2, e.width, e.height);
-      state.ctx.shadowBlur = 0;
+      
+      // Cockpit section (front)
+      state.ctx.fillStyle = "#4a4a60";
+      state.ctx.fillRect(e.width/4, -e.height/3, e.width/4, e.height * 0.66);
+      
+      // Cockpit window (cyan glow)
+      state.ctx.fillStyle = "#00ccff";
+      state.ctx.fillRect(e.width/3, -e.height/6, e.width/8, e.height/3);
+      
+      // Shield generator pods on sides
+      const podWidth = 8;
+      const podHeight = 12;
+      state.ctx.fillStyle = e.shieldActive ? "#8844ff" : "#6633cc";
+      // Left pod
+      state.ctx.fillRect(-e.width/2 - podWidth, -podHeight/2, podWidth, podHeight);
+      // Right pod
+      state.ctx.fillRect(e.width/2, -podHeight/2, podWidth, podHeight);
+      
+      // Shield generator energy cores (pulsing)
+      const pulse = e.shieldActive ? (0.6 + Math.sin(state.frameCount * 0.15) * 0.4) : 0.3;
+      state.ctx.fillStyle = `rgba(138, 100, 255, ${pulse})`;
+      state.ctx.beginPath();
+      state.ctx.arc(-e.width/2 - podWidth/2, 0, 3, 0, Math.PI * 2);
+      state.ctx.arc(e.width/2 + podWidth/2, 0, 3, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Panel lines (8-bit detailing)
+      state.ctx.strokeStyle = "#2a2a40";
+      state.ctx.lineWidth = 1;
+      state.ctx.beginPath();
+      state.ctx.moveTo(-e.width/4, -e.height/2);
+      state.ctx.lineTo(-e.width/4, e.height/2);
+      state.ctx.moveTo(e.width/8, -e.height/2);
+      state.ctx.lineTo(e.width/8, e.height/2);
+      state.ctx.stroke();
 
+      // Active shield field
       if (e.shieldActive) {
         const shieldPulse = Math.sin(state.frameCount * 0.1) * 5 + 60;
-        state.ctx.strokeStyle = `rgba(138,43,226,${0.5 + Math.sin(state.frameCount * 0.1) * 0.3})`;
+        state.ctx.strokeStyle = `rgba(138,100,255,${0.5 + Math.sin(state.frameCount * 0.1) * 0.3})`;
         state.ctx.lineWidth = 2;
         state.ctx.beginPath();
         state.ctx.arc(0, 0, shieldPulse, 0, Math.PI*2);
         state.ctx.stroke();
+        
+        // Shield energy beams connecting to nearby allies
+        state.ctx.strokeStyle = `rgba(138,100,255,0.4)`;
+        state.ctx.lineWidth = 1;
+        // Visual only - actual shield logic in enemies.js
       }
       state.ctx.restore();
     }
@@ -270,8 +333,6 @@ export function drawEnemies() {
       state.ctx.rotate(e.angle);
 
       const glowIntensity = Math.sin(state.frameCount * 0.05) * 0.3 + 0.7;
-      state.ctx.shadowBlur = 50;
-      state.ctx.shadowColor = "rgba(0,200,255,0.8)";
       state.ctx.strokeStyle = `rgba(0,150,255,${glowIntensity})`;
       state.ctx.lineWidth = 8;
       state.ctx.beginPath();
@@ -283,18 +344,14 @@ export function drawEnemies() {
       state.ctx.fillStyle = "rgba(20,40,80,0.9)";
       state.ctx.fill();
       state.ctx.stroke();
-      state.ctx.shadowBlur = 0;
       state.ctx.restore();
 
       e.cores.forEach(core => {
         state.ctx.save();
-        state.ctx.shadowBlur = 20;
-        state.ctx.shadowColor = "cyan";
         state.ctx.fillStyle = "cyan";
         state.ctx.beginPath();
         state.ctx.arc(core.x, core.y, 20, 0, Math.PI * 2);
         state.ctx.fill();
-        state.ctx.shadowBlur = 0;
         state.ctx.restore();
       });
 
@@ -309,41 +366,102 @@ export function drawEnemies() {
 }
 
 export function drawTanks() {
+  // Raiden-style ground tanks
   state.tanks.forEach(tank => {
     state.ctx.save();
     state.ctx.translate(tank.x, tank.y);
 
-    state.ctx.fillStyle = "rgba(100,100,100,0.9)";
+    // Tank chassis (military olive/gray)
+    state.ctx.fillStyle = "#5a5a4a";
     state.ctx.fillRect(-tank.width/2, -tank.height/2, tank.width, tank.height);
+    
+    // Treads/tracks
+    state.ctx.fillStyle = "#3a3a2a";
+    state.ctx.fillRect(-tank.width/2, -tank.height/2 + 2, tank.width, 4);
+    state.ctx.fillRect(-tank.width/2, tank.height/2 - 6, tank.width, 4);
+    
+    // Armor panels
+    state.ctx.fillStyle = "#6a6a5a";
+    state.ctx.fillRect(-tank.width/3, -tank.height/3, tank.width*0.66, tank.height*0.4);
+    
+    // Turret base
+    state.ctx.fillStyle = "#5a5a5a";
+    state.ctx.fillRect(-12, -12, 24, 24);
 
+    // Turret barrel (rotates toward player)
     state.ctx.rotate(tank.turretAngle);
-    state.ctx.fillStyle = "rgba(80,80,80,0.9)";
-    state.ctx.fillRect(0, -5, 25, 10);
+    state.ctx.fillStyle = "#4a4a4a";
+    state.ctx.fillRect(0, -6, 28, 12);
+    
+    // Barrel tip
+    state.ctx.fillStyle = "#3a3a3a";
+    state.ctx.fillRect(26, -7, 4, 14);
+    
+    // Muzzle brake details
+    state.ctx.strokeStyle = "#2a2a2a";
+    state.ctx.lineWidth = 1;
+    state.ctx.beginPath();
+    state.ctx.moveTo(4, -5);
+    state.ctx.lineTo(24, -5);
+    state.ctx.moveTo(4, 5);
+    state.ctx.lineTo(24, 5);
+    state.ctx.stroke();
 
     state.ctx.restore();
   });
 }
 
 export function drawWalkers() {
+  // Raiden-style bipedal walkers
   state.walkers.forEach(walker => {
     state.ctx.save();
     state.ctx.translate(walker.x, walker.y);
 
-    state.ctx.fillStyle = "rgba(120,120,150,0.9)";
+    // Main body (military blue-gray)
+    state.ctx.fillStyle = "#4a5a6a";
     state.ctx.fillRect(-walker.width/2, -walker.height/2, walker.width, walker.height/2);
+    
+    // Command module on top
+    state.ctx.fillStyle = "#5a6a7a";
+    state.ctx.fillRect(-walker.width/3, -walker.height/1.8, walker.width*0.66, walker.height/4);
+    
+    // Sensor array (glowing)
+    const pulse = 0.6 + Math.sin(state.frameCount * 0.1) * 0.4;
+    state.ctx.fillStyle = `rgba(100, 200, 255, ${pulse})`;
+    state.ctx.fillRect(-walker.width/6, -walker.height/1.6, walker.width/3, walker.height/12);
+    
+    // Weapons pods on sides
+    state.ctx.fillStyle = "#3a4a5a";
+    state.ctx.fillRect(-walker.width/2 - 4, -walker.height/6, 6, walker.height/4);
+    state.ctx.fillRect(walker.width/2 - 2, -walker.height/6, 6, walker.height/4);
 
-    const legOffset = Math.sin(walker.legPhase) * 10;
-    state.ctx.strokeStyle = "rgba(100,100,130,0.9)";
-    state.ctx.lineWidth = 3;
+    // Animated legs (bipedal walker)
+    const legOffset = Math.sin(walker.legPhase) * 12;
+    state.ctx.strokeStyle = "#5a6a7a";
+    state.ctx.lineWidth = 4;
+    state.ctx.lineCap = "round";
+    
+    // Left leg
     state.ctx.beginPath();
-    state.ctx.moveTo(-10, walker.height/4);
-    state.ctx.lineTo(-10 + legOffset, walker.height/2 + 10);
+    state.ctx.moveTo(-walker.width/4, walker.height/4);
+    state.ctx.lineTo(-walker.width/4 + legOffset, walker.height/2 + 12);
     state.ctx.stroke();
-
+    
+    // Right leg
     state.ctx.beginPath();
-    state.ctx.moveTo(10, walker.height/4);
-    state.ctx.lineTo(10 - legOffset, walker.height/2 + 10);
+    state.ctx.moveTo(walker.width/4, walker.height/4);
+    state.ctx.lineTo(walker.width/4 - legOffset, walker.height/2 + 12);
     state.ctx.stroke();
+    
+    // Leg joints
+    state.ctx.fillStyle = "#6a7a8a";
+    state.ctx.fillRect(-walker.width/4 - 3, walker.height/4 - 3, 6, 6);
+    state.ctx.fillRect(walker.width/4 - 3, walker.height/4 - 3, 6, 6);
+    
+    // Foot pads
+    state.ctx.fillStyle = "#4a5a6a";
+    state.ctx.fillRect(-walker.width/4 + legOffset - 4, walker.height/2 + 10, 8, 4);
+    state.ctx.fillRect(walker.width/4 - legOffset - 4, walker.height/2 + 10, 8, 4);
 
     state.ctx.restore();
   });
@@ -386,12 +504,9 @@ export function drawMechs() {
       state.ctx.fill();
       state.ctx.stroke();
       
-      // Cockpit windows (glowing cyan)
+      // Cockpit windows (glowing cyan) - no blur for performance
       state.ctx.fillStyle = '#00ccff';
-      state.ctx.shadowBlur = 8;
-      state.ctx.shadowColor = '#00ccff';
       state.ctx.fillRect(-size/6, -size/2, size/3, size/8);
-      state.ctx.shadowBlur = 0;
       
       // Side thrusters
       state.ctx.fillStyle = '#555';
@@ -411,8 +526,7 @@ export function drawMechs() {
       state.ctx.fillStyle = '#333';
       state.ctx.fillRect(-size/3, size/4, size/1.5, size/6);
       
-      state.ctx.shadowBlur = 15;
-      state.ctx.shadowColor = `rgba(100, 200, 255, ${engineFlicker})`;
+      // Engine glow (no blur for performance)
       state.ctx.fillStyle = `rgba(100, 200, 255, ${engineFlicker * enginePulse})`;
       state.ctx.beginPath();
       state.ctx.moveTo(-size/4, size/4 + size/6);
@@ -421,7 +535,6 @@ export function drawMechs() {
       state.ctx.lineTo(size/4, size/4 + size/6);
       state.ctx.closePath();
       state.ctx.fill();
-      state.ctx.shadowBlur = 0;
       
       // Deployment bay door (opening during deploy)
       if (mech.deploying) {
@@ -432,13 +545,11 @@ export function drawMechs() {
         state.ctx.fillRect(0 + (size/4) * doorOpen, size/6, (size/4) * (1 - doorOpen), size/8);
         
         if (doorOpen > 0.3) {
-          state.ctx.shadowBlur = 10;
-          state.ctx.shadowColor = 'rgba(255, 50, 50, 0.8)';
+          // Deployment light (no blur for performance)
           state.ctx.fillStyle = `rgba(255, 100, 100, ${doorOpen})`;
           state.ctx.beginPath();
           state.ctx.arc(0, size/5, 3, 0, Math.PI * 2);
           state.ctx.fill();
-          state.ctx.shadowBlur = 0;
         }
       }
       
@@ -502,116 +613,108 @@ export function drawMechs() {
       state.ctx.restore();
     }
 
-    // 8-bit Spider Bot with Howitzer
+    // Raiden-style heavy ground mech/tank with 4 legs
     const legPhase = (mech.legPhase || 0);
     
-    // Draw 4 mechanical legs (animated)
+    // Draw 4 mechanical legs (animated, Raiden military style)
     for (let i = 0; i < 4; i++) {
       const baseAngle = (i / 4) * Math.PI * 2;
-      const legOffset = Math.sin(legPhase + i * Math.PI / 2) * 8;
+      const legOffset = Math.sin(legPhase + i * Math.PI / 2) * 6;
       
-      // Leg segments
-      const legBaseX = Math.cos(baseAngle) * (mech.size/3);
-      const legBaseY = Math.sin(baseAngle) * (mech.size/3);
-      const legMidX = Math.cos(baseAngle) * (mech.size/2 + 8) + legOffset * Math.sin(baseAngle);
-      const legMidY = Math.sin(baseAngle) * (mech.size/2 + 8) - legOffset * Math.cos(baseAngle);
-      const legEndX = Math.cos(baseAngle) * (mech.size/2 + 16) + legOffset * 1.5 * Math.sin(baseAngle);
-      const legEndY = Math.sin(baseAngle) * (mech.size/2 + 16) - legOffset * 1.5 * Math.cos(baseAngle);
+      // Leg positions
+      const legBaseX = Math.cos(baseAngle) * (mech.size/3.5);
+      const legBaseY = Math.sin(baseAngle) * (mech.size/3.5);
+      const legMidX = Math.cos(baseAngle) * (mech.size/2 + 6) + legOffset * Math.sin(baseAngle);
+      const legMidY = Math.sin(baseAngle) * (mech.size/2 + 6) - legOffset * Math.cos(baseAngle);
+      const legEndX = Math.cos(baseAngle) * (mech.size/2 + 12) + legOffset * 1.2 * Math.sin(baseAngle);
+      const legEndY = Math.sin(baseAngle) * (mech.size/2 + 12) - legOffset * 1.2 * Math.cos(baseAngle);
       
-      // Draw leg segments
-      state.ctx.strokeStyle = "rgba(100, 100, 100, 0.9)";
-      state.ctx.lineWidth = 3;
+      // Hydraulic leg segments (military mech style)
+      state.ctx.strokeStyle = "#5a5a5a";
+      state.ctx.lineWidth = 4;
       state.ctx.lineCap = "round";
       
-      // Upper leg segment
       state.ctx.beginPath();
       state.ctx.moveTo(legBaseX, legBaseY);
       state.ctx.lineTo(legMidX, legMidY);
       state.ctx.stroke();
       
-      // Lower leg segment
-      state.ctx.strokeStyle = "rgba(80, 80, 80, 0.9)";
-      state.ctx.lineWidth = 2;
+      state.ctx.strokeStyle = "#4a4a4a";
+      state.ctx.lineWidth = 3;
       state.ctx.beginPath();
       state.ctx.moveTo(legMidX, legMidY);
       state.ctx.lineTo(legEndX, legEndY);
       state.ctx.stroke();
       
-      // Leg joints
-      state.ctx.fillStyle = "rgba(120, 120, 120, 0.9)";
-      state.ctx.beginPath();
-      state.ctx.arc(legBaseX, legBaseY, 3, 0, Math.PI * 2);
-      state.ctx.fill();
+      // Joints (bolted connections)
+      state.ctx.fillStyle = "#6a6a6a";
+      state.ctx.fillRect(legBaseX - 3, legBaseY - 3, 6, 6);
+      state.ctx.fillRect(legMidX - 2, legMidY - 2, 4, 4);
       
-      state.ctx.beginPath();
-      state.ctx.arc(legMidX, legMidY, 2.5, 0, Math.PI * 2);
-      state.ctx.fill();
-      
-      // Foot
-      state.ctx.fillStyle = "rgba(60, 60, 60, 0.9)";
-      state.ctx.fillRect(legEndX - 2, legEndY - 1, 4, 2);
+      // Foot pads
+      state.ctx.fillStyle = "#3a3a3a";
+      state.ctx.fillRect(legEndX - 3, legEndY - 2, 6, 4);
     }
     
-    // Central torso/body (octagonal)
-    state.ctx.fillStyle = "rgba(150, 50, 50, 0.9)";
-    state.ctx.strokeStyle = "rgba(200, 100, 100, 0.9)";
-    state.ctx.lineWidth = 2;
+    // Main body (heavy tank chassis)
+    state.ctx.fillStyle = "#4a5a4a";
+    state.ctx.fillRect(-mech.size/2.5, -mech.size/4, mech.size*0.8, mech.size/2);
     
-    state.ctx.beginPath();
-    for (let i = 0; i < 8; i++) {
-      const angle = (i / 8) * Math.PI * 2;
-      const x = Math.cos(angle) * mech.size/2.5;
-      const y = Math.sin(angle) * mech.size/2.5;
-      if (i === 0) state.ctx.moveTo(x, y);
-      else state.ctx.lineTo(x, y);
-    }
-    state.ctx.closePath();
-    state.ctx.fill();
-    state.ctx.stroke();
+    // Armor plating
+    state.ctx.fillStyle = "#5a6a5a";
+    state.ctx.fillRect(-mech.size/3, -mech.size/3.5, mech.size*0.66, mech.size/7);
+    state.ctx.fillRect(-mech.size/3, mech.size/3.5 - mech.size/7, mech.size*0.66, mech.size/7);
     
-    // Torso details (panel lines)
-    state.ctx.strokeStyle = "rgba(100, 30, 30, 0.7)";
+    // Command module
+    state.ctx.fillStyle = "#6a7a6a";
+    state.ctx.fillRect(-mech.size/8, -mech.size/3, mech.size/4, mech.size/6);
+    
+    // Sensor array (glowing red)
+    const sensorPulse = 0.6 + Math.sin(state.frameCount * 0.1) * 0.4;
+    state.ctx.fillStyle = `rgba(255, 80, 80, ${sensorPulse})`;
+    state.ctx.fillRect(-mech.size/16, -mech.size/3.2, mech.size/8, mech.size/16);
+    
+    // Panel lines and rivets
+    state.ctx.strokeStyle = "#3a4a3a";
     state.ctx.lineWidth = 1;
     state.ctx.beginPath();
-    state.ctx.moveTo(-mech.size/4, -mech.size/4);
-    state.ctx.lineTo(mech.size/4, mech.size/4);
-    state.ctx.moveTo(mech.size/4, -mech.size/4);
-    state.ctx.lineTo(-mech.size/4, mech.size/4);
+    state.ctx.moveTo(-mech.size/3, -mech.size/8);
+    state.ctx.lineTo(mech.size/2, -mech.size/8);
+    state.ctx.moveTo(-mech.size/3, mech.size/8);
+    state.ctx.lineTo(mech.size/2, mech.size/8);
     state.ctx.stroke();
     
-    // Howitzer cannon mounted on torso
+    // Heavy cannon turret (aims at player)
     const cannonAngle = Math.atan2(state.player.y - mech.y, state.player.x - mech.x);
     state.ctx.rotate(cannonAngle);
     
-    // Cannon base turret
-    state.ctx.fillStyle = "rgba(100, 100, 100, 0.95)";
-    state.ctx.fillRect(-6, -6, 12, 12);
+    // Turret base
+    state.ctx.fillStyle = "#5a5a5a";
+    state.ctx.fillRect(-8, -8, 16, 16);
     
-    // Cannon barrel (howitzer style - thick and short)
-    state.ctx.fillStyle = "rgba(80, 80, 80, 0.95)";
-    state.ctx.fillRect(0, -4, 20, 8);
+    // Main gun barrel (Raiden-style heavy cannon)
+    state.ctx.fillStyle = "#4a4a4a";
+    state.ctx.fillRect(0, -5, 24, 10);
     
-    // Cannon muzzle
-    state.ctx.fillStyle = "rgba(60, 60, 60, 0.95)";
-    state.ctx.fillRect(18, -5, 4, 10);
+    // Barrel tip
+    state.ctx.fillStyle = "#3a3a3a";
+    state.ctx.fillRect(22, -6, 4, 12);
     
-    // Muzzle glow when about to shoot
+    // Muzzle flash when charging
     if (mech.shootTimer && mech.shootTimer > 50) {
       const chargeIntensity = (mech.shootTimer - 50) / 10;
-      state.ctx.fillStyle = `rgba(255, 100, 0, ${chargeIntensity * 0.8})`;
-      state.ctx.beginPath();
-      state.ctx.arc(22, 0, 3, 0, Math.PI * 2);
-      state.ctx.fill();
+      state.ctx.fillStyle = `rgba(255, 150, 50, ${chargeIntensity * 0.9})`;
+      state.ctx.fillRect(24, -4, 6, 8);
     }
     
-    // Cannon detail lines
-    state.ctx.strokeStyle = "rgba(60, 60, 60, 0.9)";
+    // Barrel details
+    state.ctx.strokeStyle = "#2a2a2a";
     state.ctx.lineWidth = 1;
     state.ctx.beginPath();
-    state.ctx.moveTo(4, -3);
-    state.ctx.lineTo(16, -3);
-    state.ctx.moveTo(4, 3);
-    state.ctx.lineTo(16, 3);
+    state.ctx.moveTo(2, -4);
+    state.ctx.lineTo(20, -4);
+    state.ctx.moveTo(2, 4);
+    state.ctx.lineTo(20, 4);
     state.ctx.stroke();
 
     state.ctx.restore();
@@ -652,12 +755,9 @@ export function drawDiamonds() {
     // Mid-layer boss aura (pulsing energy ring)
     state.ctx.strokeStyle = `rgba(255, 150, 255, ${0.6 * bossAuraPulse})`;
     state.ctx.lineWidth = 3;
-    state.ctx.shadowBlur = 20;
-    state.ctx.shadowColor = `rgba(255, 150, 255, ${bossAuraPulse})`;
     state.ctx.beginPath();
     state.ctx.arc(0, 0, bossAuraSize * 0.7, 0, Math.PI * 2);
     state.ctx.stroke();
-    state.ctx.shadowBlur = 0;
     
     // Inner boss energy field
     const innerAuraGradient = state.ctx.createRadialGradient(0, 0, 0, 0, 0, bossAuraSize * 0.5);
@@ -674,12 +774,9 @@ export function drawDiamonds() {
       const pullIntensity = d.gravitonCharge / 600;
       state.ctx.strokeStyle = `rgba(100,200,255,${pullIntensity * 0.7})`;
       state.ctx.lineWidth = 5;
-      state.ctx.shadowBlur = 25;
-      state.ctx.shadowColor = `rgba(100,200,255,${pullIntensity})`;
       state.ctx.beginPath();
       state.ctx.arc(0, 0, d.size/2 + 80 + Math.sin(state.frameCount * 0.1) * 25, 0, Math.PI * 2);
       state.ctx.stroke();
-      state.ctx.shadowBlur = 0;
 
       state.ctx.strokeStyle = `rgba(150,220,255,${pullIntensity * 0.5})`;
       state.ctx.lineWidth = 3;
@@ -707,13 +804,11 @@ export function drawDiamonds() {
         state.ctx.arc(px, py, particleSize, 0, Math.PI * 2);
         state.ctx.fill();
         
-        // Add glow effect to particles
-        state.ctx.shadowBlur = 10 + chargeProgress * 20;
-        state.ctx.shadowColor = "rgba(255, 255, 100, 0.8)";
+        // Particle center glow (no blur for performance)
+        state.ctx.fillStyle = `rgba(255, 255, 150, ${opacity * 1.2})`;
         state.ctx.beginPath();
         state.ctx.arc(px, py, particleSize * 0.5, 0, Math.PI * 2);
         state.ctx.fill();
-        state.ctx.shadowBlur = 0;
       }
       
       // Add energy lines from particles to center
@@ -734,11 +829,7 @@ export function drawDiamonds() {
       }
     }
 
-    if (d.vulnerable) {
-      const vulnPulse = Math.sin(state.frameCount * 0.2) * 0.3 + 0.7;
-      state.ctx.shadowBlur = 50;
-      state.ctx.shadowColor = `rgba(255,100,100,${vulnPulse})`;
-    }
+    // Vulnerable state indicated by color only (no blur for performance)
 
     // === ENHANCED DIAMOND BOSS BODY ===
     const glowIntensity = Math.sin(state.frameCount * 0.05) * 0.3 + 0.7;
@@ -757,9 +848,7 @@ export function drawDiamonds() {
     state.ctx.closePath();
     state.ctx.fill();
     
-    // Main boss body with enhanced glow
-    state.ctx.shadowBlur = d.vulnerable ? 50 : 40;
-    state.ctx.shadowColor = d.canReflect ? "cyan" : (d.vulnerable ? "red" : "white");
+    // Main boss body (no blur for performance)
     
     // Fill with gradient for depth
     const bodyGradient = state.ctx.createRadialGradient(0, 0, 0, 0, 0, enhancedSize/2);
@@ -819,7 +908,6 @@ export function drawDiamonds() {
     state.ctx.arc(0, 0, coreSize, 0, Math.PI * 2);
     state.ctx.fill();
     
-    state.ctx.shadowBlur = 0;
     state.ctx.restore();
     
     // === BOSS HEALTH BAR (Enhanced) ===
@@ -874,19 +962,69 @@ export function drawDiamonds() {
     state.ctx.strokeText("◆ DIAMOND BOSS ◆", d.x, barY - 8);
     state.ctx.fillText("◆ DIAMOND BOSS ◆", d.x, barY - 8);
 
-    // Draw visual formation lines connecting attached enemies to diamond
-    d.attachments.forEach(a => {
-      if (a.visualOrbitX && a.visualOrbitY) {
+    // Draw enhanced barrier/shield formation with attached enemies
+    if (d.attachments && d.attachments.length > 0) {
+      // Draw shield energy field connecting all attached enemies
+      const shieldAlpha = Math.min(0.3 + d.attachments.length * 0.05, 0.6);
+      const shieldPulse = Math.sin(state.frameCount * 0.08) * 0.15 + 0.85;
+      
+      // Draw shield polygon connecting all attached enemy positions
+      if (d.attachments.length >= 3) {
         state.ctx.save();
-        state.ctx.strokeStyle = "rgba(100, 200, 255, 0.3)";
-        state.ctx.lineWidth = 1;
+        state.ctx.fillStyle = `rgba(100, 200, 255, ${shieldAlpha * 0.3 * shieldPulse})`;
+        state.ctx.strokeStyle = `rgba(100, 200, 255, ${shieldAlpha * shieldPulse})`;
+        state.ctx.lineWidth = 2;
+        
         state.ctx.beginPath();
-        state.ctx.moveTo(d.x, d.y);
-        state.ctx.lineTo(a.visualOrbitX, a.visualOrbitY);
+        d.attachments.forEach((a, i) => {
+          if (a.visualOrbitX && a.visualOrbitY) {
+            if (i === 0) {
+              state.ctx.moveTo(a.visualOrbitX, a.visualOrbitY);
+            } else {
+              state.ctx.lineTo(a.visualOrbitX, a.visualOrbitY);
+            }
+          }
+        });
+        state.ctx.closePath();
+        state.ctx.fill();
         state.ctx.stroke();
         state.ctx.restore();
       }
-    });
+      
+      // Draw energy beams from diamond core to each attached enemy
+      d.attachments.forEach(a => {
+        if (a.visualOrbitX && a.visualOrbitY) {
+          state.ctx.save();
+          
+          // Pulsing energy beam
+          const beamAlpha = 0.4 + Math.sin(state.frameCount * 0.1 + a.orbitAngle) * 0.2;
+          state.ctx.strokeStyle = `rgba(150, 220, 255, ${beamAlpha * shieldPulse})`;
+          state.ctx.lineWidth = 2;
+          state.ctx.beginPath();
+          state.ctx.moveTo(d.x, d.y);
+          state.ctx.lineTo(a.visualOrbitX, a.visualOrbitY);
+          state.ctx.stroke();
+          
+          // Energy nodes at attachment points
+          state.ctx.fillStyle = `rgba(100, 200, 255, ${beamAlpha * 1.2})`;
+          state.ctx.beginPath();
+          state.ctx.arc(a.visualOrbitX, a.visualOrbitY, 4, 0, Math.PI * 2);
+          state.ctx.fill();
+          
+          state.ctx.restore();
+        }
+      });
+      
+      // Barrier strength indicator text
+      if (d.attachments.length >= 5) {
+        state.ctx.save();
+        state.ctx.font = "bold 12px Orbitron, monospace";
+        state.ctx.textAlign = "center";
+        state.ctx.fillStyle = `rgba(100, 255, 255, ${shieldPulse})`;
+        state.ctx.fillText(`⬢ BARRIER ACTIVE ⬢`, d.x, d.y + enhancedSize/2 + 60);
+        state.ctx.restore();
+      }
+    }
 
     // Draw turrets
     if (d.turrets) {
@@ -913,16 +1051,13 @@ export function drawDiamonds() {
         state.ctx.fillStyle = "rgba(100, 100, 140, 0.9)";
         state.ctx.fillRect(0, -3, 15, 6);
         
-        // Turret glow when charging
+        // Turret glow when charging (no blur for performance)
         if (turret.shootTimer > turret.fireRate - 20) {
           const chargePulse = (turret.shootTimer - (turret.fireRate - 20)) / 20;
-          state.ctx.shadowBlur = 15 * chargePulse;
-          state.ctx.shadowColor = "rgba(255, 100, 100, 0.8)";
           state.ctx.fillStyle = `rgba(255, 100, 100, ${chargePulse * 0.8})`;
           state.ctx.beginPath();
           state.ctx.arc(12, 0, 4, 0, Math.PI * 2);
           state.ctx.fill();
-          state.ctx.shadowBlur = 0;
         }
         
         state.ctx.restore();
@@ -1021,12 +1156,9 @@ export function drawDropships() {
     ctx.fill();
     ctx.stroke();
     
-    // Cockpit windows (glowing cyan)
+    // Cockpit windows (glowing cyan) - no blur for performance
     ctx.fillStyle = '#00ccff';
-    ctx.shadowBlur = 8;
-    ctx.shadowColor = '#00ccff';
     ctx.fillRect(-size/6, -size/2, size/3, size/8);
-    ctx.shadowBlur = 0;
     
     // Side thrusters
     ctx.fillStyle = '#555';
@@ -1046,8 +1178,7 @@ export function drawDropships() {
     ctx.fillStyle = '#333';
     ctx.fillRect(-size/3, size/4, size/1.5, size/6);
     
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = `rgba(100, 200, 255, ${engineFlicker})`;
+    // Engine glow (no blur for performance)
     ctx.fillStyle = `rgba(100, 200, 255, ${engineFlicker * enginePulse})`;
     ctx.beginPath();
     ctx.moveTo(-size/4, size/4 + size/6);
@@ -1056,7 +1187,6 @@ export function drawDropships() {
     ctx.lineTo(size/4, size/4 + size/6);
     ctx.closePath();
     ctx.fill();
-    ctx.shadowBlur = 0;
     
     // Panel lines
     ctx.strokeStyle = '#1a1a1a';
@@ -1129,12 +1259,9 @@ export function drawDropship(mech) {
   ctx.fill();
   ctx.stroke();
   
-  // Cockpit windows (glowing cyan)
+  // Cockpit windows (glowing cyan) - no blur for performance
   ctx.fillStyle = '#00ccff';
-  ctx.shadowBlur = 8;
-  ctx.shadowColor = '#00ccff';
   ctx.fillRect(-size/6, -size/2, size/3, size/8);
-  ctx.shadowBlur = 0;
   
   // Side thrusters (mechanical details)
   ctx.fillStyle = '#555';
@@ -1157,9 +1284,7 @@ export function drawDropship(mech) {
   ctx.fillStyle = '#333';
   ctx.fillRect(-size/3, size/4, size/1.5, size/6);
   
-  // Engine glow (blue thrust)
-  ctx.shadowBlur = 15;
-  ctx.shadowColor = `rgba(100, 200, 255, ${engineFlicker})`;
+  // Engine glow (blue thrust) - no blur for performance
   ctx.fillStyle = `rgba(100, 200, 255, ${engineFlicker * enginePulse})`;
   ctx.beginPath();
   ctx.moveTo(-size/4, size/4 + size/6);
@@ -1168,7 +1293,6 @@ export function drawDropship(mech) {
   ctx.lineTo(size/4, size/4 + size/6);
   ctx.closePath();
   ctx.fill();
-  ctx.shadowBlur = 0;
   
   // Side engine particles
   for (let side = -1; side <= 1; side += 2) {
@@ -1189,15 +1313,12 @@ export function drawDropship(mech) {
     ctx.fillRect(-size/4, size/6, (size/4) * (1 - doorOpen), size/8);
     ctx.fillRect(0 + (size/4) * doorOpen, size/6, (size/4) * (1 - doorOpen), size/8);
     
-    // Deployment light
+    // Deployment light (no blur for performance)
     if (doorOpen > 0.3) {
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = 'rgba(255, 50, 50, 0.8)';
       ctx.fillStyle = `rgba(255, 100, 100, ${doorOpen})`;
       ctx.beginPath();
       ctx.arc(0, size/5, 3, 0, Math.PI * 2);
       ctx.fill();
-      ctx.shadowBlur = 0;
     }
   }
   

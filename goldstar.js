@@ -340,7 +340,18 @@ export function updateGoldStar() {
           }
         }
         else if (gs.blueCannonLevel === 5) {
-          for (let i = 0; i < 5; i++) safeCall(state.pushBullet, { x: gs.x + (dx / mag) * i * 20, y: gs.y + (dy / mag) * i * 20, dx: (dx / mag) * 12, dy: (dy / mag) * 12, size: 10, owner: "gold" });
+          // Kamehameha-style energy wave (concentrated beam)
+          for (let i = 0; i < 8; i++) {
+            safeCall(state.pushBullet, { 
+              x: gs.x + (dx / mag) * i * 15, 
+              y: gs.y + (dy / mag) * i * 15, 
+              dx: (dx / mag) * 14, 
+              dy: (dy / mag) * 14, 
+              size: 12, 
+              owner: "gold",
+              kamehameha: true // Special flag for Kamehameha beam rendering
+            });
+          }
         }
       }
     }
