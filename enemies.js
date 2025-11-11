@@ -69,6 +69,37 @@ export function updateDiamond(d) {
   }
   if (d.releaseCooldown > 0) d.releaseCooldown--;
 
+  // Diamond spawn timer - spawn new enemies periodically
+  d.spawnTimer = (d.spawnTimer || 0) + 1;
+  if (d.spawnTimer > 350 && d.attachments.length < 5) {
+    d.spawnTimer = 0;
+    // Spawn 1-2 enemies near the diamond
+    const spawnCount = Math.random() < 0.5 ? 1 : 2;
+    for (let i = 0; i < spawnCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 80 + Math.random() * 40;
+      const spawnX = d.x + Math.cos(angle) * dist;
+      const spawnY = d.y + Math.sin(angle) * dist;
+      const enemyType = Math.random() < 0.5 ? "red-square" : "triangle";
+      
+      if (enemyType === "red-square") {
+        state.pushEnemy({
+          x: spawnX,
+          y: spawnY,
+          size: 30, speed: 1.8, health: 30, type: "red-square", shootTimer: 0, fromBoss: true,
+          attachImmunityTimer: 60  // Shorter immunity for spawned enemies
+        });
+      } else {
+        state.pushEnemy({
+          x: spawnX,
+          y: spawnY,
+          size: 30, speed: 1.5, health: 40, type: "triangle", shootTimer: 0, fromBoss: true,
+          attachImmunityTimer: 60  // Shorter immunity for spawned enemies
+        });
+      }
+    }
+  }
+
   if (d.gravitonActive) {
     d.gravitonCharge++;
     if (d.gravitonCharge < 600) {
@@ -167,6 +198,12 @@ export function updateDiamond(d) {
     const e = state.enemies[i];
     if (!e || e === d || e.attachedTo || e.type === "boss" || e.type === "mini-boss") continue;
     if (e.canReattach === false) continue;
+    
+    // Check immunity timer before allowing attachment
+    if (e.attachImmunityTimer && e.attachImmunityTimer > 0) {
+      e.attachImmunityTimer--;
+      continue;
+    }
 
     const dx = d.x - e.x, dy = d.y - e.y, dist = Math.hypot(dx,dy);
     if (dist < 260 && d.attachments.length < 15) {
@@ -179,6 +216,8 @@ export function updateDiamond(d) {
         if (e.type === "triangle") e.fireRateBoost = true;
         if (e.type === "red-square") e.spawnMini = true;
         if (e.type === "reflector") d.canReflect = true;
+        // Store original speed before setting to 0
+        e.originalSpeed = e.speed || 1.5;
         e.speed = 0;
         d.attachments.push(e);
       }

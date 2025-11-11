@@ -67,7 +67,8 @@ export function spawnRedSquares(c, fromBoss = false) {
     state.pushEnemy({
       x: pos.x,
       y: pos.y,
-      size: 30, speed: 1.8, health: 30, type: "red-square", shootTimer: 0, fromBoss
+      size: 30, speed: 1.8, health: 30, type: "red-square", shootTimer: 0, fromBoss,
+      attachImmunityTimer: 120  // Short immunity period on spawn
     });
   }
   console.log('[spawnRedSquares] enemies.length after spawn:', state.enemies.length);
@@ -79,7 +80,8 @@ export function spawnTriangles(c, fromBoss = false) {
     state.pushEnemy({
       x: pos.x,
       y: pos.y,
-      size: 30, speed: 1.5, health: 40, type: "triangle", shootTimer: 0, fromBoss
+      size: 30, speed: 1.5, health: 40, type: "triangle", shootTimer: 0, fromBoss,
+      attachImmunityTimer: 120  // Short immunity period on spawn
     });
   }
 }
@@ -90,7 +92,8 @@ export function spawnReflectors(c) {
     state.pushEnemy({
       x: pos.x,
       y: pos.y,
-      width: 40, height: 20, angle: 0, speed: 1.2, health: 200, type: "reflector", shieldActive: false, fromBoss: false
+      width: 40, height: 20, angle: 0, speed: 1.2, health: 200, type: "reflector", shieldActive: false, fromBoss: false,
+      attachImmunityTimer: 120  // Short immunity period on spawn
     });
   }
 }
@@ -311,6 +314,8 @@ export function detachAndLaunchEnemy(diamond, enemy, launchSpeed = 20) {
   const mag = Math.hypot(dx, dy) || 1;
   enemy.vx = (dx / mag) * launchSpeed;
   enemy.vy = (dy / mag) * launchSpeed;
+  // Restore original speed
+  enemy.speed = enemy.originalSpeed || 1.5;
   enemy.canReattach = false;
   setTimeout(() => { enemy.canReattach = true; }, 1200);
   state.pushEnemy(enemy);
@@ -328,8 +333,8 @@ export function diamondReleaseAttachedEnemies(diamond) {
   const dist = Math.hypot(dx, dy) || 1;
   const beamSpeed = 8;
   
-  // Create multiple large lightning projectiles for a "beam" effect
-  for (let i = 0; i < 8; i++) {
+  // Create multiple large lightning projectiles for a "beam" effect - waterfall style
+  for (let i = 0; i < 35; i++) {
     setTimeout(() => {
       state.pushLightning({
         x: diamond.x,
@@ -339,7 +344,7 @@ export function diamondReleaseAttachedEnemies(diamond) {
         size: 20 + i * 2, // Increasing size for wave effect
         damage: 40
       });
-    }, i * 25); // Stagger the projectiles slightly
+    }, i * 60); // Increased stagger for waterfall effect (total ~2.1 seconds)
   }
   
   // Create visual beam effect with particles
@@ -369,7 +374,6 @@ export function diamondReleaseAttachedEnemies(diamond) {
     a.y = diamond.y + (Math.sin(a.orbitAngle || 0) * (diamond.size/2 + 20));
     detachAndLaunchEnemy(diamond, a, 20);
     delete a.orbitAngle;
-    a.speed = a.speed || 1.5;
     a.state = 'launched';
   });
 
