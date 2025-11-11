@@ -67,9 +67,13 @@ export let player = {
   dashTimer: 0,
   dashCooldown: 0,
   lastKeyPress: { key: null, time: 0 },
-  // Reflector power-up system
+  // Reflector power-up system (now creates shield instead of missiles)
   reflectorLevel: 0,
-  reflectorCooldown: 0
+  reflectorCooldown: 0,
+  // Shield system
+  shieldHealth: 0,
+  maxShieldHealth: 0,
+  shieldActive: false
 };
 
 export let goldStar = {
@@ -84,14 +88,24 @@ export let goldStar = {
   speed: 3.5,  // Increased from 2 to 3.5 (1.75x faster)
   reflectAvailable: false,
   redPunchLevel: 0,
-  blueCannonnLevel: 0,
+  blueCannonLevel: 0,
   redKills: 0,
   blueKills: 0,
   punchCooldown: 0,
   cannonCooldown: 0,
   respawnTimer: 0,
   healAccumulator: 0,
-  targetPowerUp: null
+  targetPowerUp: null,
+  // New homing missile system (moved from player)
+  homingMissileLevel: 0,
+  homingMissileCooldown: 0,
+  // Animation states for visual upgrades
+  redPunchCharging: false,
+  redPunchChargeTimer: 0,
+  blueCannonTurretDeployed: false,
+  blueCannonTurretDeployTimer: 0,
+  dronePodDetached: false,
+  dronePodReturnTimer: 0
 };
 
 export const GOLD_STAR_PICKUP_FRAMES = 30;
@@ -268,6 +282,9 @@ export function resetGame() {
   player.lastKeyPress = { key: null, time: 0 };
   player.reflectorLevel = 0;
   player.reflectorCooldown = 0;
+  player.shieldHealth = 0;
+  player.maxShieldHealth = 0;
+  player.shieldActive = false;
 
   // reset gold star
   goldStar.x = 0;
@@ -280,7 +297,7 @@ export function resetGame() {
   goldStar.speed = 3.5;  // Increased from 2 to 3.5 (1.75x faster)
   goldStar.reflectAvailable = false;
   goldStar.redPunchLevel = 0;
-  goldStar.blueCannonnLevel = 0;
+  goldStar.blueCannonLevel = 0;
   goldStar.redKills = 0;
   goldStar.blueKills = 0;
   goldStar.punchCooldown = 0;
@@ -288,6 +305,14 @@ export function resetGame() {
   goldStar.respawnTimer = 0;
   goldStar.healAccumulator = 0;
   goldStar.targetPowerUp = null;
+  goldStar.homingMissileLevel = 0;
+  goldStar.homingMissileCooldown = 0;
+  goldStar.redPunchCharging = false;
+  goldStar.redPunchChargeTimer = 0;
+  goldStar.blueCannonTurretDeployed = false;
+  goldStar.blueCannonTurretDeployTimer = 0;
+  goldStar.dronePodDetached = false;
+  goldStar.dronePodReturnTimer = 0;
 
   // aura
   goldStarAura.radius = goldStarAura.baseRadius = 50;

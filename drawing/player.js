@@ -137,8 +137,55 @@ export function drawPlayer() {
     state.setFireIndicatorAngle(state.firingIndicatorAngle + 0.15);
   }
 
-  // reflect aura ring
-  if (state.player.reflectAvailable) {
+  // Shield system rendering
+  if (state.player.shieldActive && state.player.shieldHealth > 0) {
+    const shieldRotation = state.frameCount * 0.03;
+    const shieldHealthRatio = state.player.shieldHealth / state.player.maxShieldHealth;
+    const shieldRadius = state.player.size/2 + 18;
+    
+    state.ctx.save();
+    state.ctx.translate(state.player.x, state.player.y);
+    state.ctx.rotate(shieldRotation);
+    
+    // Hexagonal shield pattern (8-bit style)
+    state.ctx.strokeStyle = `rgba(100, 200, 255, ${0.4 + shieldHealthRatio * 0.4})`;
+    state.ctx.lineWidth = 2;
+    
+    // Draw hexagon shield
+    state.ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      const x = Math.cos(angle) * shieldRadius;
+      const y = Math.sin(angle) * shieldRadius;
+      if (i === 0) state.ctx.moveTo(x, y);
+      else state.ctx.lineTo(x, y);
+    }
+    state.ctx.closePath();
+    state.ctx.stroke();
+    
+    // Shield glow
+    state.ctx.fillStyle = `rgba(100, 200, 255, ${0.1 * shieldHealthRatio})`;
+    state.ctx.fill();
+    
+    // Shield segments (decorative)
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      const x1 = Math.cos(angle) * shieldRadius;
+      const y1 = Math.sin(angle) * shieldRadius;
+      
+      state.ctx.strokeStyle = `rgba(150, 220, 255, ${0.3 * shieldHealthRatio})`;
+      state.ctx.lineWidth = 1;
+      state.ctx.beginPath();
+      state.ctx.moveTo(0, 0);
+      state.ctx.lineTo(x1, y1);
+      state.ctx.stroke();
+    }
+    
+    state.ctx.restore();
+  }
+
+  // reflect aura ring (now deprecated, using shield system instead)
+  if (state.player.reflectAvailable && !state.player.shieldActive) {
     state.ctx.save();
     state.ctx.strokeStyle = "cyan";
     state.ctx.lineWidth = 2;

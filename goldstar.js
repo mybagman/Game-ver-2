@@ -140,13 +140,32 @@ export function updateGoldStar() {
           else if (pu.type === "reflect") {
             gs.reflectAvailable = true;
             state.player.reflectAvailable = true;
+            // Initialize shield if not already active
+            if (!state.player.shieldActive) {
+              state.player.shieldActive = true;
+              state.player.maxShieldHealth = 50;
+              state.player.shieldHealth = 50;
+            } else {
+              // Add to existing shield (max 200)
+              state.player.maxShieldHealth = Math.min(200, state.player.maxShieldHealth + 25);
+              state.player.shieldHealth = Math.min(state.player.maxShieldHealth, state.player.shieldHealth + 25);
+            }
             safeCall(createExplosion, pu.x, pu.y, "magenta");
             safeCall(state.addScore, 12);
           }
           else if (pu.type === "reflector-level") {
-            // Increase reflector level (max 10)
+            // Increase reflector level (now adds shield strength instead of missiles)
             if (state.player.reflectorLevel < 10) {
               state.player.reflectorLevel++;
+              // Initialize or grow shield
+              if (!state.player.shieldActive) {
+                state.player.shieldActive = true;
+                state.player.maxShieldHealth = 30;
+                state.player.shieldHealth = 30;
+              } else {
+                state.player.maxShieldHealth = Math.min(200, state.player.maxShieldHealth + 20);
+                state.player.shieldHealth = Math.min(state.player.maxShieldHealth, state.player.shieldHealth + 20);
+              }
               safeCall(createExplosion, pu.x, pu.y, "cyan");
               safeCall(state.addScore, 15);
             } else {
@@ -154,6 +173,12 @@ export function updateGoldStar() {
               safeCall(createExplosion, pu.x, pu.y, "white");
               safeCall(state.addScore, 5);
             }
+          }
+          else if (pu.type === "homing-missile") {
+            // New power-up type for homing missiles (goes to gold star)
+            gs.homingMissileLevel = Math.min(10, (gs.homingMissileLevel || 0) + 1);
+            safeCall(createExplosion, pu.x, pu.y, "orange");
+            safeCall(state.addScore, 15);
           } else {
             safeCall(createExplosion, pu.x, pu.y, "white");
             safeCall(state.addScore, 1);
@@ -239,20 +264,42 @@ export function updateGoldStar() {
   gs.x = Math.max(50, Math.min((state.canvas && state.canvas.width) ? state.canvas.width - 50 : (gs.x || 50), gs.x));
   gs.y = Math.max(50, Math.min((state.canvas && state.canvas.height) ? state.canvas.height - 50 : (gs.y || 50), gs.y));
 
-  // red punch auto-fire
+  // red punch auto-fire with charging animation
   if ((gs.redPunchLevel || 0) > 0) {
     gs.punchCooldown = (gs.punchCooldown || 0) + 1;
+    
+    // Start charging animation 30 frames before firing
+    if (gs.punchCooldown >= 270 && gs.punchCooldown < 300) {
+      gs.redPunchCharging = true;
+      gs.redPunchChargeTimer = (gs.redPunchChargeTimer || 0) + 1;
+    }
+    
     if (gs.punchCooldown >= 300) {
       gs.punchCooldown = 0;
+      gs.redPunchCharging = false;
+      gs.redPunchChargeTimer = 0;
       performRedPunch();
     }
+  } else {
+    gs.redPunchCharging = false;
+    gs.redPunchChargeTimer = 0;
   }
 
-  // blue cannon firing logic (note: use consistent property name blueCannonLevel)
+  // blue cannon firing logic with turret deploy animation
   if ((gs.blueCannonLevel || 0) > 0) {
     gs.cannonCooldown = (gs.cannonCooldown || 0) + 1;
+    
+    // Deploy turret animation (quick deploy/retract)
+    if (gs.cannonCooldown > 45 && gs.cannonCooldown <= 50) {
+      gs.blueCannonTurretDeployed = true;
+      gs.blueCannonTurretDeployTimer = (gs.blueCannonTurretDeployTimer || 0) + 1;
+    }
+    
     if (gs.cannonCooldown > 50) {
       gs.cannonCooldown = 0;
+      gs.blueCannonTurretDeployed = false;
+      gs.blueCannonTurretDeployTimer = 0;
+      
       // Filter out reflector enemies to avoid shooting at them
       const nonReflectorEnemies = (state.enemies || []).filter(e => e.type !== "reflector");
       if (nonReflectorEnemies.length > 0) {
@@ -280,5 +327,8 @@ export function updateGoldStar() {
         }
       }
     }
+  } else {
+    gs.blueCannonTurretDeployed = false;
+    gs.blueCannonTurretDeployTimer = 0;
   }
 }

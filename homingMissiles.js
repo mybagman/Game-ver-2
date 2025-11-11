@@ -6,50 +6,55 @@ const MISSILE_FIRE_INTERVAL = 90; // frames (~1.5 seconds at 60fps)
 const MISSILE_SPEED = 6;
 const MISSILE_TURN_RATE = 0.08;
 const MISSILE_LIFETIME = 180; // frames (~3 seconds)
-const AOE_RADIUS = 70;
-const AOE_DAMAGE = 35;
+const AOE_RADIUS = 50;  // Reduced from 70 for better balance
+const AOE_DAMAGE = 20;  // Reduced from 35 for better balance
 
 export function updateReflectorSystem() {
-  // Update cooldown
+  // Update cooldowns for both player and gold star
   if (state.player.reflectorCooldown > 0) {
     state.player.reflectorCooldown--;
   }
+  if (state.goldStar.homingMissileCooldown > 0) {
+    state.goldStar.homingMissileCooldown--;
+  }
   
-  // Fire homing missiles based on reflector level
-  if (state.player.reflectorLevel > 0 && state.player.reflectorCooldown === 0) {
+  // Fire homing missiles from gold star based on homingMissileLevel
+  if (state.goldStar.alive && state.goldStar.homingMissileLevel > 0 && state.goldStar.homingMissileCooldown === 0) {
     // Find non-reflector enemies
     const validTargets = state.enemies.filter(e => e.type !== "reflector");
     
     if (validTargets.length > 0) {
-      // Fire missiles equal to reflector level (max 10)
-      const missileCount = Math.min(state.player.reflectorLevel, 10);
+      // Fire missiles equal to homing missile level (max 10)
+      const missileCount = Math.min(state.goldStar.homingMissileLevel, 10);
       
       for (let i = 0; i < missileCount; i++) {
         // Pick a random target or nearest for first missile
         const target = i === 0 ? 
-          findNearestEnemy(state.player.x, state.player.y, validTargets) :
+          findNearestEnemy(state.goldStar.x, state.goldStar.y, validTargets) :
           validTargets[Math.floor(Math.random() * validTargets.length)];
         
         if (target) {
           // Calculate initial direction towards target
-          const dx = target.x - state.player.x;
-          const dy = target.y - state.player.y;
+          const dx = target.x - state.goldStar.x;
+          const dy = target.y - state.goldStar.y;
           const angle = Math.atan2(dy, dx);
           
           state.pushHomingMissile({
-            x: state.player.x,
-            y: state.player.y,
+            x: state.goldStar.x,
+            y: state.goldStar.y,
             vx: Math.cos(angle) * MISSILE_SPEED,
             vy: Math.sin(angle) * MISSILE_SPEED,
             targetId: target,
             life: MISSILE_LIFETIME,
             size: 8,
-            trail: []
+            trail: [],
+            podDetached: false,  // For drone pod animation
+            podReturnTimer: 0
           });
         }
       }
       
-      state.player.reflectorCooldown = MISSILE_FIRE_INTERVAL;
+      state.goldStar.homingMissileCooldown = MISSILE_FIRE_INTERVAL;
     }
   }
 }

@@ -1,6 +1,25 @@
 import * as state from './state.js';
 import { createExplosion, spawnPowerUp, spawnRandomPowerUp } from './utils.js';
 
+// Helper function to apply damage to player with shield absorption
+function applyPlayerDamage(damage) {
+  if (state.player.invulnerable) return;
+  
+  if (state.player.shieldActive && state.player.shieldHealth > 0) {
+    state.player.shieldHealth -= damage;
+    if (state.player.shieldHealth <= 0) {
+      state.player.shieldActive = false;
+      state.player.shieldHealth = 0;
+      createExplosion(state.player.x, state.player.y, "cyan");
+    }
+  } else {
+    state.player.health -= damage;
+  }
+}
+
+// Export for use in other modules
+export { applyPlayerDamage };
+
 export function updateLightning() {
   state.filterLightning(l => {
     l.x += l.dx; l.y += l.dy;
@@ -13,7 +32,7 @@ export function updateLightning() {
         createExplosion(state.player.x, state.player.y, "cyan");
         return false;
       } else {
-        if (!state.player.invulnerable) state.player.health -= l.damage;
+        applyPlayerDamage(l.damage);
         return false;
       }
     }

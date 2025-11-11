@@ -263,7 +263,7 @@ export function updateDiamond(d) {
 
   const distToPlayer = Math.hypot(d.x-state.player.x, d.y-state.player.y);
   if (distToPlayer < (d.size/2 + state.player.size/2)) {
-    if (!state.player.invulnerable) state.player.health -= 30;
+    applyPlayerDamage(30);
     createExplosion(d.x, d.y, "white");
     // Diamond itself doesn't take damage from player collision
   }
@@ -629,7 +629,7 @@ export function updateEnemies() {
 
       const distToPlayer = Math.hypot(e.x-state.player.x, e.y-state.player.y);
       if (distToPlayer < (e.size/2 + state.player.size/2)) {
-        if (!state.player.invulnerable) state.player.health -= (e.type === "triangle" ? 25 : 15);
+        applyPlayerDamage(e.type === "triangle" ? 25 : 15);
         createExplosion(e.x, e.y, "red");
         e.health -= 100;
       }
@@ -712,7 +712,7 @@ export function updateEnemies() {
       }
 
       const distToPlayer = Math.hypot(e.x-state.player.x, e.y-state.player.y);
-      if (distToPlayer < 30) { if (!state.player.invulnerable) state.player.health -= 15; createExplosion(e.x, e.y, "magenta"); e.health -= 50; }
+      if (distToPlayer < 30) { applyPlayerDamage(15); createExplosion(e.x, e.y, "magenta"); e.health -= 50; }
       const distToGoldStar = Math.hypot(e.x-state.goldStar.x, e.y-state.goldStar.y);
       if (state.goldStar.alive && distToGoldStar < 30) {
         state.goldStar.health -= 15; createExplosion(e.x, e.y, "magenta");

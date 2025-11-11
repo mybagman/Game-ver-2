@@ -60,6 +60,37 @@ export function drawUI() {
   state.ctx.fillStyle = "rgba(220,230,255,0.95)";
   state.ctx.font = "11px 'Orbitron', monospace";
   state.ctx.fillText(`HP ${Math.floor(state.player.health)}/${state.player.maxHealth}`, hbX + 6, hbY - 14);
+  
+  // Shield bar (if active)
+  if (state.player.shieldActive && state.player.maxShieldHealth > 0) {
+    const shbY = hbY + hbH + 4;
+    const shbH = 8;
+    
+    // Shield bar background
+    state.ctx.fillStyle = "rgba(100,150,255,0.08)";
+    roundRect(state.ctx, hbX, shbY, hbW, shbH, 4);
+    state.ctx.fill();
+    
+    // Shield bar fill
+    const shieldRatio = Math.max(0, state.player.shieldHealth / state.player.maxShieldHealth);
+    const shieldGrad = state.ctx.createLinearGradient(hbX, shbY, hbX+hbW, shbY);
+    shieldGrad.addColorStop(0, "rgba(100,200,255,0.95)");
+    shieldGrad.addColorStop(0.5, "rgba(150,220,255,0.95)");
+    shieldGrad.addColorStop(1, "rgba(100,180,255,0.95)");
+    
+    state.ctx.save();
+    state.ctx.shadowColor = "rgba(100,200,255,0.15)";
+    state.ctx.shadowBlur = 6;
+    state.ctx.fillStyle = shieldGrad;
+    roundRect(state.ctx, hbX+1, shbY+1, (hbW-2) * shieldRatio, shbH-2, 4);
+    state.ctx.fill();
+    state.ctx.restore();
+    
+    // Shield label
+    state.ctx.fillStyle = "rgba(200,220,255,0.9)";
+    state.ctx.font = "10px 'Orbitron', monospace";
+    state.ctx.fillText(`SHIELD ${Math.floor(state.player.shieldHealth)}/${state.player.maxShieldHealth}`, hbX + 6, shbY - 2);
+  }
 
   state.ctx.fillStyle = "rgba(200,220,255,0.95)";
   state.ctx.font = "12px 'Orbitron', monospace";
@@ -199,8 +230,25 @@ export function drawUI() {
     state.ctx.fillText(state.goldStar.blueCannonLevel.toString(), iconX + 16, iconsY + 0);
     iconX += iconSpacing;
   }
+  
+  // Homing missiles
+  if (state.goldStar.homingMissileLevel > 0) {
+    state.ctx.fillStyle = "rgba(255,150,50,0.95)";
+    state.ctx.beginPath();
+    // draw a small missile icon
+    state.ctx.moveTo(iconX + 8, iconsY + 6);
+    state.ctx.lineTo(iconX + 2, iconsY + 9);
+    state.ctx.lineTo(iconX + 2, iconsY + 3);
+    state.ctx.closePath();
+    state.ctx.fill();
+    state.ctx.fillStyle = "rgba(220,230,255,0.95)";
+    state.ctx.font = "10px 'Orbitron', monospace";
+    state.ctx.fillText(state.goldStar.homingMissileLevel.toString(), iconX + 16, iconsY + 0);
+    iconX += iconSpacing;
+  }
+  
   // If no powerups present, show a dim placeholder
-  if (state.goldStar.redPunchLevel === 0 && state.goldStar.blueCannonLevel === 0) {
+  if (state.goldStar.redPunchLevel === 0 && state.goldStar.blueCannonLevel === 0 && state.goldStar.homingMissileLevel === 0) {
     state.ctx.fillStyle = "rgba(255,255,255,0.06)";
     state.ctx.font = "10px 'Orbitron', monospace";
     state.ctx.fillText("No power-ups", gsX + 10, iconsY + 0);
