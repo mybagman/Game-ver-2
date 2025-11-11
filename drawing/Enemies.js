@@ -902,6 +902,99 @@ export function drawDiamonds() {
         state.ctx.restore();
       }
     });
+
+    // Draw turrets
+    if (d.turrets) {
+      for (let i = 0; i < d.turrets.length; i++) {
+        const turret = d.turrets[i];
+        const turretDist = enhancedSize/2 + 15;
+        const turretX = d.x + Math.cos(turret.angle) * turretDist;
+        const turretY = d.y + Math.sin(turret.angle) * turretDist;
+        
+        state.ctx.save();
+        state.ctx.translate(turretX, turretY);
+        
+        // Turret base
+        state.ctx.fillStyle = "rgba(80, 80, 120, 0.9)";
+        state.ctx.beginPath();
+        state.ctx.arc(0, 0, 8, 0, Math.PI * 2);
+        state.ctx.fill();
+        
+        // Turret barrel (aimed at player)
+        const dx = state.player.x - turretX;
+        const dy = state.player.y - turretY;
+        const barrelAngle = Math.atan2(dy, dx);
+        state.ctx.rotate(barrelAngle);
+        state.ctx.fillStyle = "rgba(100, 100, 140, 0.9)";
+        state.ctx.fillRect(0, -3, 15, 6);
+        
+        // Turret glow when charging
+        if (turret.shootTimer > turret.fireRate - 20) {
+          const chargePulse = (turret.shootTimer - (turret.fireRate - 20)) / 20;
+          state.ctx.shadowBlur = 15 * chargePulse;
+          state.ctx.shadowColor = "rgba(255, 100, 100, 0.8)";
+          state.ctx.fillStyle = `rgba(255, 100, 100, ${chargePulse * 0.8})`;
+          state.ctx.beginPath();
+          state.ctx.arc(12, 0, 4, 0, Math.PI * 2);
+          state.ctx.fill();
+          state.ctx.shadowBlur = 0;
+        }
+        
+        state.ctx.restore();
+      }
+    }
+
+    // Draw laser charging effect
+    if (d.laserCharging && d.laserChargeTimer > 0) {
+      const chargeProgress = d.laserChargeTimer / 60;
+      
+      // Laser charge core
+      state.ctx.save();
+      state.ctx.translate(d.x, d.y);
+      
+      // Pulsing core
+      const coreSize = 20 + chargeProgress * 30;
+      const coreGradient = state.ctx.createRadialGradient(0, 0, 0, 0, 0, coreSize);
+      coreGradient.addColorStop(0, `rgba(255, 100, 255, ${chargeProgress})`);
+      coreGradient.addColorStop(0.5, `rgba(200, 50, 200, ${chargeProgress * 0.6})`);
+      coreGradient.addColorStop(1, "rgba(150, 0, 150, 0)");
+      
+      state.ctx.fillStyle = coreGradient;
+      state.ctx.beginPath();
+      state.ctx.arc(0, 0, coreSize, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Energy rings converging
+      for (let r = 0; r < 4; r++) {
+        const ringPhase = (state.frameCount * 0.1 + r * 0.5) % 1;
+        const ringRadius = 60 * (1 - ringPhase * chargeProgress);
+        const ringAlpha = (1 - ringPhase) * chargeProgress;
+        
+        state.ctx.strokeStyle = `rgba(255, 150, 255, ${ringAlpha * 0.6})`;
+        state.ctx.lineWidth = 2;
+        state.ctx.beginPath();
+        state.ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+        state.ctx.stroke();
+      }
+      
+      // Laser aim line to player
+      if (chargeProgress > 0.3) {
+        const dx = state.player.x - d.x;
+        const dy = state.player.y - d.y;
+        const dist = Math.hypot(dx, dy);
+        
+        state.ctx.strokeStyle = `rgba(255, 100, 255, ${chargeProgress * 0.4})`;
+        state.ctx.lineWidth = 3;
+        state.ctx.setLineDash([10, 5]);
+        state.ctx.beginPath();
+        state.ctx.moveTo(0, 0);
+        state.ctx.lineTo(dx, dy);
+        state.ctx.stroke();
+        state.ctx.setLineDash([]);
+      }
+      
+      state.ctx.restore();
+    }
   });
 }
 

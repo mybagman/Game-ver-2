@@ -13,6 +13,13 @@ export function updatePlayerMovement() {
     state.player.dashCooldown--;
   }
 
+  // Handle slow effect from EMP
+  let slowMultiplier = 1.0;
+  if (state.player.slowTimer && state.player.slowTimer > 0) {
+    state.player.slowTimer--;
+    slowMultiplier = 1.0 - (state.player.slowedBy || 0);
+  }
+
   // Read input and apply movement.
   // NOTE: Movement is restricted to WASD to avoid arrow-key shooting also moving the player.
   let dirX = 0, dirY = 0;
@@ -31,8 +38,8 @@ export function updatePlayerMovement() {
     const normalizedDirX = dirX / mag;
     const normalizedDirY = dirY / mag;
     
-    // Apply dash speed multiplier if dashing
-    const speedMultiplier = state.player.dashing ? DASH_SPEED_MULTIPLIER : 1;
+    // Apply dash speed multiplier if dashing, and slow multiplier from EMP
+    const speedMultiplier = (state.player.dashing ? DASH_SPEED_MULTIPLIER : 1) * slowMultiplier;
     const effectiveSpeed = state.player.speed * speedMultiplier;
     
     state.player.x += normalizedDirX * effectiveSpeed;
@@ -212,32 +219,55 @@ export function updateEmpProjectiles() {
         });
       }
       
-      // Apply slow effect to enemies in AOE
-      const allTargets = [
-        ...state.enemies,
-        ...state.mechs,
-        ...state.tanks,
-        ...state.dropships,
-        ...state.walkers
-      ];
-      
-      for (const target of allTargets) {
-        const dist = Math.hypot((target.x || 0) - emp.x, (target.y || 0) - emp.y);
-        if (dist < emp.aoe) {
-          // Apply slow effect
-          target.slowedBy = emp.slowStrength;
-          target.slowDuration = emp.slowDuration;
-          target.slowTimer = emp.slowDuration;
+      // Apply slow effect based on EMP owner
+      if (emp.owner === "gold") {
+        // Gold star EMP affects enemies
+        const allTargets = [
+          ...state.enemies,
+          ...state.mechs,
+          ...state.tanks,
+          ...state.dropships,
+          ...state.walkers
+        ];
+        
+        for (const target of allTargets) {
+          const dist = Math.hypot((target.x || 0) - emp.x, (target.y || 0) - emp.y);
+          if (dist < emp.aoe) {
+            // Apply slow effect
+            target.slowedBy = emp.slowStrength;
+            target.slowDuration = emp.slowDuration;
+            target.slowTimer = emp.slowDuration;
+            
+            // Visual feedback
+            state.pushExplosion({
+              x: target.x,
+              y: target.y,
+              dx: 0,
+              dy: 0,
+              radius: 8,
+              color: "rgba(150, 220, 255, 0.8)",
+              life: 15
+            });
+          }
+        }
+      } else if (emp.owner === "diamond") {
+        // Diamond EMP affects player
+        const distToPlayer = Math.hypot(state.player.x - emp.x, state.player.y - emp.y);
+        if (distToPlayer < emp.aoe) {
+          // Apply slow effect to player
+          state.player.slowedBy = emp.slowStrength;
+          state.player.slowDuration = emp.slowDuration;
+          state.player.slowTimer = emp.slowDuration;
           
           // Visual feedback
           state.pushExplosion({
-            x: target.x,
-            y: target.y,
+            x: state.player.x,
+            y: state.player.y,
             dx: 0,
             dy: 0,
-            radius: 8,
-            color: "rgba(150, 220, 255, 0.8)",
-            life: 15
+            radius: 12,
+            color: "rgba(255, 100, 100, 0.8)",
+            life: 20
           });
         }
       }

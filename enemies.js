@@ -265,6 +265,124 @@ export function updateDiamond(d) {
     [{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}].forEach(dv => state.pushLightning({x: d.x, y: d.y, dx: dv.x*6, dy: dv.y*6, size: 8, damage: 20}));
   }
 
+  // Initialize turrets on first update
+  if (!d.turrets) {
+    d.turrets = [];
+    const turretCount = 8;
+    for (let i = 0; i < turretCount; i++) {
+      const angle = (i / turretCount) * Math.PI * 2;
+      d.turrets.push({
+        angle: angle,
+        shootTimer: Math.random() * 60, // Stagger firing
+        fireRate: 80
+      });
+    }
+  }
+
+  // Update and fire turrets
+  for (let i = 0; i < d.turrets.length; i++) {
+    const turret = d.turrets[i];
+    turret.shootTimer = (turret.shootTimer || 0) + 1;
+    
+    if (turret.shootTimer > turret.fireRate) {
+      turret.shootTimer = 0;
+      
+      // Calculate turret position on diamond
+      const turretDist = d.size/2 + 15;
+      const turretX = d.x + Math.cos(turret.angle) * turretDist;
+      const turretY = d.y + Math.sin(turret.angle) * turretDist;
+      
+      // Aim at player
+      const dx = state.player.x - turretX;
+      const dy = state.player.y - turretY;
+      const mag = Math.hypot(dx, dy) || 1;
+      
+      state.pushLightning({
+        x: turretX,
+        y: turretY,
+        dx: (dx / mag) * 5,
+        dy: (dy / mag) * 5,
+        size: 6,
+        damage: 15
+      });
+    }
+  }
+
+  // Mega Power Up Laser Cannon - fires every 5 seconds
+  d.laserCooldown = (d.laserCooldown || 0) + 1;
+  if (d.laserCooldown > 300) { // 5 seconds at 60fps
+    d.laserCooldown = 0;
+    d.laserCharging = true;
+    d.laserChargeTimer = 0;
+  }
+  
+  // Laser charging and firing
+  if (d.laserCharging) {
+    d.laserChargeTimer = (d.laserChargeTimer || 0) + 1;
+    
+    if (d.laserChargeTimer > 60) { // 1 second charge time
+      d.laserCharging = false;
+      
+      // Fire powerful laser at player
+      const dx = state.player.x - d.x;
+      const dy = state.player.y - d.y;
+      const mag = Math.hypot(dx, dy) || 1;
+      
+      // Create multiple laser projectiles in a tight beam
+      for (let i = 0; i < 5; i++) {
+        state.pushLightning({
+          x: d.x + (dx / mag) * (i * 20),
+          y: d.y + (dy / mag) * (i * 20),
+          dx: (dx / mag) * 12,
+          dy: (dy / mag) * 12,
+          size: 15,
+          damage: 35,
+          color: "rgba(255, 100, 255, 0.9)"
+        });
+      }
+      
+      // Visual effects for laser
+      for (let j = 0; j < 20; j++) {
+        const angle = (j / 20) * Math.PI * 2;
+        state.pushExplosion({
+          x: d.x,
+          y: d.y,
+          dx: Math.cos(angle) * 4,
+          dy: Math.sin(angle) * 4,
+          radius: 6,
+          color: "rgba(255, 100, 255, 0.8)",
+          life: 20
+        });
+      }
+    }
+  }
+
+  // EMP attack - fires at player every 8 seconds
+  d.empCooldown = (d.empCooldown || 0) + 1;
+  if (d.empCooldown > 480) { // 8 seconds at 60fps
+    d.empCooldown = 0;
+    
+    // Fire EMP at player
+    const dx = state.player.x - d.x;
+    const dy = state.player.y - d.y;
+    const mag = Math.hypot(dx, dy) || 1;
+    
+    state.pushEmpProjectile({
+      x: d.x,
+      y: d.y,
+      dx: (dx / mag) * 5,
+      dy: (dy / mag) * 5,
+      targetX: state.player.x,
+      targetY: state.player.y,
+      size: 15,
+      owner: "diamond",
+      aoe: 100,
+      slowDuration: 180, // 3 seconds
+      slowStrength: 0.6,
+      level: 5
+    });
+  }
+
   const distToPlayer = Math.hypot(d.x-state.player.x, d.y-state.player.y);
   if (distToPlayer < (d.size/2 + state.player.size/2)) {
     applyPlayerDamage(30);
