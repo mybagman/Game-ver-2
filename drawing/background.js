@@ -96,6 +96,44 @@ export function drawCityBackground() {
   }
 }
 
+// NEW: Desert landscape that persists across all waves
+export function drawDesertGround() {
+  const groundHeight = state.canvas.height * 0.25; // Bottom 25% of screen
+  const groundY = state.canvas.height - groundHeight;
+  
+  // Desert sand gradient (warm yellows and browns)
+  const desertGradient = state.ctx.createLinearGradient(0, groundY, 0, state.canvas.height);
+  desertGradient.addColorStop(0, "#d4a574"); // Light sand
+  desertGradient.addColorStop(0.4, "#c9984a"); // Medium sand
+  desertGradient.addColorStop(1, "#a87d3a"); // Darker sand
+  
+  state.ctx.fillStyle = desertGradient;
+  state.ctx.fillRect(0, groundY, state.canvas.width, groundHeight);
+  
+  // Sand dunes (rolling hills using sine waves)
+  state.ctx.fillStyle = "rgba(180, 140, 90, 0.3)";
+  state.ctx.beginPath();
+  state.ctx.moveTo(0, groundY);
+  
+  for (let x = 0; x <= state.canvas.width; x += 20) {
+    const duneHeight = Math.sin(x * 0.01 + state.frameCount * 0.002) * 30 + 
+                       Math.sin(x * 0.005) * 20;
+    state.ctx.lineTo(x, groundY + duneHeight);
+  }
+  
+  state.ctx.lineTo(state.canvas.width, groundY);
+  state.ctx.closePath();
+  state.ctx.fill();
+  
+  // Sand texture (small dots for detail)
+  state.ctx.fillStyle = "rgba(200, 160, 110, 0.2)";
+  for (let i = 0; i < 100; i++) {
+    const x = (i * 137.5 + i * i * 73) % state.canvas.width;
+    const y = groundY + ((i * 89) % groundHeight);
+    state.ctx.fillRect(x, y, 2, 2);
+  }
+}
+
 export function drawGroundObjects() {
   // Draw ground collision objects (buildings/terrain)
   state.groundObjects.forEach(ground => {
@@ -130,91 +168,50 @@ export function drawGroundObjects() {
 }
 
 export function drawBackground(waveNum) {
-  if (waveNum >= 12 && waveNum <= 21) {
-    if (waveNum === 12) {
-      const grad = state.ctx.createLinearGradient(0, 0, 0, state.canvas.height);
-      grad.addColorStop(0, "#1a0a0a");
-      grad.addColorStop(0.5, "#4a1a0a");
-      grad.addColorStop(1, "#8a3a1a");
-      state.ctx.fillStyle = grad;
-      state.ctx.fillRect(0, 0, state.canvas.width, state.canvas.height);
-
-      // Reduced from 30 to 15 particles, use deterministic positions
-      for (let i = 0; i < 15; i++) {
-        const x = (i * 73 + i * i * 17) % state.canvas.width; // deterministic x position
-        const y = (state.frameCount * 3 + i * 50) % state.canvas.height;
-        const colorVariation = ((i * 37) % 100);
-        const alphaVariation = ((i * 13) % 50) / 100;
-        state.ctx.fillStyle = `rgba(255,${100 + colorVariation},0,${alphaVariation})`;
-        state.ctx.fillRect(x, y, 3, 10);
-      }
-    } else if (waveNum === 13) {
-      state.ctx.fillStyle = "#6a8a9a";
-      state.ctx.fillRect(0, 0, state.canvas.width, state.canvas.height);
-      drawClouds();
-    } else if (waveNum >= 14 && waveNum <= 19) {
-      const grad = state.ctx.createLinearGradient(0, 0, 0, state.canvas.height);
-      grad.addColorStop(0, "#2a2a3a");
-      grad.addColorStop(1, "#4a3a2a");
-      state.ctx.fillStyle = grad;
-      state.ctx.fillRect(0, 0, state.canvas.width, state.canvas.height);
-      drawCityBackground();
-    } else if (waveNum >= 20) {
-      state.ctx.fillStyle = "#0a0a1a";
-      state.ctx.fillRect(0, 0, state.canvas.width, state.canvas.height);
-      if (state.frameCount % 60 < 3) {
-        state.ctx.fillStyle = `rgba(255,255,255,${(3 - state.frameCount % 60) / 3 * 0.3})`;
-        state.ctx.fillRect(0, 0, state.canvas.width, state.canvas.height);
-      }
-    }
-  } else {
-    state.ctx.fillStyle = "#00142b";
-    state.ctx.fillRect(0, 0, state.canvas.width, state.canvas.height);
-
-    for (let i = 0; i < 80; i++) {
-      const seed = (i * 97 + (i % 7) * 13);
-      const x = (seed + state.backgroundOffset * (0.2 + (i % 5) * 0.02)) % state.canvas.width;
-      const y = (i * 89 + Math.sin(state.frameCount * 0.01 + i) * 20) % state.canvas.height;
-      const alpha = 0.3 + (i % 3) * 0.15;
-      state.ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-      state.ctx.fillRect(x, y, 2, 2);
-    }
-
-    state.ctx.strokeStyle = "rgba(200,240,255,0.03)";
-    state.ctx.lineWidth = 1;
-    for (let r = 1; r <= 3; r++) {
-      state.ctx.beginPath();
-      const radius = (Math.min(state.canvas.width, state.canvas.height) / 2) * (0.5 + r * 0.12 + Math.sin(state.frameCount * 0.005 + r) * 0.01);
-      state.ctx.arc(state.canvas.width / 2, state.canvas.height * 0.25, radius, 0, Math.PI * 2);
-      state.ctx.stroke();
-    }
-
-    const earthBaseY = state.canvas.height * 0.9;
-    const progressFactor = Math.min(1, Math.max(0, state.wave / 10));
-    const earthRadius = 120 + progressFactor * 90;
-    const earthX = state.canvas.width / 2;
-    const earthY = earthBaseY;
-    const eg = state.ctx.createRadialGradient(earthX, earthY, earthRadius * 0.1, earthX, earthY, earthRadius);
-    eg.addColorStop(0, "#2b6f2b");
-    eg.addColorStop(0.6, "#144f8a");
-    eg.addColorStop(1, "#071325");
-    state.ctx.fillStyle = eg;
-    state.ctx.beginPath();
-    state.ctx.arc(earthX, earthY, earthRadius, Math.PI, 2 * Math.PI);
-    state.ctx.lineTo(state.canvas.width, state.canvas.height);
-    state.ctx.lineTo(0, state.canvas.height);
-    state.ctx.closePath();
-    state.ctx.fill();
-
-    state.ctx.globalAlpha = 0.08 + progressFactor * 0.12;
-    state.ctx.fillStyle = "rgba(100,180,255,0.6)";
-    state.ctx.beginPath();
-    state.ctx.arc(earthX, earthY - 10, earthRadius + 30, Math.PI, 2 * Math.PI);
-    state.ctx.fill();
-    state.ctx.globalAlpha = 1;
-  }
+  // REDESIGNED: Desert sky background (warm desert atmosphere)
+  const skyGradient = state.ctx.createLinearGradient(0, 0, 0, state.canvas.height * 0.7);
+  skyGradient.addColorStop(0, "#87ceeb"); // Sky blue at top
+  skyGradient.addColorStop(0.6, "#e8d4a0"); // Hazy horizon
+  skyGradient.addColorStop(1, "#d4a574"); // Sandy horizon
+  
+  state.ctx.fillStyle = skyGradient;
+  state.ctx.fillRect(0, 0, state.canvas.width, state.canvas.height * 0.75);
+  
+  // Draw a few small stationary clouds (requirement: only a few small clouds, stationary)
+  drawStaticDesertClouds();
+  
+  // PERSISTENT desert ground across ALL waves (requirement: desert ground persists)
+  drawDesertGround();
 
   state.incrementBackgroundOffset(0.5);
+}
+
+// NEW: Static desert clouds (stationary, not moving)
+function drawStaticDesertClouds() {
+  const clouds = [
+    { x: 150, y: 80, size: 30 },
+    { x: 400, y: 120, size: 25 },
+    { x: 800, y: 60, size: 35 },
+    { x: 1100, y: 100, size: 28 }
+  ];
+  
+  clouds.forEach(cloud => {
+    // Only draw if within canvas bounds
+    if (cloud.x < state.canvas.width) {
+      state.ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+      state.ctx.beginPath();
+      state.ctx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Add fluffy bumps
+      state.ctx.beginPath();
+      state.ctx.arc(cloud.x - cloud.size * 0.5, cloud.y, cloud.size * 0.7, 0, Math.PI * 2);
+      state.ctx.fill();
+      state.ctx.beginPath();
+      state.ctx.arc(cloud.x + cloud.size * 0.5, cloud.y, cloud.size * 0.7, 0, Math.PI * 2);
+      state.ctx.fill();
+    }
+  });
 }
 
 // ----------------------
