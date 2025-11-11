@@ -22,6 +22,7 @@ export let redPunchEffects = [];
 export let minionsToAdd = [];
 export let homingMissiles = [];
 export let empProjectiles = [];
+export let groundObjects = []; // Ground collision objects for building waves
 
 export let keys = {};
 export let shootCooldown = 0;
@@ -218,6 +219,7 @@ export function pushAuraSpark(s) { auraSparks.push(s); }
 export function pushAuraShockwave(s) { auraShockwaves.push(s); }
 export function pushHomingMissile(m) { homingMissiles.push(m); }
 export function pushEmpProjectile(e) { empProjectiles.push(e); }
+export function pushGroundObject(g) { groundObjects.push(g); }
 
 export function filterAuraSparks(fn) { auraSparks = auraSparks.filter(fn); }
 export function filterAuraShockwaves(fn) { auraShockwaves = auraShockwaves.filter(fn); }
@@ -265,6 +267,7 @@ export function resetGame() {
   auraShockwaves.length = 0;
   homingMissiles.length = 0;
   empProjectiles.length = 0;
+  groundObjects.length = 0;
 
   // reset simple state
   keys = {};

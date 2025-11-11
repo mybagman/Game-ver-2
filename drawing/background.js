@@ -96,6 +96,39 @@ export function drawCityBackground() {
   }
 }
 
+export function drawGroundObjects() {
+  // Draw ground collision objects (buildings/terrain)
+  state.groundObjects.forEach(ground => {
+    state.ctx.save();
+    
+    // Building with 8-bit aesthetic
+    state.ctx.fillStyle = "#3a3a4a";
+    state.ctx.fillRect(ground.x, ground.y, ground.width, ground.height);
+    
+    // Building windows (8-bit style)
+    const windowSize = 8;
+    const windowSpacing = 16;
+    state.ctx.fillStyle = "#6a6a8a";
+    
+    for (let wx = ground.x + 10; wx < ground.x + ground.width - 10; wx += windowSpacing) {
+      for (let wy = ground.y + 10; wy < ground.y + ground.height - 10; wy += windowSpacing) {
+        state.ctx.fillRect(wx, wy, windowSize, windowSize);
+      }
+    }
+    
+    // Building outline
+    state.ctx.strokeStyle = "#2a2a3a";
+    state.ctx.lineWidth = 2;
+    state.ctx.strokeRect(ground.x, ground.y, ground.width, ground.height);
+    
+    // Danger indicator (red glow at top)
+    state.ctx.fillStyle = "rgba(255, 50, 50, 0.3)";
+    state.ctx.fillRect(ground.x, ground.y, ground.width, 5);
+    
+    state.ctx.restore();
+  });
+}
+
 export function drawBackground(waveNum) {
   if (waveNum >= 12 && waveNum <= 21) {
     if (waveNum === 12) {

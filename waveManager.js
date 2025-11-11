@@ -42,6 +42,11 @@ export function spawnWave(waveIndex) {
   }
 
   if (waveData.tunnel) spawns.spawnTunnel();
+  
+  // Spawn ground objects for city/building waves
+  if (waveData.theme === "city-descent" || waveData.theme === "ruined-city") {
+    spawns.spawnGroundObjects();
+  }
 
   if (waveData.enemies && Array.isArray(waveData.enemies)) {
     waveData.enemies.forEach(group => {
@@ -73,6 +78,8 @@ export function tryAdvanceWave() {
   if (allEnemiesClear && !state.waveTransition) {
     state.clearBullets();
     state.clearLightning();
+    // Clear ground objects from previous wave
+    state.groundObjects.length = 0;
 
     if (state.wave >= waves.length-1) { 
       state.setWaveTransition(true);
