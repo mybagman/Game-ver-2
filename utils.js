@@ -224,6 +224,32 @@ export function spawnMotherCore() {
   });
 }
 
+export function spawnGroundObjects() {
+  // Create ground collision objects for city/building waves
+  // These act as impassable, damaging terrain at the bottom of the screen
+  const groundHeight = 80;
+  const groundY = state.canvas.height - groundHeight;
+  
+  // Create a series of building/ground blocks
+  const blockCount = 8;
+  const blockWidth = state.canvas.width / blockCount;
+  
+  for (let i = 0; i < blockCount; i++) {
+    const x = i * blockWidth;
+    const heightVariation = Math.random() * 30 - 15; // Vary building heights
+    const h = groundHeight + heightVariation;
+    
+    state.pushGroundObject({
+      x: x,
+      y: state.canvas.height - h,
+      width: blockWidth - 10, // Small gap between buildings
+      height: h,
+      damage: 15, // Damage per second
+      type: 'building'
+    });
+  }
+}
+
 export function respawnGoldStar() {
   state.goldStar.x = state.canvas.width/4; 
   state.goldStar.y = state.canvas.height/2;

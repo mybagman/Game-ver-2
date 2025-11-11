@@ -1,5 +1,6 @@
 import * as state from './state.js';
 import { DASH_SPEED_MULTIPLIER } from './input.js';
+import { triggerTunnelCollision } from './drawing/Effects.js';
 
 export function updatePlayerMovement() {
   // Update dash timers
@@ -76,7 +77,41 @@ export function updatePlayerMovement() {
   state.player.x = Math.max(state.player.size/2, Math.min(state.canvas.width - state.player.size/2, state.player.x));
   state.player.y = Math.max(state.player.size/2, Math.min(state.canvas.height - state.player.size/2, state.player.y));
 
-  // TUNNEL DAMAGE: damage player while overlapping an active tunnel
+  // GROUND COLLISION: Check collision with ground objects (buildings)
+  for (let gi = 0; gi < state.groundObjects.length; gi++) {
+    const ground = state.groundObjects[gi];
+    if (!ground) continue;
+
+    // Check overlap between the player's circle and the ground rectangle
+    const radius = state.player.size / 2;
+    const nearestX = Math.max(ground.x, Math.min(state.player.x, ground.x + ground.width));
+    const nearestY = Math.max(ground.y, Math.min(state.player.y, ground.y + ground.height));
+    const dx = state.player.x - nearestX;
+    const dy = state.player.y - nearestY;
+    const distSq = dx * dx + dy * dy;
+
+    if (distSq < radius * radius) {
+      // Player is overlapping the ground - make it impassable by pushing player out
+      const dist = Math.sqrt(distSq);
+      const pushDist = radius - dist;
+      
+      if (dist > 0) {
+        // Push player away from nearest point on ground
+        const pushX = (dx / dist) * pushDist;
+        const pushY = (dy / dist) * pushDist;
+        state.player.x += pushX;
+        state.player.y += pushY;
+      }
+      
+      // Apply damage unless invulnerable
+      if (!state.player.invulnerable) {
+        const damagePerFrame = (ground.damage || 15) / 60; // damage per second / 60fps
+        state.player.health -= damagePerFrame;
+      }
+    }
+  }
+
+  // TUNNEL COLLISION: Make tunnels impassable and damaging
   // configurable damage per second
   const TUNNEL_DAMAGE_PER_SECOND = 20; // adjust this value to tune how harmful tunnels are
   const damagePerFrame = TUNNEL_DAMAGE_PER_SECOND / 60; // assuming ~60 FPS
@@ -95,10 +130,26 @@ export function updatePlayerMovement() {
     const distSq = dx*dx + dy*dy;
 
     if (distSq < radius * radius) {
-      // Player is overlapping the tunnel. Apply damage unless invulnerable.
+      // Player is overlapping the tunnel - make it impassable by pushing player out
+      const dist = Math.sqrt(distSq);
+      const pushDist = radius - dist;
+      
+      if (dist > 0) {
+        // Push player away from nearest point on tunnel
+        const pushX = (dx / dist) * pushDist;
+        const pushY = (dy / dist) * pushDist;
+        state.player.x += pushX;
+        state.player.y += pushY;
+      }
+      
+      // Apply damage unless invulnerable
       if (!state.player.invulnerable) {
         state.player.health -= damagePerFrame;
-        // Optional: small visual effect or hurt sound can be triggered here.
+        
+        // Trigger visual damage effect every 10 frames
+        if (state.frameCount % 10 === 0) {
+          triggerTunnelCollision(nearestX, nearestY);
+        }
       }
     }
   }

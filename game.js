@@ -19,7 +19,7 @@ import { tryAdvanceWave, spawnWave } from './waveManager.js';
 import { updateReflectorSystem, updateHomingMissiles, drawHomingMissiles } from './homingMissiles.js';
 /* patched imports: consolidated drawing helpers from drawing.js */
 // Replace the single `from './drawing.js'` import with these direct imports:
-import { drawBackground, drawPlanetBackground, drawClouds } from './drawing/background.js';
+import { drawBackground, drawPlanetBackground, drawClouds, drawGroundObjects } from './drawing/background.js';
 import { drawBullets, drawEmpProjectiles } from './drawing/bullets.js';
 import { drawDiamonds, drawEnemies, drawDropship, drawDropships, drawTanks, drawWalkers, drawMechs } from './drawing/Enemies.js';
 import { drawGoldStarAura, drawGoldStar } from './drawing/goldstar.js';
@@ -188,12 +188,15 @@ export function renderFrame() {
     try { drawClouds(); } catch (e) {}
   }
 
-  // 4) World objects: tunnels, planet colliders
+  // 4) World objects: tunnels, ground, planet colliders
   if (typeof drawTunnels === 'function') {
     try { drawTunnels(); } catch (e) {}
   }
   if (typeof drawTunnelCollisions === 'function') {
     try { drawTunnelCollisions(); } catch (e) {}
+  }
+  if (typeof drawGroundObjects === 'function') {
+    try { drawGroundObjects(); } catch (e) {}
   }
 
   // 5) Enemies / bullets / dropships / mechs / tanks / walkers

@@ -494,10 +494,10 @@ export function drawUI() {
     weaponY += weaponSpacing;
   }
   
-  // Reflector system
+  // EMP system (formerly Reflector)
   if (state.player.reflectorLevel > 0) {
     ctx.fillStyle = `rgba(100, 200, 255, ${0.9 * weaponPanelTransparency})`;
-    ctx.fillText(`REFLECTOR`, weaponPanelX + 10, weaponY);
+    ctx.fillText(`EMP`, weaponPanelX + 10, weaponY);
     ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * weaponPanelTransparency})`;
     ctx.fillText(`LV ${state.player.reflectorLevel}`, weaponPanelX + 140, weaponY);
   }

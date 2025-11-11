@@ -3,137 +3,235 @@ import * as state from '../state.js';
 export function drawEnemies() {
   // Cache pulse value - calculated once per frame and reused for all red squares
   const redSquarePulse = Math.sin(state.frameCount * 0.1) * 0.3 + 0.7;
+  const isSideView = state.wave >= 11;
   
   state.enemies.forEach(e => {
     if (!e) return;
 
     if (e.type === "red-square") { 
-      // Raiden-style enemy fighter (aggressive red variant)
+      // After wave 11: WW2 Zero fighter style (side-view, larger)
+      // Before wave 11: Raiden-style enemy fighter (top-down)
       state.ctx.save();
       state.ctx.translate(e.x, e.y);
       
-      // Calculate angle toward player for orientation
-      const dx = state.player.x - e.x;
-      const dy = state.player.y - e.y;
-      const angle = Math.atan2(dy, dx);
-      state.ctx.rotate(angle);
-      
-      const size = e.size;
+      // Size increase for side-view
+      const sizeMultiplier = isSideView ? 1.5 : 1.0;
+      const size = e.size * sizeMultiplier;
       const pulse = redSquarePulse;
       
-      // Main fuselage (dark red military)
-      state.ctx.fillStyle = "#8B0000";
-      state.ctx.fillRect(-size/3, -size/8, size*0.66, size/4);
-      
-      // Nose cone
-      state.ctx.fillStyle = "#A00000";
-      state.ctx.beginPath();
-      state.ctx.moveTo(size/3, 0);
-      state.ctx.lineTo(size/6, -size/8);
-      state.ctx.lineTo(size/6, size/8);
-      state.ctx.closePath();
-      state.ctx.fill();
-      
-      // Delta wings (Raiden enemy style)
-      state.ctx.fillStyle = "#700000";
-      state.ctx.beginPath();
-      state.ctx.moveTo(-size/6, -size/8);
-      state.ctx.lineTo(-size/4, -size/3);
-      state.ctx.lineTo(size/12, -size/6);
-      state.ctx.closePath();
-      state.ctx.fill();
-      state.ctx.beginPath();
-      state.ctx.moveTo(-size/6, size/8);
-      state.ctx.lineTo(-size/4, size/3);
-      state.ctx.lineTo(size/12, size/6);
-      state.ctx.closePath();
-      state.ctx.fill();
-      
-      // Cockpit window (glowing)
-      state.ctx.fillStyle = `rgba(255, 80, 80, ${pulse})`;
-      state.ctx.fillRect(size/12, -size/16, size/8, size/8);
-      
-      // Twin engines at rear
-      state.ctx.fillStyle = `rgba(255, 100, 0, ${pulse * 0.8})`;
-      state.ctx.fillRect(-size/3, -size/12, size/12, size/6);
-      
-      // Engine glow effect
-      if (state.frameCount % 3 === 0) {
-        state.ctx.fillStyle = `rgba(255, 150, 50, ${pulse * 0.6})`;
-        state.ctx.fillRect(-size/2.5, -size/16, size/8, size/8);
+      if (isSideView) {
+        // WW2 Zero fighter - side view profile
+        // Orient horizontally (side-on view)
+        state.ctx.rotate(0); // Fixed horizontal orientation
+        
+        // Main fuselage (red, cylindrical body)
+        state.ctx.fillStyle = "#8B0000";
+        state.ctx.fillRect(-size/2, -size/6, size*0.8, size/3);
+        
+        // Nose cone (pointed)
+        state.ctx.fillStyle = "#A00000";
+        state.ctx.beginPath();
+        state.ctx.moveTo(size*0.3, 0);
+        state.ctx.lineTo(size*0.15, -size/6);
+        state.ctx.lineTo(size*0.15, size/6);
+        state.ctx.closePath();
+        state.ctx.fill();
+        
+        // Propeller spinner
+        state.ctx.fillStyle = "#600000";
+        state.ctx.beginPath();
+        state.ctx.arc(size*0.3, 0, size/12, 0, Math.PI * 2);
+        state.ctx.fill();
+        
+        // Wings (distinctive rising sun markings area)
+        state.ctx.fillStyle = "#700000";
+        state.ctx.fillRect(-size/4, -size/2.5, size/3, size/16);
+        state.ctx.fillRect(-size/4, size/2.5 - size/16, size/3, size/16);
+        
+        // Cockpit canopy
+        state.ctx.fillStyle = `rgba(100, 100, 150, ${pulse * 0.8})`;
+        state.ctx.fillRect(-size/8, -size/8, size/6, size/4);
+        
+        // Tail section
+        state.ctx.fillStyle = "#700000";
+        state.ctx.fillRect(-size/2, -size/8, size/8, size/4);
+        
+        // Vertical stabilizer
+        state.ctx.fillStyle = "#600000";
+        state.ctx.fillRect(-size/2.2, -size/3, size/12, size/3);
+        
+        // Engine exhaust glow
+        state.ctx.fillStyle = `rgba(255, 120, 0, ${pulse * 0.6})`;
+        state.ctx.beginPath();
+        state.ctx.arc(-size/2, 0, size/10, 0, Math.PI * 2);
+        state.ctx.fill();
+      } else {
+        // Original top-down Raiden-style fighter
+        // Calculate angle toward player for orientation
+        const dx = state.player.x - e.x;
+        const dy = state.player.y - e.y;
+        const angle = Math.atan2(dy, dx);
+        state.ctx.rotate(angle);
+        
+        // Main fuselage (dark red military)
+        state.ctx.fillStyle = "#8B0000";
+        state.ctx.fillRect(-size/3, -size/8, size*0.66, size/4);
+        
+        // Nose cone
+        state.ctx.fillStyle = "#A00000";
+        state.ctx.beginPath();
+        state.ctx.moveTo(size/3, 0);
+        state.ctx.lineTo(size/6, -size/8);
+        state.ctx.lineTo(size/6, size/8);
+        state.ctx.closePath();
+        state.ctx.fill();
+        
+        // Delta wings (Raiden enemy style)
+        state.ctx.fillStyle = "#700000";
+        state.ctx.beginPath();
+        state.ctx.moveTo(-size/6, -size/8);
+        state.ctx.lineTo(-size/4, -size/3);
+        state.ctx.lineTo(size/12, -size/6);
+        state.ctx.closePath();
+        state.ctx.fill();
+        state.ctx.beginPath();
+        state.ctx.moveTo(-size/6, size/8);
+        state.ctx.lineTo(-size/4, size/3);
+        state.ctx.lineTo(size/12, size/6);
+        state.ctx.closePath();
+        state.ctx.fill();
+        
+        // Cockpit window (glowing)
+        state.ctx.fillStyle = `rgba(255, 80, 80, ${pulse})`;
+        state.ctx.fillRect(size/12, -size/16, size/8, size/8);
+        
+        // Twin engines at rear
+        state.ctx.fillStyle = `rgba(255, 100, 0, ${pulse * 0.8})`;
+        state.ctx.fillRect(-size/3, -size/12, size/12, size/6);
+        
+        // Engine glow effect
+        if (state.frameCount % 3 === 0) {
+          state.ctx.fillStyle = `rgba(255, 150, 50, ${pulse * 0.6})`;
+          state.ctx.fillRect(-size/2.5, -size/16, size/8, size/8);
+        }
+        
+        // Panel lines
+        state.ctx.strokeStyle = "#500000";
+        state.ctx.lineWidth = 1;
+        state.ctx.beginPath();
+        state.ctx.moveTo(0, -size/10);
+        state.ctx.lineTo(-size/4, -size/10);
+        state.ctx.moveTo(0, size/10);
+        state.ctx.lineTo(-size/4, size/10);
+        state.ctx.stroke();
+        
+        // Weapons hardpoints
+        state.ctx.fillStyle = "#600000";
+        state.ctx.fillRect(-size/5, -size/4, size/20, size/12);
+        state.ctx.fillRect(-size/5, size/4 - size/12, size/20, size/12);
       }
-      
-      // Panel lines
-      state.ctx.strokeStyle = "#500000";
-      state.ctx.lineWidth = 1;
-      state.ctx.beginPath();
-      state.ctx.moveTo(0, -size/10);
-      state.ctx.lineTo(-size/4, -size/10);
-      state.ctx.moveTo(0, size/10);
-      state.ctx.lineTo(-size/4, size/10);
-      state.ctx.stroke();
-      
-      // Weapons hardpoints
-      state.ctx.fillStyle = "#600000";
-      state.ctx.fillRect(-size/5, -size/4, size/20, size/12);
-      state.ctx.fillRect(-size/5, size/4 - size/12, size/20, size/12);
       
       state.ctx.restore();
     }
     else if (e.type === "triangle") { 
-      // Raiden-style blue support bomber (heavier enemy aircraft)
+      // After wave 11: Larger blue triangle (side-view, enhanced visuals)
+      // Before wave 11: Raiden-style blue support bomber (top-down)
       state.ctx.save();
       state.ctx.translate(e.x, e.y);
       
-      const size = e.size;
+      const sizeMultiplier = isSideView ? 1.5 : 1.0;
+      const size = e.size * sizeMultiplier;
       const pulse = Math.sin(state.frameCount * 0.08 + e.x) * 0.4 + 0.6;
       
-      // Main body (blue-gray military bomber)
-      state.ctx.fillStyle = "#2a4a6a";
-      state.ctx.fillRect(-size/3, -size/6, size*0.75, size/3);
-      
-      // Nose section
-      state.ctx.fillStyle = "#3a5a7a";
-      state.ctx.beginPath();
-      state.ctx.moveTo(size*0.42, 0);
-      state.ctx.lineTo(size/4, -size/6);
-      state.ctx.lineTo(size/4, size/6);
-      state.ctx.closePath();
-      state.ctx.fill();
-      
-      // Wide bomber wings
-      state.ctx.fillStyle = "#1a3a5a";
-      state.ctx.fillRect(-size/4, -size/2.5, size/2, size/12);
-      state.ctx.fillRect(-size/4, size/2.5 - size/12, size/2, size/12);
-      
-      // Wing-mounted weapons pods
-      state.ctx.fillStyle = "#0a2a4a";
-      state.ctx.fillRect(-size/6, -size/2.2, size/12, size/8);
-      state.ctx.fillRect(-size/6, size/2.2 - size/8, size/12, size/8);
-      
-      // Cockpit (glowing cyan)
-      state.ctx.fillStyle = `rgba(0,200,255,${pulse})`;
-      state.ctx.fillRect(size/8, -size/12, size/6, size/6);
-      
-      // Twin engines with glow
-      state.ctx.fillStyle = "#1a2a3a";
-      state.ctx.fillRect(-size/3, -size/10, size/10, size/5);
-      state.ctx.fillStyle = `rgba(100,180,255,${pulse * 0.8})`;
-      state.ctx.fillRect(-size/2.8, -size/14, size/12, size/7);
-      
-      // Panel lines
-      state.ctx.strokeStyle = "#0a2a4a";
-      state.ctx.lineWidth = 1;
-      state.ctx.beginPath();
-      state.ctx.moveTo(0, -size/8);
-      state.ctx.lineTo(-size/3, -size/8);
-      state.ctx.moveTo(0, size/8);
-      state.ctx.lineTo(-size/3, size/8);
-      state.ctx.stroke();
-      
-      // Vertical stabilizer
-      state.ctx.fillStyle = "#2a4a6a";
-      state.ctx.fillRect(-size/4, -size/3, size/20, size/8);
+      if (isSideView) {
+        // Enhanced blue triangle - side view, larger with more details
+        // Triangle profile shape
+        state.ctx.fillStyle = "#2a4a6a";
+        state.ctx.beginPath();
+        state.ctx.moveTo(size*0.4, 0); // Nose
+        state.ctx.lineTo(-size*0.4, -size*0.5); // Top rear
+        state.ctx.lineTo(-size*0.4, size*0.5); // Bottom rear
+        state.ctx.closePath();
+        state.ctx.fill();
+        
+        // Enhanced outline for definition
+        state.ctx.strokeStyle = "#3a5a8a";
+        state.ctx.lineWidth = 2;
+        state.ctx.stroke();
+        
+        // Cockpit area (glowing)
+        state.ctx.fillStyle = `rgba(50, 150, 255, ${pulse})`;
+        state.ctx.beginPath();
+        state.ctx.arc(size*0.1, 0, size/6, 0, Math.PI * 2);
+        state.ctx.fill();
+        
+        // Engine ports on wings
+        state.ctx.fillStyle = `rgba(100, 180, 255, ${pulse * 0.9})`;
+        state.ctx.fillRect(-size*0.35, -size*0.45, size/8, size/6);
+        state.ctx.fillRect(-size*0.35, size*0.3, size/8, size/6);
+        
+        // Panel details
+        state.ctx.strokeStyle = "#1a3a5a";
+        state.ctx.lineWidth = 1;
+        state.ctx.beginPath();
+        state.ctx.moveTo(0, -size*0.3);
+        state.ctx.lineTo(-size*0.2, -size*0.3);
+        state.ctx.moveTo(0, size*0.3);
+        state.ctx.lineTo(-size*0.2, size*0.3);
+        state.ctx.stroke();
+        
+        // Weapon hardpoint markers
+        state.ctx.fillStyle = "#0a2a4a";
+        state.ctx.fillRect(size*0.15, -size*0.1, size/10, size/5);
+      } else {
+        // Original top-down blue bomber
+        // Main body (blue-gray military bomber)
+        state.ctx.fillStyle = "#2a4a6a";
+        state.ctx.fillRect(-size/3, -size/6, size*0.75, size/3);
+        
+        // Nose section
+        state.ctx.fillStyle = "#3a5a7a";
+        state.ctx.beginPath();
+        state.ctx.moveTo(size*0.42, 0);
+        state.ctx.lineTo(size/4, -size/6);
+        state.ctx.lineTo(size/4, size/6);
+        state.ctx.closePath();
+        state.ctx.fill();
+        
+        // Wide bomber wings
+        state.ctx.fillStyle = "#1a3a5a";
+        state.ctx.fillRect(-size/4, -size/2.5, size/2, size/12);
+        state.ctx.fillRect(-size/4, size/2.5 - size/12, size/2, size/12);
+        
+        // Wing-mounted weapons pods
+        state.ctx.fillStyle = "#0a2a4a";
+        state.ctx.fillRect(-size/6, -size/2.2, size/12, size/8);
+        state.ctx.fillRect(-size/6, size/2.2 - size/8, size/12, size/8);
+        
+        // Cockpit (glowing cyan)
+        state.ctx.fillStyle = `rgba(0,200,255,${pulse})`;
+        state.ctx.fillRect(size/8, -size/12, size/6, size/6);
+        
+        // Twin engines with glow
+        state.ctx.fillStyle = "#1a2a3a";
+        state.ctx.fillRect(-size/3, -size/10, size/10, size/5);
+        state.ctx.fillStyle = `rgba(100,180,255,${pulse * 0.8})`;
+        state.ctx.fillRect(-size/2.8, -size/14, size/12, size/7);
+        
+        // Panel lines
+        state.ctx.strokeStyle = "#0a2a4a";
+        state.ctx.lineWidth = 1;
+        state.ctx.beginPath();
+        state.ctx.moveTo(0, -size/8);
+        state.ctx.lineTo(-size/3, -size/8);
+        state.ctx.moveTo(0, size/8);
+        state.ctx.lineTo(-size/3, size/8);
+        state.ctx.stroke();
+        
+        // Vertical stabilizer
+        state.ctx.fillStyle = "#2a4a6a";
+        state.ctx.fillRect(-size/4, -size/3, size/20, size/8);
+      }
       
       state.ctx.restore();
 
@@ -163,92 +261,190 @@ export function drawEnemies() {
       } catch (err) {}
     }
     else if (e.type === "boss") { 
-      // Raiden-style massive battleship/mothership boss
+      // After wave 11: 8-bit Unicron style
+      // Before wave 11: Raiden-style massive battleship/mothership boss
       state.ctx.save();
       state.ctx.translate(e.x, e.y);
       
       const size = e.size;
       const pulse = Math.sin(state.frameCount * 0.05) * 0.2 + 0.8;
       
-      // Main hull (massive fortress-like structure)
-      state.ctx.fillStyle = "#4a4a3a";
-      state.ctx.fillRect(-size/2, -size/3, size, size*0.66);
-      
-      // Bridge tower
-      state.ctx.fillStyle = "#5a5a4a";
-      state.ctx.fillRect(-size/6, -size/2, size/3, size/4);
-      
-      // Command deck windows (glowing yellow)
-      state.ctx.fillStyle = `rgba(255, 220, 100, ${pulse})`;
-      state.ctx.fillRect(-size/8, -size/2.2, size/4, size/12);
-      
-      // Multiple turret emplacements
-      const turretPositions = [
-        [-size/3, -size/4], [size/3, -size/4],
-        [-size/3, size/4], [size/3, size/4],
-        [-size/6, 0], [size/6, 0]
-      ];
-      
-      turretPositions.forEach(([tx, ty]) => {
-        state.ctx.fillStyle = "#3a3a2a";
-        state.ctx.fillRect(tx - size/12, ty - size/12, size/6, size/6);
-        state.ctx.fillStyle = "#5a5a4a";
-        state.ctx.fillRect(tx - size/16, ty - size/16, size/8, size/8);
-      });
-      
-      // Engine banks (glowing)
-      state.ctx.fillStyle = `rgba(255, 150, 50, ${pulse * 0.9})`;
-      state.ctx.fillRect(-size/2.5, size/3, size/8, size/4);
-      state.ctx.fillRect(size/2.5 - size/8, size/3, size/8, size/4);
-      
-      // Armor plating detail
-      state.ctx.strokeStyle = "#2a2a1a";
-      state.ctx.lineWidth = 2;
-      for (let i = -2; i <= 2; i++) {
+      if (isSideView) {
+        // 8-bit Unicron - planet-eating robot with pixelated retro aesthetic
+        // Spherical body with menacing features
+        state.ctx.fillStyle = "#3a2a2a";
         state.ctx.beginPath();
-        state.ctx.moveTo(-size/2, i * size/10);
-        state.ctx.lineTo(size/2, i * size/10);
+        state.ctx.arc(0, 0, size/2, 0, Math.PI * 2);
+        state.ctx.fill();
+        
+        // Pixelated segments (8-bit style)
+        const segmentSize = size / 10;
+        for (let i = -4; i <= 4; i++) {
+          for (let j = -4; j <= 4; j++) {
+            const dist = Math.sqrt(i*i + j*j);
+            if (dist < 4.5) {
+              const shade = Math.floor((dist / 4.5) * 3);
+              const colors = ["#6a4a4a", "#5a3a3a", "#4a2a2a"];
+              state.ctx.fillStyle = colors[shade] || "#3a2a2a";
+              state.ctx.fillRect(i * segmentSize - segmentSize/2, j * segmentSize - segmentSize/2, segmentSize, segmentSize);
+            }
+          }
+        }
+        
+        // Menacing red eye/core (glowing)
+        state.ctx.fillStyle = `rgba(255, 50, 50, ${pulse})`;
+        state.ctx.beginPath();
+        state.ctx.arc(0, 0, size/6, 0, Math.PI * 2);
+        state.ctx.fill();
+        
+        // Jaws/mandibles (opening/closing effect)
+        const jawOpen = Math.sin(state.frameCount * 0.03) * size/8;
+        state.ctx.fillStyle = "#5a4a4a";
+        // Upper jaw
+        state.ctx.fillRect(-size/3, -size/2 - jawOpen, size*0.6, size/8);
+        // Lower jaw
+        state.ctx.fillRect(-size/3, size/2 + jawOpen - size/8, size*0.6, size/8);
+        
+        // Teeth/spikes (8-bit style)
+        state.ctx.fillStyle = "#8a8a8a";
+        for (let t = -2; t <= 2; t++) {
+          state.ctx.fillRect(t * size/6, -size/2 - jawOpen + size/8, size/12, size/16);
+          state.ctx.fillRect(t * size/6, size/2 + jawOpen - size/8 - size/16, size/12, size/16);
+        }
+        
+        // Ring/halo segments (like Unicron's planet ring)
+        state.ctx.strokeStyle = `rgba(100, 100, 150, ${pulse * 0.7})`;
+        state.ctx.lineWidth = 3;
+        state.ctx.beginPath();
+        state.ctx.arc(0, 0, size * 0.7, 0, Math.PI * 2);
         state.ctx.stroke();
-      }
-      
-      // Warning lights
-      if (state.frameCount % 30 < 15) {
-        state.ctx.fillStyle = "#ff3333";
-        state.ctx.fillRect(-size/2.2, -size/3, size/20, size/20);
-        state.ctx.fillRect(size/2.2 - size/20, -size/3, size/20, size/20);
+      } else {
+        // Original Raiden-style mothership
+        // Main hull (massive fortress-like structure)
+        state.ctx.fillStyle = "#4a4a3a";
+        state.ctx.fillRect(-size/2, -size/3, size, size*0.66);
+        
+        // Bridge tower
+        state.ctx.fillStyle = "#5a5a4a";
+        state.ctx.fillRect(-size/6, -size/2, size/3, size/4);
+        
+        // Command deck windows (glowing yellow)
+        state.ctx.fillStyle = `rgba(255, 220, 100, ${pulse})`;
+        state.ctx.fillRect(-size/8, -size/2.2, size/4, size/12);
+        
+        // Multiple turret emplacements
+        const turretPositions = [
+          [-size/3, -size/4], [size/3, -size/4],
+          [-size/3, size/4], [size/3, size/4],
+          [-size/6, 0], [size/6, 0]
+        ];
+        
+        turretPositions.forEach(([tx, ty]) => {
+          state.ctx.fillStyle = "#3a3a2a";
+          state.ctx.fillRect(tx - size/12, ty - size/12, size/6, size/6);
+          state.ctx.fillStyle = "#5a5a4a";
+          state.ctx.fillRect(tx - size/16, ty - size/16, size/8, size/8);
+        });
+        
+        // Engine banks (glowing)
+        state.ctx.fillStyle = `rgba(255, 150, 50, ${pulse * 0.9})`;
+        state.ctx.fillRect(-size/2.5, size/3, size/8, size/4);
+        state.ctx.fillRect(size/2.5 - size/8, size/3, size/8, size/4);
+        
+        // Armor plating detail
+        state.ctx.strokeStyle = "#2a2a1a";
+        state.ctx.lineWidth = 2;
+        for (let i = -2; i <= 2; i++) {
+          state.ctx.beginPath();
+          state.ctx.moveTo(-size/2, i * size/10);
+          state.ctx.lineTo(size/2, i * size/10);
+          state.ctx.stroke();
+        }
+        
+        // Warning lights
+        if (state.frameCount % 30 < 15) {
+          state.ctx.fillStyle = "#ff3333";
+          state.ctx.fillRect(-size/2.2, -size/3, size/20, size/20);
+          state.ctx.fillRect(size/2.2 - size/20, -size/3, size/20, size/20);
+        }
       }
       
       state.ctx.restore();
     }
     else if (e.type === "mini-boss") { 
-      // Raiden-style heavy cruiser mini-boss
+      // After wave 11: 8-bit space battleship
+      // Before wave 11: Raiden-style heavy cruiser mini-boss
       state.ctx.save();
       state.ctx.translate(e.x, e.y);
       
       const size = e.size;
       const pulse = Math.sin(state.frameCount * 0.07) * 0.2 + 0.8;
       
-      // Main hull (military gray)
-      state.ctx.fillStyle = "#5a5a5a";
-      state.ctx.fillRect(-size/2.5, -size/4, size*0.9, size/2);
-      
-      // Command bridge
-      state.ctx.fillStyle = "#6a6a6a";
-      state.ctx.fillRect(-size/8, -size/3, size/4, size/6);
-      
-      // Bridge windows (orange glow)
-      state.ctx.fillStyle = `rgba(255, 160, 80, ${pulse})`;
-      state.ctx.fillRect(-size/12, -size/3.5, size/6, size/12);
-      
-      // Wing cannons
-      state.ctx.fillStyle = "#4a4a4a";
-      state.ctx.fillRect(-size/2, -size/3.5, size/6, size/8);
-      state.ctx.fillRect(size/2 - size/6, -size/3.5, size/6, size/8);
-      
-      // Main guns
-      state.ctx.fillStyle = "#3a3a3a";
-      state.ctx.fillRect(-size/4, -size/8, size/2, size/12);
-      state.ctx.fillRect(-size/4, size/8 - size/12, size/2, size/12);
+      if (isSideView) {
+        // 8-bit space battleship - blocky retro design
+        // Main hull (pixelated blocks)
+        const blockSize = size / 12;
+        state.ctx.fillStyle = "#4a4a5a";
+        state.ctx.fillRect(-size/2, -size/5, size, size*0.4);
+        
+        // Superstructure tower (8-bit style)
+        state.ctx.fillStyle = "#5a5a6a";
+        state.ctx.fillRect(-size/6, -size/2, blockSize * 4, size/3);
+        
+        // Bridge windows (pixelated glow)
+        state.ctx.fillStyle = `rgba(100, 200, 255, ${pulse})`;
+        for (let i = 0; i < 3; i++) {
+          state.ctx.fillRect(-size/8 + i * blockSize, -size/2.5, blockSize * 0.8, blockSize * 0.8);
+        }
+        
+        // Main gun turrets (8-bit blocks)
+        state.ctx.fillStyle = "#3a3a4a";
+        // Forward turret
+        state.ctx.fillRect(size/4, -size/3, blockSize * 3, blockSize * 2);
+        state.ctx.fillRect(size/3, -size/4, blockSize * 4, blockSize);
+        // Aft turret
+        state.ctx.fillRect(-size/2.5, -size/4, blockSize * 3, blockSize * 2);
+        
+        // Hull plating (pixelated panels)
+        state.ctx.fillStyle = "#6a6a7a";
+        for (let i = -5; i < 5; i++) {
+          if (i % 2 === 0) {
+            state.ctx.fillRect(i * blockSize, -size/6, blockSize * 0.9, blockSize * 0.9);
+          }
+        }
+        
+        // Engine exhausts (glowing blocks)
+        state.ctx.fillStyle = `rgba(255, 150, 50, ${pulse * 0.9})`;
+        state.ctx.fillRect(-size/2, -size/8, blockSize * 2, blockSize);
+        state.ctx.fillRect(-size/2, size/8 - blockSize, blockSize * 2, blockSize);
+        
+        // Radar/antenna array (8-bit style)
+        state.ctx.fillStyle = "#7a7a8a";
+        state.ctx.fillRect(-size/12, -size/1.8, blockSize, size/6);
+      } else {
+        // Original Raiden-style cruiser
+        // Main hull (military gray)
+        state.ctx.fillStyle = "#5a5a5a";
+        state.ctx.fillRect(-size/2.5, -size/4, size*0.9, size/2);
+        
+        // Command bridge
+        state.ctx.fillStyle = "#6a6a6a";
+        state.ctx.fillRect(-size/8, -size/3, size/4, size/6);
+        
+        // Bridge windows (orange glow)
+        state.ctx.fillStyle = `rgba(255, 160, 80, ${pulse})`;
+        state.ctx.fillRect(-size/12, -size/3.5, size/6, size/12);
+        
+        // Wing cannons
+        state.ctx.fillStyle = "#4a4a4a";
+        state.ctx.fillRect(-size/2, -size/3.5, size/6, size/8);
+        state.ctx.fillRect(size/2 - size/6, -size/3.5, size/6, size/8);
+        
+        // Main guns
+        state.ctx.fillStyle = "#3a3a3a";
+        state.ctx.fillRect(-size/4, -size/8, size/2, size/12);
+        state.ctx.fillRect(-size/4, size/8 - size/12, size/2, size/12);
+      }
       
       // Engine cluster (glowing)
       state.ctx.fillStyle = `rgba(255, 120, 50, ${pulse * 0.9})`;
@@ -366,92 +562,176 @@ export function drawEnemies() {
 }
 
 export function drawTanks() {
-  // Raiden-style ground tanks
+  // After wave 11: Army 8-bit side-view tanks
+  // Before wave 11: Raiden-style ground tanks (top-down)
+  const isSideView = state.wave >= 11;
+  
   state.tanks.forEach(tank => {
     state.ctx.save();
     state.ctx.translate(tank.x, tank.y);
 
-    // Tank chassis (military olive/gray)
-    state.ctx.fillStyle = "#5a5a4a";
-    state.ctx.fillRect(-tank.width/2, -tank.height/2, tank.width, tank.height);
-    
-    // Treads/tracks
-    state.ctx.fillStyle = "#3a3a2a";
-    state.ctx.fillRect(-tank.width/2, -tank.height/2 + 2, tank.width, 4);
-    state.ctx.fillRect(-tank.width/2, tank.height/2 - 6, tank.width, 4);
-    
-    // Armor panels
-    state.ctx.fillStyle = "#6a6a5a";
-    state.ctx.fillRect(-tank.width/3, -tank.height/3, tank.width*0.66, tank.height*0.4);
-    
-    // Turret base
-    state.ctx.fillStyle = "#5a5a5a";
-    state.ctx.fillRect(-12, -12, 24, 24);
+    if (isSideView) {
+      // 8-bit Army tank - side view profile with pixelated blocks
+      const blockSize = tank.height / 6;
+      
+      // Lower hull / chassis (olive drab)
+      state.ctx.fillStyle = "#5a5a3a";
+      state.ctx.fillRect(-tank.width/2, 0, tank.width, blockSize * 2);
+      
+      // Treads (darker blocks)
+      state.ctx.fillStyle = "#2a2a1a";
+      for (let i = 0; i < 5; i++) {
+        state.ctx.fillRect(-tank.width/2 + i * blockSize * 1.5, blockSize * 2, blockSize, blockSize * 0.5);
+      }
+      
+      // Upper hull (8-bit stepped armor)
+      state.ctx.fillStyle = "#6a6a4a";
+      state.ctx.fillRect(-tank.width/3, -blockSize, tank.width * 0.6, blockSize);
+      state.ctx.fillRect(-tank.width/4, -blockSize * 2, tank.width * 0.4, blockSize);
+      
+      // Turret (blocky 8-bit)
+      state.ctx.fillStyle = "#5a5a4a";
+      state.ctx.fillRect(-blockSize * 2, -blockSize * 3, blockSize * 4, blockSize * 2);
+      
+      // Main gun barrel (horizontal, side view)
+      state.ctx.fillStyle = "#3a3a2a";
+      state.ctx.fillRect(blockSize * 2, -blockSize * 2.5, blockSize * 4, blockSize);
+      
+      // Barrel tip detail
+      state.ctx.fillStyle = "#2a2a1a";
+      state.ctx.fillRect(blockSize * 5.5, -blockSize * 2.5, blockSize * 0.5, blockSize);
+      
+      // Hatch detail
+      state.ctx.fillStyle = "#4a4a3a";
+      state.ctx.fillRect(-blockSize, -blockSize * 3.5, blockSize * 2, blockSize * 0.5);
+    } else {
+      // Original top-down Raiden-style tank
+      // Tank chassis (military olive/gray)
+      state.ctx.fillStyle = "#5a5a4a";
+      state.ctx.fillRect(-tank.width/2, -tank.height/2, tank.width, tank.height);
+      
+      // Treads/tracks
+      state.ctx.fillStyle = "#3a3a2a";
+      state.ctx.fillRect(-tank.width/2, -tank.height/2 + 2, tank.width, 4);
+      state.ctx.fillRect(-tank.width/2, tank.height/2 - 6, tank.width, 4);
+      
+      // Armor panels
+      state.ctx.fillStyle = "#6a6a5a";
+      state.ctx.fillRect(-tank.width/3, -tank.height/3, tank.width*0.66, tank.height*0.4);
+      
+      // Turret base
+      state.ctx.fillStyle = "#5a5a5a";
+      state.ctx.fillRect(-12, -12, 24, 24);
 
-    // Turret barrel (rotates toward player)
-    state.ctx.rotate(tank.turretAngle);
-    state.ctx.fillStyle = "#4a4a4a";
-    state.ctx.fillRect(0, -6, 28, 12);
-    
-    // Barrel tip
-    state.ctx.fillStyle = "#3a3a3a";
-    state.ctx.fillRect(26, -7, 4, 14);
-    
-    // Muzzle brake details
-    state.ctx.strokeStyle = "#2a2a2a";
-    state.ctx.lineWidth = 1;
-    state.ctx.beginPath();
-    state.ctx.moveTo(4, -5);
-    state.ctx.lineTo(24, -5);
-    state.ctx.moveTo(4, 5);
-    state.ctx.lineTo(24, 5);
-    state.ctx.stroke();
+      // Turret barrel (rotates toward player)
+      state.ctx.rotate(tank.turretAngle);
+      state.ctx.fillStyle = "#4a4a4a";
+      state.ctx.fillRect(0, -6, 28, 12);
+      
+      // Barrel tip
+      state.ctx.fillStyle = "#3a3a3a";
+      state.ctx.fillRect(26, -7, 4, 14);
+      
+      // Muzzle brake details
+      state.ctx.strokeStyle = "#2a2a2a";
+      state.ctx.lineWidth = 1;
+      state.ctx.beginPath();
+      state.ctx.moveTo(4, -5);
+      state.ctx.lineTo(24, -5);
+      state.ctx.moveTo(4, 5);
+      state.ctx.lineTo(24, 5);
+      state.ctx.stroke();
+    }
 
     state.ctx.restore();
   });
 }
 
 export function drawWalkers() {
-  // Raiden-style bipedal walkers
+  // After wave 11: Army 8-bit side-view walkers
+  // Before wave 11: Raiden-style bipedal walkers (top-down)
+  const isSideView = state.wave >= 11;
+  
   state.walkers.forEach(walker => {
     state.ctx.save();
     state.ctx.translate(walker.x, walker.y);
 
-    // Main body (military blue-gray)
-    state.ctx.fillStyle = "#4a5a6a";
-    state.ctx.fillRect(-walker.width/2, -walker.height/2, walker.width, walker.height/2);
-    
-    // Command module on top
-    state.ctx.fillStyle = "#5a6a7a";
-    state.ctx.fillRect(-walker.width/3, -walker.height/1.8, walker.width*0.66, walker.height/4);
-    
-    // Sensor array (glowing)
     const pulse = 0.6 + Math.sin(state.frameCount * 0.1) * 0.4;
-    state.ctx.fillStyle = `rgba(100, 200, 255, ${pulse})`;
-    state.ctx.fillRect(-walker.width/6, -walker.height/1.6, walker.width/3, walker.height/12);
     
-    // Weapons pods on sides
-    state.ctx.fillStyle = "#3a4a5a";
-    state.ctx.fillRect(-walker.width/2 - 4, -walker.height/6, 6, walker.height/4);
-    state.ctx.fillRect(walker.width/2 - 2, -walker.height/6, 6, walker.height/4);
+    if (isSideView) {
+      // 8-bit AT-ST style walker - side view with blocky pixels
+      const blockSize = walker.height / 10;
+      
+      // Legs (animated walking motion)
+      const legOffset = Math.sin(walker.legPhase || 0) * blockSize;
+      state.ctx.fillStyle = "#3a4a5a";
+      
+      // Front leg (forward position)
+      state.ctx.fillRect(-blockSize * 2, blockSize * 2 + legOffset, blockSize * 2, blockSize * 6);
+      state.ctx.fillRect(-blockSize * 2.5, blockSize * 8 + legOffset, blockSize * 3, blockSize);
+      
+      // Back leg (rear position)
+      state.ctx.fillRect(0, blockSize * 2 - legOffset, blockSize * 2, blockSize * 6);
+      state.ctx.fillRect(-blockSize * 0.5, blockSize * 8 - legOffset, blockSize * 3, blockSize);
+      
+      // Main body (command pod)
+      state.ctx.fillStyle = "#4a5a6a";
+      state.ctx.fillRect(-blockSize * 3, -blockSize * 2, blockSize * 6, blockSize * 4);
+      
+      // Head/cockpit (8-bit box)
+      state.ctx.fillStyle = "#5a6a7a";
+      state.ctx.fillRect(-blockSize * 2.5, -blockSize * 4, blockSize * 5, blockSize * 2);
+      
+      // Viewport (glowing)
+      state.ctx.fillStyle = `rgba(100, 200, 255, ${pulse})`;
+      state.ctx.fillRect(-blockSize * 1.5, -blockSize * 3.5, blockSize * 3, blockSize);
+      
+      // Side weapons (blocky guns)
+      state.ctx.fillStyle = "#3a4a5a";
+      state.ctx.fillRect(-blockSize * 3.5, -blockSize, blockSize, blockSize * 3);
+      state.ctx.fillRect(blockSize * 2.5, -blockSize, blockSize, blockSize * 3);
+      
+      // Gun barrels (horizontal side view)
+      state.ctx.fillStyle = "#2a3a4a";
+      state.ctx.fillRect(-blockSize * 4.5, 0, blockSize * 2, blockSize);
+      state.ctx.fillRect(blockSize * 3.5, 0, blockSize * 2, blockSize);
+    } else {
+      // Original top-down Raiden-style walker
+      // Main body (military blue-gray)
+      state.ctx.fillStyle = "#4a5a6a";
+      state.ctx.fillRect(-walker.width/2, -walker.height/2, walker.width, walker.height/2);
+      
+      // Command module on top
+      state.ctx.fillStyle = "#5a6a7a";
+      state.ctx.fillRect(-walker.width/3, -walker.height/1.8, walker.width*0.66, walker.height/4);
+      
+      // Sensor array (glowing)
+      state.ctx.fillStyle = `rgba(100, 200, 255, ${pulse})`;
+      state.ctx.fillRect(-walker.width/6, -walker.height/1.6, walker.width/3, walker.height/12);
+      
+      // Weapons pods on sides
+      state.ctx.fillStyle = "#3a4a5a";
+      state.ctx.fillRect(-walker.width/2 - 4, -walker.height/6, 6, walker.height/4);
+      state.ctx.fillRect(walker.width/2 - 2, -walker.height/6, 6, walker.height/4);
 
-    // Animated legs (bipedal walker)
-    const legOffset = Math.sin(walker.legPhase) * 12;
-    state.ctx.strokeStyle = "#5a6a7a";
-    state.ctx.lineWidth = 4;
-    state.ctx.lineCap = "round";
-    
-    // Left leg
-    state.ctx.beginPath();
-    state.ctx.moveTo(-walker.width/4, walker.height/4);
-    state.ctx.lineTo(-walker.width/4 + legOffset, walker.height/2 + 12);
-    state.ctx.stroke();
-    
-    // Right leg
-    state.ctx.beginPath();
-    state.ctx.moveTo(walker.width/4, walker.height/4);
-    state.ctx.lineTo(walker.width/4 - legOffset, walker.height/2 + 12);
-    state.ctx.stroke();
+      // Animated legs (bipedal walker)
+      const legOffset = Math.sin(walker.legPhase || 0) * 12;
+      state.ctx.strokeStyle = "#5a6a7a";
+      state.ctx.lineWidth = 4;
+      state.ctx.lineCap = "round";
+      
+      // Left leg
+      state.ctx.beginPath();
+      state.ctx.moveTo(-walker.width/4, walker.height/4);
+      state.ctx.lineTo(-walker.width/4 + legOffset, walker.height/2 + 12);
+      state.ctx.stroke();
+      
+      // Right leg
+      state.ctx.beginPath();
+      state.ctx.moveTo(walker.width/4, walker.height/4);
+      state.ctx.lineTo(walker.width/4 - legOffset, walker.height/2 + 12);
+      state.ctx.stroke();
+    }
     
     // Leg joints
     state.ctx.fillStyle = "#6a7a8a";
@@ -468,6 +748,8 @@ export function drawWalkers() {
 }
 
 export function drawMechs() {
+  const isSideView = state.wave >= 11;
+  
   state.mechs.forEach(mech => {
     // Draw dropship if visible (Gundam-style military transport)
     if (mech.dropshipVisible) {
@@ -569,7 +851,64 @@ export function drawMechs() {
     state.ctx.save();
     state.ctx.translate(mech.x, mech.y);
 
-    if (mech.shieldActive) {
+    if (isSideView) {
+      // 8-bit Army mech - side view Gundam-style
+      const blockSize = mech.size / 12;
+      
+      // Legs (bipedal, side profile)
+      const legPhase = mech.legPhase || 0;
+      const legOffset = Math.sin(legPhase) * blockSize * 2;
+      
+      state.ctx.fillStyle = "#5a5a6a";
+      // Front leg
+      state.ctx.fillRect(-blockSize * 2, blockSize * 2 + legOffset, blockSize * 2.5, blockSize * 6);
+      // Back leg  
+      state.ctx.fillRect(blockSize, blockSize * 2 - legOffset, blockSize * 2.5, blockSize * 6);
+      
+      // Feet (8-bit blocks)
+      state.ctx.fillStyle = "#4a4a5a";
+      state.ctx.fillRect(-blockSize * 2.5, blockSize * 8 + legOffset, blockSize * 3.5, blockSize * 1.5);
+      state.ctx.fillRect(blockSize * 0.5, blockSize * 8 - legOffset, blockSize * 3.5, blockSize * 1.5);
+      
+      // Torso (main body, blocky 8-bit)
+      state.ctx.fillStyle = "#6a6a7a";
+      state.ctx.fillRect(-blockSize * 3, -blockSize * 2, blockSize * 6, blockSize * 4);
+      
+      // Chest armor plate
+      state.ctx.fillStyle = "#7a7a8a";
+      state.ctx.fillRect(-blockSize * 2.5, -blockSize * 1.5, blockSize * 5, blockSize * 2);
+      
+      // Head/cockpit (small blocky head)
+      state.ctx.fillStyle = "#5a6a7a";
+      state.ctx.fillRect(-blockSize * 1.5, -blockSize * 4.5, blockSize * 3, blockSize * 2.5);
+      
+      // Sensor eye (glowing)
+      const sensorPulse = 0.6 + Math.sin(state.frameCount * 0.1) * 0.4;
+      state.ctx.fillStyle = `rgba(255, 80, 80, ${sensorPulse})`;
+      state.ctx.fillRect(-blockSize * 0.5, -blockSize * 3.5, blockSize, blockSize * 0.8);
+      
+      // Arms (side view - one arm visible)
+      state.ctx.fillStyle = "#5a5a6a";
+      // Shoulder
+      state.ctx.fillRect(-blockSize * 4, -blockSize, blockSize * 1.5, blockSize * 2);
+      // Upper arm
+      state.ctx.fillRect(-blockSize * 5, 0, blockSize * 1.5, blockSize * 4);
+      // Forearm
+      state.ctx.fillRect(-blockSize * 5.5, blockSize * 3.5, blockSize * 2, blockSize * 3);
+      
+      // Weapon in hand (8-bit gun)
+      state.ctx.fillStyle = "#3a3a4a";
+      state.ctx.fillRect(-blockSize * 7, blockSize * 5, blockSize * 4, blockSize * 1.5);
+      
+      // Back-mounted equipment (8-bit jetpack/thrusters)
+      state.ctx.fillStyle = "#4a4a5a";
+      state.ctx.fillRect(blockSize * 2.5, -blockSize, blockSize * 2, blockSize * 3);
+      
+      // Thruster glow
+      const thrusterPulse = 0.5 + Math.sin(state.frameCount * 0.15) * 0.5;
+      state.ctx.fillStyle = `rgba(100, 200, 255, ${thrusterPulse * 0.7})`;
+      state.ctx.fillRect(blockSize * 2.5, blockSize * 2, blockSize * 2, blockSize);
+    } else if (mech.shieldActive) {
       const shieldHealthRatio = (mech.shieldHealth || 150) / 150;
       const pulse = Math.sin(state.frameCount * 0.1) * 5;
       const shieldRadius = mech.size/2 + 15 + pulse;
@@ -613,8 +952,9 @@ export function drawMechs() {
       state.ctx.restore();
     }
 
-    // Raiden-style heavy ground mech/tank with 4 legs
-    const legPhase = (mech.legPhase || 0);
+    if (!isSideView) {
+      // Raiden-style heavy ground mech/tank with 4 legs (top-down only)
+      const legPhase = (mech.legPhase || 0);
     
     // Draw 4 mechanical legs (animated, Raiden military style)
     for (let i = 0; i < 4; i++) {
@@ -707,15 +1047,16 @@ export function drawMechs() {
       state.ctx.fillRect(24, -4, 6, 8);
     }
     
-    // Barrel details
-    state.ctx.strokeStyle = "#2a2a2a";
-    state.ctx.lineWidth = 1;
-    state.ctx.beginPath();
-    state.ctx.moveTo(2, -4);
-    state.ctx.lineTo(20, -4);
-    state.ctx.moveTo(2, 4);
-    state.ctx.lineTo(20, 4);
-    state.ctx.stroke();
+      // Barrel details
+      state.ctx.strokeStyle = "#2a2a2a";
+      state.ctx.lineWidth = 1;
+      state.ctx.beginPath();
+      state.ctx.moveTo(2, -4);
+      state.ctx.lineTo(20, -4);
+      state.ctx.moveTo(2, 4);
+      state.ctx.lineTo(20, 4);
+      state.ctx.stroke();
+    }
 
     state.ctx.restore();
   });

@@ -416,6 +416,10 @@ export function updateTanks() {
     const moveX = Math.sign(dx) * Math.min(tank.speed * 1.2 * slowMultiplier, distX);
     tank.x += moveX;
 
+    // Boundary constraints - keep tank on screen
+    const margin = tank.width / 2 || 30;
+    tank.x = Math.max(margin, Math.min(state.canvas.width - margin, tank.x));
+
     const desiredY = groundY - tank.height/2;
     tank.y += (desiredY - tank.y) * 0.2;
 
@@ -460,6 +464,10 @@ export function updateWalkers() {
     const distX = Math.abs(dx) || 1;
 
     walker.x += Math.sign(dx) * Math.min(walker.speed * 1.0 * slowMultiplier, distX);
+
+    // Boundary constraints - keep walker on screen
+    const margin = walker.width / 2 || 30;
+    walker.x = Math.max(margin, Math.min(state.canvas.width - margin, walker.x));
 
     walker.legPhase = (walker.legPhase || 0) + 0.15;
     const bob = Math.sin(walker.legPhase) * 4;
@@ -568,6 +576,10 @@ export function updateMechs() {
       const distX = Math.abs(dx) || 1;
       // flying mechs move a bit faster horizontally (affected by slow)
       mech.x += Math.sign(dx) * Math.min(mech.speed * 1.4 * slowMultiplier, distX);
+
+      // Boundary constraints - keep mech on screen
+      const margin = mech.size / 2 || 40;
+      mech.x = Math.max(margin, Math.min(state.canvas.width - margin, mech.x));
 
       // smoothly move to flyHeight
       mech.y += (flyHeight - mech.y) * 0.06;
@@ -860,6 +872,11 @@ export function updateEnemies() {
         const t = state.tunnels[ti];
         if (t.active) handleTunnelCollisionForEntity(e, t);
       }
+
+      // Boundary constraints - keep enemies on screen (especially important for side-view after wave 11)
+      const margin = e.size || 30;
+      e.x = Math.max(margin, Math.min(state.canvas.width - margin, e.x));
+      e.y = Math.max(margin, Math.min(state.canvas.height - margin, e.y));
 
       const distToPlayer = Math.hypot(e.x-state.player.x, e.y-state.player.y);
       if (distToPlayer < (e.size/2 + state.player.size/2)) {
