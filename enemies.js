@@ -1,5 +1,5 @@
 import * as state from './state.js';
-import { createExplosion, spawnPowerUp, spawnDebris, handleTunnelCollisionForEntity, diamondReleaseAttachedEnemies } from './utils.js';
+import { createExplosion, spawnPowerUp, spawnRandomPowerUp, spawnDebris, handleTunnelCollisionForEntity, diamondReleaseAttachedEnemies } from './utils.js';
 
 export function updateBoss(boss) {
   boss.angle = boss.angle||0; boss.angle += 0.01;
@@ -210,71 +210,36 @@ export function updateDiamond(d) {
       const pull = 0.04 + (1 - Math.min(dist/260,1)) * 0.06;
       e.x += dx * pull; e.y += dy * pull;
       if (dist < 28) {
-        state.enemies.splice(i,1);
+        // Mark as attached but DON'T remove from enemies array
         e.attachedTo = d;
         e.orbitAngle = Math.random()*Math.PI*2;
-        if (e.type === "triangle") e.fireRateBoost = true;
-        if (e.type === "red-square") e.spawnMini = true;
-        if (e.type === "reflector") d.canReflect = true;
-        // Store original speed before setting to 0
-        e.originalSpeed = e.speed || 1.5;
-        e.speed = 0;
+        // Store in attachments for visual tracking only
         d.attachments.push(e);
+        if (e.type === "reflector") d.canReflect = true;
       }
     }
   }
 
+  // Update visual orbit positions for attached enemies (they still function as normal enemies)
   for (let i = d.attachments.length - 1; i >= 0; i--) {
     const a = d.attachments[i];
+    
+    // Check if attached enemy still exists in enemies array
+    if (!state.enemies.includes(a)) {
+      d.attachments.splice(i, 1);
+      continue;
+    }
+    
+    // Update orbit angle for visual formation
     a.orbitAngle = (a.orbitAngle||0) + 0.06 + (a.type === "reflector" ? 0.02 : 0);
     const orbitRadius = d.size/2 + 28 + (a.type === "reflector" ? 14 : 0);
-    a.x = d.x + Math.cos(a.orbitAngle) * orbitRadius;
-    a.y = d.y + Math.sin(a.orbitAngle) * orbitRadius;
-
-    a.shootTimer = (a.shootTimer||0) + 1;
-    const fireRate = a.type === "triangle" ? (a.fireRateBoost ? 40 : 100) : 120;
-    if (a.shootTimer > fireRate) {
-      a.shootTimer = 0;
-      const dxp = state.player.x - a.x, dyp = state.player.y - a.y, mag = Math.hypot(dxp,dyp)||1;
-      state.pushLightning({x: a.x, y: a.y, dx: (dxp/mag)*5, dy: (dyp/mag)*5, size: 6, damage: 15});
-    }
-
-    // Attached enemies can take damage from bullets
-    for (let bi = state.bullets.length-1; bi >= 0; bi--) {
-      const b = state.bullets[bi];
-      const aSize = a.size || (a.width && a.height ? Math.max(a.width, a.height) : 20);
-      const distB = Math.hypot(b.x-a.x, b.y-a.y);
-      
-      if (a.type === "reflector" && distB < 40) {
-        // Reflectors still reflect bullets
-        state.pushLightning({x: b.x, y: b.y, dx: -b.dx, dy: -b.dy, size: 6, damage: 15});
-        state.pushReflectionEffect({x: b.x, y: b.y, dx: -b.dx, dy: -b.dy, life: 22, maxLife: 22});
-        state.bullets.splice(bi,1);
-        a.health = (a.health || 200) - 5; // Reflectors take reduced damage when reflecting
-      } else if (distB < aSize/2) {
-        // Non-reflector attached enemies take full bullet damage
-        state.bullets.splice(bi,1);
-        a.health = (a.health || 30) - (b.damage || 10);
-        state.pushExplosion({ x: b.x, y: b.y, dx: 0, dy: 0, radius: 3, color: "yellow", life: 12 });
-      }
-    }
-
-    // Remove destroyed attached enemies
-    if (a.health <= 0) {
-      createExplosion(a.x, a.y, a.type === "triangle" ? "cyan" : (a.type === "reflector" ? "purple" : "red"));
-      spawnDebris(a.x, a.y, 5);
-      d.attachments.splice(i, 1);
-      // Recalculate canReflect based on remaining attachments
-      d.canReflect = d.attachments.some(att => att.type === "reflector");
-      state.addScore(5); // Small score for destroying attached enemy
-    }
-
-    // Attached enemies still damage player on collision
-    const distToPlayer = Math.hypot(a.x-state.player.x, a.y-state.player.y);
-    if (distToPlayer < (aSize/2 + state.player.size/2)) {
-      if (!state.player.invulnerable) state.player.health -= 20;
-      createExplosion(a.x, a.y, "orange");
-    }
+    
+    // Calculate visual orbit position (stored separately for drawing)
+    a.visualOrbitX = d.x + Math.cos(a.orbitAngle) * orbitRadius;
+    a.visualOrbitY = d.y + Math.sin(a.orbitAngle) * orbitRadius;
+    
+    // Recalculate canReflect based on remaining attachments
+    d.canReflect = d.attachments.some(att => att.type === "reflector" && state.enemies.includes(att));
   }
 
   d.shootTimer = (d.shootTimer||0)+1;
@@ -345,7 +310,7 @@ export function updateTanks() {
       spawnDebris(tank.x, tank.y, 8);
       state.tanks.splice(i, 1);
       state.addScore(30);
-      spawnPowerUp(tank.x, tank.y, Math.random() > 0.5 ? "red-punch" : "blue-cannon");
+      spawnRandomPowerUp(tank.x, tank.y);
     }
   }
 }
@@ -676,8 +641,8 @@ export function updateEnemies() {
       }
       if (e.health <= 0) {
         if (!e.fromBoss) {
-          if (e.type === "triangle") { state.addScore(10); spawnPowerUp(e.x, e.y, "blue-cannon"); }
-          else if (e.type === "red-square") { state.addScore(10); spawnPowerUp(e.x, e.y, "red-punch"); }
+          if (e.type === "triangle") { state.addScore(10); spawnRandomPowerUp(e.x, e.y); }
+          else if (e.type === "red-square") { state.addScore(10); spawnRandomPowerUp(e.x, e.y); }
         }
         return false;
       }

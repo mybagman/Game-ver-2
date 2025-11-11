@@ -111,10 +111,39 @@ export function handleShooting() {
     const mag = Math.hypot(dirX, dirY) || 1;
     const baseAngle = Math.atan2(dirY, dirX);
     
-    // Double shot at aura level 10 or higher
-    if (state.goldStarAura && state.goldStarAura.level >= 10) {
-      const spreadAngle = 0.2; // ~11.5 degrees spread
-      // Fire two bullets with slight angle spread
+    // Multi-shot based on aura level and active state
+    const auraActive = state.goldStarAura && state.goldStarAura.active;
+    const auraLevel = state.goldStarAura ? state.goldStarAura.level : 0;
+    
+    if (auraActive && auraLevel >= 9) {
+      // Quad shot at level 9+
+      const spreadAngle = 0.15;
+      for (let i = -1.5; i <= 1.5; i++) {
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(baseAngle + i * spreadAngle) * 10, 
+          dy: Math.sin(baseAngle + i * spreadAngle) * 10, 
+          size: 6, 
+          owner: "player"
+        });
+      }
+    } else if (auraActive && auraLevel >= 6) {
+      // Triple shot at level 6+
+      const spreadAngle = 0.2;
+      for (let i = -1; i <= 1; i++) {
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(baseAngle + i * spreadAngle) * 10, 
+          dy: Math.sin(baseAngle + i * spreadAngle) * 10, 
+          size: 6, 
+          owner: "player"
+        });
+      }
+    } else if (auraActive && auraLevel >= 3) {
+      // Double shot at level 3+
+      const spreadAngle = 0.2;
       state.pushBullet({
         x: state.player.x, 
         y: state.player.y, 
@@ -132,7 +161,7 @@ export function handleShooting() {
         owner: "player"
       });
     } else {
-      // Single shot for aura level < 10
+      // Single shot (normal or when aura not active)
       state.pushBullet({x: state.player.x, y: state.player.y, dx: (dirX/mag)*10, dy: (dirY/mag)*10, size: 6, owner: "player"});
     }
     

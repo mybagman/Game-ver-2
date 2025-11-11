@@ -8,6 +8,13 @@ export function spawnPowerUp(x, y, type) {
   state.pushPowerUp({x, y, type, size: 18, lifetime: 600, active: true});
 }
 
+export function spawnRandomPowerUp(x, y) {
+  // Spawn random power-up from available types
+  const powerUpTypes = ["health", "reflect", "red-punch", "blue-cannon", "reflector-level"];
+  const randomType = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+  spawnPowerUp(x, y, randomType);
+}
+
 export function spawnTunnel() {
   const h = state.canvas.height/3, w = 600;
   state.pushTunnel({x: state.canvas.width, y: 0, width: w, height: h, speed: 2, active: true});
