@@ -109,7 +109,33 @@ export function handleShooting() {
   if (state.keys["arrowright"]) dirX = 1;
   if ((dirX !== 0 || dirY !== 0) && state.shootCooldown === 0) {
     const mag = Math.hypot(dirX, dirY) || 1;
-    state.pushBullet({x: state.player.x, y: state.player.y, dx: (dirX/mag)*10, dy: (dirY/mag)*10, size: 6, owner: "player"});
+    const baseAngle = Math.atan2(dirY, dirX);
+    
+    // Double shot at aura level 10 or higher
+    if (state.goldStarAura && state.goldStarAura.level >= 10) {
+      const spreadAngle = 0.2; // ~11.5 degrees spread
+      // Fire two bullets with slight angle spread
+      state.pushBullet({
+        x: state.player.x, 
+        y: state.player.y, 
+        dx: Math.cos(baseAngle - spreadAngle) * 10, 
+        dy: Math.sin(baseAngle - spreadAngle) * 10, 
+        size: 6, 
+        owner: "player"
+      });
+      state.pushBullet({
+        x: state.player.x, 
+        y: state.player.y, 
+        dx: Math.cos(baseAngle + spreadAngle) * 10, 
+        dy: Math.sin(baseAngle + spreadAngle) * 10, 
+        size: 6, 
+        owner: "player"
+      });
+    } else {
+      // Single shot for aura level < 10
+      state.pushBullet({x: state.player.x, y: state.player.y, dx: (dirX/mag)*10, dy: (dirY/mag)*10, size: 6, owner: "player"});
+    }
+    
     state.setShootCooldown(Math.max(5, Math.floor(10 / state.player.fireRateBoost)));
 
     state.setFireIndicatorAngle(state.firingIndicatorAngle + Math.PI / 2);
