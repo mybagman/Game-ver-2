@@ -1,6 +1,11 @@
 import * as state from './state.js';
 import { resetGame } from './game.js';
 
+const DOUBLE_TAP_WINDOW = 300; // milliseconds
+const DASH_DURATION = 15; // frames (~250ms at 60fps)
+const DASH_COOLDOWN = 30; // frames (~500ms at 60fps)
+const DASH_SPEED_MULTIPLIER = 2.5; // 2.5x normal speed
+
 export function setupInputHandlers() {
   window.addEventListener("keydown", (e) => {
     const key = e.key.toLowerCase();
@@ -13,6 +18,22 @@ export function setupInputHandlers() {
     if (e.key === "ArrowDown") state.keys["arrowdown"] = true;
     if (e.key === "ArrowLeft") state.keys["arrowleft"] = true;
     if (e.key === "ArrowRight") state.keys["arrowright"] = true;
+
+    // Detect double-tap for dash on WASD keys
+    const now = Date.now();
+    const movementKeys = ['w', 'a', 's', 'd'];
+    if (movementKeys.includes(key)) {
+      if (state.player.lastKeyPress.key === key && 
+          (now - state.player.lastKeyPress.time) < DOUBLE_TAP_WINDOW &&
+          state.player.dashCooldown === 0 &&
+          !state.player.dashing) {
+        // Trigger dash
+        state.player.dashing = true;
+        state.player.dashTimer = DASH_DURATION;
+        state.player.dashCooldown = DASH_COOLDOWN;
+      }
+      state.player.lastKeyPress = { key, time: now };
+    }
 
     state.keys[key] = true;
   });
@@ -33,3 +54,5 @@ export function setupInputHandlers() {
     state.canvas.height = window.innerHeight;
   });
 }
+
+export { DASH_SPEED_MULTIPLIER };

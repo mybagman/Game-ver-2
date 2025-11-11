@@ -60,7 +60,12 @@ export let player = {
   targetRotation: -Math.PI / 2,
   vx: 0, // velocity x
   vy: 0, // velocity y
-  thrusterParticles: [] // engine particles
+  thrusterParticles: [], // engine particles
+  // Dash system properties
+  dashing: false,
+  dashTimer: 0,
+  dashCooldown: 0,
+  lastKeyPress: { key: null, time: 0 }
 };
 
 export let goldStar = {
@@ -246,6 +251,10 @@ export function resetGame() {
   player.vx = 0;
   player.vy = 0;
   player.thrusterParticles = [];
+  player.dashing = false;
+  player.dashTimer = 0;
+  player.dashCooldown = 0;
+  player.lastKeyPress = { key: null, time: 0 };
 
   // reset gold star
   goldStar.x = 0;
