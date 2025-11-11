@@ -10,7 +10,7 @@ export function spawnPowerUp(x, y, type) {
 
 export function spawnRandomPowerUp(x, y) {
   // Spawn random power-up from available types
-  const powerUpTypes = ["health", "reflect", "red-punch", "blue-cannon", "reflector-level"];
+  const powerUpTypes = ["health", "reflect", "red-punch", "blue-cannon", "reflector-level", "homing-missile"];
   const randomType = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
   spawnPowerUp(x, y, randomType);
 }
