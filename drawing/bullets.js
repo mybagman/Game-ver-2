@@ -240,12 +240,12 @@ export function drawEmpProjectiles() {
     state.ctx.fill();
     
     // Core sphere
-    state.// shadowBlur removed for performance
+    // shadowBlur removed for performance
     state.ctx.fillStyle = `rgba(150, 220, 255, ${pulse})`;
     state.ctx.beginPath();
     state.ctx.arc(x, y, size, 0, Math.PI * 2);
     state.ctx.fill();
-    state.// shadowBlur removed for performance
+    // shadowBlur removed for performance
     
     // Electric arcs rotating around core
     state.ctx.save();
