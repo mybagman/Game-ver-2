@@ -276,7 +276,7 @@ export function updateDiamond(d) {
   if (state.goldStar.alive && distToGoldStar < (d.size/2 + state.goldStar.size/2)) {
     state.goldStar.health -= 25;
     createExplosion(d.x, d.y, "white");
-    if (state.goldStar.health <= 0) { state.goldStar.alive = false; state.goldStar.respawnTimer = 0; createExplosion(state.goldStar.x, state.goldStar.y, "gold"); }
+    if (state.goldStar.health <= 0) { state.goldStar.alive = false; state.goldStar.respawnTimer = 0; state.player.reflectorLevel = 0; createExplosion(state.goldStar.x, state.goldStar.y, "gold"); }
   }
 }
 
@@ -285,10 +285,17 @@ export function updateTanks() {
   for (let i = state.tanks.length - 1; i >= 0; i--) {
     const tank = state.tanks[i];
 
+    // Handle slow effect from EMP
+    let slowMultiplier = 1.0;
+    if (tank.slowTimer && tank.slowTimer > 0) {
+      tank.slowTimer--;
+      slowMultiplier = 1.0 - (tank.slowedBy || 0);
+    }
+
     const targetX = state.player.x;
     const dx = targetX - tank.x;
     const distX = Math.abs(dx) || 1;
-    const moveX = Math.sign(dx) * Math.min(tank.speed * 1.2, distX);
+    const moveX = Math.sign(dx) * Math.min(tank.speed * 1.2 * slowMultiplier, distX);
     tank.x += moveX;
 
     const desiredY = groundY - tank.height/2;
@@ -324,10 +331,17 @@ export function updateWalkers() {
   for (let i = state.walkers.length - 1; i >= 0; i--) {
     const walker = state.walkers[i];
 
+    // Handle slow effect from EMP
+    let slowMultiplier = 1.0;
+    if (walker.slowTimer && walker.slowTimer > 0) {
+      walker.slowTimer--;
+      slowMultiplier = 1.0 - (walker.slowedBy || 0);
+    }
+
     const dx = state.player.x - walker.x;
     const distX = Math.abs(dx) || 1;
 
-    walker.x += Math.sign(dx) * Math.min(walker.speed * 1.0, distX);
+    walker.x += Math.sign(dx) * Math.min(walker.speed * 1.0 * slowMultiplier, distX);
 
     walker.legPhase = (walker.legPhase || 0) + 0.15;
     const bob = Math.sin(walker.legPhase) * 4;
@@ -365,6 +379,13 @@ export function updateMechs() {
 
   for (let i = state.mechs.length - 1; i >= 0; i--) {
     const mech = state.mechs[i];
+
+    // Handle slow effect from EMP
+    let slowMultiplier = 1.0;
+    if (mech.slowTimer && mech.slowTimer > 0) {
+      mech.slowTimer--;
+      slowMultiplier = 1.0 - (mech.slowedBy || 0);
+    }
 
     // Dropship deployment animation
     if (mech.deploying) {
@@ -427,8 +448,8 @@ export function updateMechs() {
 
       const dx = mech.patrolX - mech.x;
       const distX = Math.abs(dx) || 1;
-      // flying mechs move a bit faster horizontally
-      mech.x += Math.sign(dx) * Math.min(mech.speed * 1.4, distX);
+      // flying mechs move a bit faster horizontally (affected by slow)
+      mech.x += Math.sign(dx) * Math.min(mech.speed * 1.4 * slowMultiplier, distX);
 
       // smoothly move to flyHeight
       mech.y += (flyHeight - mech.y) * 0.06;
@@ -517,7 +538,7 @@ export function updateMechs() {
       // Grounded mech (spider bot behavior)
       const dx = state.player.x - mech.x;
       const distX = Math.abs(dx) || 1;
-      mech.x += Math.sign(dx) * Math.min(mech.speed, distX);
+      mech.x += Math.sign(dx) * Math.min(mech.speed * slowMultiplier, distX);
 
       mech.y += (groundY - mech.y) * 0.15;
       
@@ -632,6 +653,13 @@ export function updateEnemies() {
     if (e.type === "triangle" || e.type === "red-square") {
       const dx = state.player.x - e.x, dy = state.player.y - e.y, dist = Math.hypot(dx,dy)||1;
       
+      // Handle slow effect from EMP
+      let slowMultiplier = 1.0;
+      if (e.slowTimer && e.slowTimer > 0) {
+        e.slowTimer--;
+        slowMultiplier = 1.0 - (e.slowedBy || 0);
+      }
+      
       if (e.type === "triangle") {
         // Blue triangles: Support units that hang back and provide fire support
         if (e.vx === undefined && e.vy === undefined) {
@@ -640,17 +668,18 @@ export function updateEnemies() {
           const initialHealth = 40;
           const healthPercent = e.health / initialHealth;
           const damageSpeedMultiplier = 0.5 + (healthPercent * 0.5); // Ranges from 0.5 (at 0 health) to 1.0 (at full health)
+          const finalSpeedMultiplier = damageSpeedMultiplier * slowMultiplier;
           
           const optimalDistance = 200; // Maintain distance from player
           
           if (dist < optimalDistance - 50) {
             // Too close - back away
-            e.x -= (dx/dist)*e.speed * 1.2 * damageSpeedMultiplier;
-            e.y -= (dy/dist)*e.speed * 1.2 * damageSpeedMultiplier;
+            e.x -= (dx/dist)*e.speed * 1.2 * finalSpeedMultiplier;
+            e.y -= (dy/dist)*e.speed * 1.2 * finalSpeedMultiplier;
           } else if (dist > optimalDistance + 50) {
             // Too far - move closer
-            e.x += (dx/dist)*e.speed * 0.8 * damageSpeedMultiplier;
-            e.y += (dy/dist)*e.speed * 0.8 * damageSpeedMultiplier;
+            e.x += (dx/dist)*e.speed * 0.8 * finalSpeedMultiplier;
+            e.y += (dy/dist)*e.speed * 0.8 * finalSpeedMultiplier;
           } else {
             // At optimal range - strafe perpendicular to player
             const perpX = -dy/dist;
@@ -658,12 +687,12 @@ export function updateEnemies() {
             e.strafeDirection = e.strafeDirection || (Math.random() < 0.5 ? 1 : -1);
             // Change strafe direction occasionally
             if (Math.random() < 0.02) e.strafeDirection *= -1;
-            e.x += perpX * e.speed * 0.6 * e.strafeDirection * damageSpeedMultiplier;
-            e.y += perpY * e.speed * 0.6 * e.strafeDirection * damageSpeedMultiplier;
+            e.x += perpX * e.speed * 0.6 * e.strafeDirection * finalSpeedMultiplier;
+            e.y += perpY * e.speed * 0.6 * e.strafeDirection * finalSpeedMultiplier;
           }
           
           // Sophisticated danger avoidance for incoming player bullets
-          // Speed reduced when damaged to make dodge less effective
+          // Speed reduced when damaged and slow to make dodge less effective
           let dangerX = 0, dangerY = 0;
           const DANGER_RADIUS = 120;
           
@@ -679,10 +708,10 @@ export function updateEnemies() {
             }
           }
           
-          // Apply danger avoidance movement with reduced effectiveness when damaged
+          // Apply danger avoidance movement with reduced effectiveness when damaged and slowed
           if (dangerX !== 0 || dangerY !== 0) {
-            e.x += dangerX * e.speed * 1.5 * damageSpeedMultiplier;
-            e.y += dangerY * e.speed * 1.5 * damageSpeedMultiplier;
+            e.x += dangerX * e.speed * 1.5 * finalSpeedMultiplier;
+            e.y += dangerY * e.speed * 1.5 * finalSpeedMultiplier;
           }
         }
         
@@ -704,8 +733,8 @@ export function updateEnemies() {
       } else if (e.type === "red-square") {
         // Red squares: Aggressive melee units that rush the player
         if (e.vx === undefined && e.vy === undefined) {
-          e.x += (dx/dist)*e.speed;
-          e.y += (dy/dist)*e.speed;
+          e.x += (dx/dist)*e.speed*slowMultiplier;
+          e.y += (dy/dist)*e.speed*slowMultiplier;
         }
       }
 
@@ -724,7 +753,7 @@ export function updateEnemies() {
       if (state.goldStar.alive && distToGoldStar < (e.size/2 + state.goldStar.size/2)) {
         state.goldStar.health -= (e.type === "triangle" ? 20 : 12);
         createExplosion(e.x, e.y, "orange");
-        if (state.goldStar.health <= 0) { state.goldStar.alive = false; state.goldStar.respawnTimer = 0; createExplosion(state.goldStar.x, state.goldStar.y, "gold"); }
+        if (state.goldStar.health <= 0) { state.goldStar.alive = false; state.goldStar.respawnTimer = 0; state.player.reflectorLevel = 0; createExplosion(state.goldStar.x, state.goldStar.y, "gold"); }
       }
       if (e.health <= 0) {
         if (!e.fromBoss) {
@@ -803,7 +832,7 @@ export function updateEnemies() {
       const distToGoldStar = Math.hypot(e.x-state.goldStar.x, e.y-state.goldStar.y);
       if (state.goldStar.alive && distToGoldStar < 30) {
         state.goldStar.health -= 15; createExplosion(e.x, e.y, "magenta");
-        if (state.goldStar.health <= 0) { state.goldStar.alive = false; state.goldStar.respawnTimer = 0; createExplosion(state.goldStar.x, state.goldStar.y, "gold"); }
+        if (state.goldStar.health <= 0) { state.goldStar.alive = false; state.goldStar.respawnTimer = 0; state.player.reflectorLevel = 0; createExplosion(state.goldStar.x, state.goldStar.y, "gold"); }
       }
 
       return true;
@@ -826,6 +855,13 @@ export function updateDropships() {
   for (let i = state.dropships.length - 1; i >= 0; i--) {
     const dropship = state.dropships[i];
     
+    // Handle slow effect from EMP
+    let slowMultiplier = 1.0;
+    if (dropship.slowTimer && dropship.slowTimer > 0) {
+      dropship.slowTimer--;
+      slowMultiplier = 1.0 - (dropship.slowedBy || 0);
+    }
+    
     // Fly to patrol position in top 1/3 of screen
     const targetY = Math.min(topThirdY, 80 + Math.random() * 40);
     dropship.y += (targetY - dropship.y) * 0.03;
@@ -837,7 +873,7 @@ export function updateDropships() {
     
     const dx = dropship.patrolX - dropship.x;
     const distX = Math.abs(dx) || 1;
-    dropship.x += Math.sign(dx) * Math.min(2.5, distX);
+    dropship.x += Math.sign(dx) * Math.min(2.5 * slowMultiplier, distX);
     
     // Shooting behavior - burst fire every 120-150 frames
     dropship.shootTimer = (dropship.shootTimer || 0) + 1;

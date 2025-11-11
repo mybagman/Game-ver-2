@@ -178,6 +178,77 @@ export function updateBullets() {
   });
 }
 
+export function updateEmpProjectiles() {
+  state.filterEmpProjectiles(emp => {
+    emp.x += emp.dx;
+    emp.y += emp.dy;
+    
+    // Check if EMP reached target location
+    const distToTarget = Math.hypot(emp.x - emp.targetX, emp.y - emp.targetY);
+    if (distToTarget < 30 || emp.x < -40 || emp.x > state.canvas.width + 40 || emp.y < -40 || emp.y > state.canvas.height + 40) {
+      // EMP explodes - create shockwave effect
+      state.pushExplosion({
+        x: emp.x,
+        y: emp.y,
+        dx: 0,
+        dy: 0,
+        radius: 20,
+        color: "rgba(100, 200, 255, 0.9)",
+        life: 20
+      });
+      
+      // Create expanding shockwave rings
+      for (let ring = 0; ring < 3; ring++) {
+        state.pushRedPunchEffect({
+          x: emp.x,
+          y: emp.y,
+          maxR: emp.aoe,
+          r: ring * 20,
+          life: 30 - ring * 5,
+          maxLife: 30 - ring * 5,
+          color: `rgba(100, 200, 255, ${0.7 - ring * 0.2})`,
+          fill: false,
+          ring: true
+        });
+      }
+      
+      // Apply slow effect to enemies in AOE
+      const allTargets = [
+        ...state.enemies,
+        ...state.mechs,
+        ...state.tanks,
+        ...state.dropships,
+        ...state.walkers
+      ];
+      
+      for (const target of allTargets) {
+        const dist = Math.hypot((target.x || 0) - emp.x, (target.y || 0) - emp.y);
+        if (dist < emp.aoe) {
+          // Apply slow effect
+          target.slowedBy = emp.slowStrength;
+          target.slowDuration = emp.slowDuration;
+          target.slowTimer = emp.slowDuration;
+          
+          // Visual feedback
+          state.pushExplosion({
+            x: target.x,
+            y: target.y,
+            dx: 0,
+            dy: 0,
+            radius: 8,
+            color: "rgba(150, 220, 255, 0.8)",
+            life: 15
+          });
+        }
+      }
+      
+      return false; // Remove EMP projectile
+    }
+    
+    return true; // Keep EMP projectile
+  });
+}
+
 export function updatePowerUps() {
   state.filterPowerUps(p => { p.lifetime--; return p.lifetime > 0; });
 }

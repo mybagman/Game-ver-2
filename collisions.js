@@ -46,7 +46,7 @@ export function updateLightning() {
         return false;
       } else {
         state.goldStar.health -= l.damage;
-        if (state.goldStar.health <= 0) { state.goldStar.alive = false; state.goldStar.respawnTimer = 0; createExplosion(state.goldStar.x, state.goldStar.y, "gold"); }
+        if (state.goldStar.health <= 0) { state.goldStar.alive = false; state.goldStar.respawnTimer = 0; state.player.reflectorLevel = 0; createExplosion(state.goldStar.x, state.goldStar.y, "gold"); }
         return false;
       }
     }

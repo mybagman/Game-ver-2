@@ -331,4 +331,73 @@ export function updateGoldStar() {
     gs.blueCannonTurretDeployed = false;
     gs.blueCannonTurretDeployTimer = 0;
   }
+
+  // EMP firing logic based on reflector level
+  if ((state.player.reflectorLevel || 0) > 0) {
+    gs.empCooldown = (gs.empCooldown || 0) + 1;
+    
+    // EMP charges animation before firing
+    if (gs.empCooldown > 170 && gs.empCooldown <= 200) {
+      gs.empCharging = true;
+      gs.empChargeTimer = (gs.empChargeTimer || 0) + 1;
+    }
+    
+    if (gs.empCooldown > 200) {
+      gs.empCooldown = 0;
+      gs.empCharging = false;
+      gs.empChargeTimer = 0;
+      
+      // Find valid targets (mechs, tanks, dropships, walkers, and other enemies)
+      const validTargets = [
+        ...state.enemies.filter(e => e.type !== "reflector"),
+        ...state.mechs,
+        ...state.tanks,
+        ...state.dropships,
+        ...state.walkers
+      ];
+      
+      if (validTargets.length > 0) {
+        // Pick closest target
+        let closestTarget = null;
+        let minDist = Infinity;
+        for (const target of validTargets) {
+          const dist = Math.hypot((target.x || 0) - (gs.x || 0), (target.y || 0) - (gs.y || 0));
+          if (dist < minDist) {
+            minDist = dist;
+            closestTarget = target;
+          }
+        }
+        
+        if (closestTarget) {
+          const dx = (closestTarget.x || 0) - (gs.x || 0);
+          const dy = (closestTarget.y || 0) - (gs.y || 0);
+          const mag = Math.hypot(dx, dy) || 1;
+          
+          // Create EMP projectile with level-based properties
+          const empLevel = state.player.reflectorLevel;
+          const empAOE = 60 + empLevel * 20; // 80-260 radius
+          const slowDuration = 120 + empLevel * 30; // 2-5 seconds at 60fps
+          const slowStrength = 0.3 + empLevel * 0.05; // 0.35-0.8 slow
+          
+          safeCall(state.pushEmpProjectile, {
+            x: gs.x,
+            y: gs.y,
+            dx: (dx / mag) * 6,
+            dy: (dy / mag) * 6,
+            targetX: closestTarget.x,
+            targetY: closestTarget.y,
+            size: 12,
+            owner: "gold",
+            aoe: empAOE,
+            slowDuration: slowDuration,
+            slowStrength: Math.min(0.8, slowStrength),
+            level: empLevel
+          });
+        }
+      }
+    }
+  } else {
+    gs.empCharging = false;
+    gs.empChargeTimer = 0;
+  }
 }

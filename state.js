@@ -21,6 +21,7 @@ export let reflectionEffects = [];
 export let redPunchEffects = [];
 export let minionsToAdd = [];
 export let homingMissiles = [];
+export let empProjectiles = [];
 
 export let keys = {};
 export let shootCooldown = 0;
@@ -209,12 +210,18 @@ export function pushRedPunchEffect(e) { redPunchEffects.push(e); }
 export function pushAuraSpark(s) { auraSparks.push(s); }
 export function pushAuraShockwave(s) { auraShockwaves.push(s); }
 export function pushHomingMissile(m) { homingMissiles.push(m); }
+export function pushEmpProjectile(e) { empProjectiles.push(e); }
 
 export function filterAuraSparks(fn) { auraSparks = auraSparks.filter(fn); }
 export function filterAuraShockwaves(fn) { auraShockwaves = auraShockwaves.filter(fn); }
 export function filterHomingMissiles(fn) { 
   for (let i = homingMissiles.length - 1; i >= 0; i--) {
     if (!fn(homingMissiles[i])) homingMissiles.splice(i, 1);
+  }
+}
+export function filterEmpProjectiles(fn) { 
+  for (let i = empProjectiles.length - 1; i >= 0; i--) {
+    if (!fn(empProjectiles[i])) empProjectiles.splice(i, 1);
   }
 }
 
@@ -250,6 +257,7 @@ export function resetGame() {
   auraSparks.length = 0;
   auraShockwaves.length = 0;
   homingMissiles.length = 0;
+  empProjectiles.length = 0;
 
   // reset simple state
   keys = {};
