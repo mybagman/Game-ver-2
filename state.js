@@ -19,6 +19,7 @@ export let powerUps = [];
 export let reflectionEffects = [];
 export let redPunchEffects = [];
 export let minionsToAdd = [];
+export let homingMissiles = [];
 
 export let keys = {};
 export let shootCooldown = 0;
@@ -65,7 +66,10 @@ export let player = {
   dashing: false,
   dashTimer: 0,
   dashCooldown: 0,
-  lastKeyPress: { key: null, time: 0 }
+  lastKeyPress: { key: null, time: 0 },
+  // Reflector power-up system
+  reflectorLevel: 0,
+  reflectorCooldown: 0
 };
 
 export let goldStar = {
@@ -184,9 +188,15 @@ export function pushReflectionEffect(r) { reflectionEffects.push(r); }
 export function pushRedPunchEffect(e) { redPunchEffects.push(e); }
 export function pushAuraSpark(s) { auraSparks.push(s); }
 export function pushAuraShockwave(s) { auraShockwaves.push(s); }
+export function pushHomingMissile(m) { homingMissiles.push(m); }
 
 export function filterAuraSparks(fn) { auraSparks = auraSparks.filter(fn); }
 export function filterAuraShockwaves(fn) { auraShockwaves = auraShockwaves.filter(fn); }
+export function filterHomingMissiles(fn) { 
+  for (let i = homingMissiles.length - 1; i >= 0; i--) {
+    if (!fn(homingMissiles[i])) homingMissiles.splice(i, 1);
+  }
+}
 
 export function pushMinion(m) { minionsToAdd.push(m); }
 export function flushMinions() { 
@@ -218,6 +228,7 @@ export function resetGame() {
   minionsToAdd.length = 0;
   auraSparks.length = 0;
   auraShockwaves.length = 0;
+  homingMissiles.length = 0;
 
   // reset simple state
   keys = {};
@@ -255,6 +266,8 @@ export function resetGame() {
   player.dashTimer = 0;
   player.dashCooldown = 0;
   player.lastKeyPress = { key: null, time: 0 };
+  player.reflectorLevel = 0;
+  player.reflectorCooldown = 0;
 
   // reset gold star
   goldStar.x = 0;

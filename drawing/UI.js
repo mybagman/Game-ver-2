@@ -102,6 +102,23 @@ export function drawUI() {
   state.ctx.fillStyle = state.player.reflectAvailable ? "rgba(0,220,255,0.95)" : "rgba(180,200,255,0.35)";
   state.ctx.font = "11px 'Orbitron', monospace";
   state.ctx.fillText("REFLECT", badgeX + 6, badgeY + 2);
+  
+  // Reflector level indicator
+  if (state.player.reflectorLevel > 0) {
+    const refLvlX = badgeX - 58;
+    const refLvlY = badgeY;
+    roundRect(state.ctx, refLvlX, refLvlY, 50, 16, 6);
+    state.ctx.fillStyle = "rgba(100,200,255,0.08)";
+    state.ctx.fill();
+    state.ctx.strokeStyle = "rgba(100,200,255,0.35)";
+    state.ctx.lineWidth = 1;
+    roundRect(state.ctx, refLvlX + 0.5, refLvlY + 0.5, 49, 15, 6);
+    state.ctx.stroke();
+    
+    state.ctx.fillStyle = "rgba(100,200,255,0.95)";
+    state.ctx.font = "11px 'Orbitron', monospace";
+    state.ctx.fillText(`HMLV ${state.player.reflectorLevel}`, refLvlX + 4, refLvlY + 2);
+  }
 
   // Gold Star panel (same sized box, but reflowed content)
   const gsX = x + hudW + 12;

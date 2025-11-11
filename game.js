@@ -15,6 +15,7 @@ import { updateLightning, checkBulletCollisions } from './collisions.js';
 import { updateGoldStar } from './goldstar.js';
 import { updateGoldStarAura, resetAuraOnDeath } from './aura.js';
 import { tryAdvanceWave, spawnWave } from './waveManager.js';
+import { updateReflectorSystem, updateHomingMissiles, drawHomingMissiles } from './homingMissiles.js';
 /* patched imports: consolidated drawing helpers from drawing.js */
 // Replace the single `from './drawing.js'` import with these direct imports:
 import { drawBackground, drawPlanetBackground, drawClouds } from './drawing/background.js';
@@ -70,6 +71,8 @@ export function gameLoop(now) {
   try { updateEnemies(); } catch (e) {}
   try { updateDebris(); } catch (e) {}
   try { updateCloudParticles(); } catch (e) {}
+  try { updateReflectorSystem(); } catch (e) {}
+  try { updateHomingMissiles(); } catch (e) {}
   try { checkBulletCollisions(); } catch (e) {}
   try { tryAdvanceWave(); } catch (e) {}
 
@@ -218,7 +221,7 @@ export function renderFrame() {
     try { updateAndDrawReflectionEffects(); } catch (e) {}
   }
 
-  // 7) Items / diamonds / lightning / debris / explosions
+  // 7) Items / diamonds / lightning / debris / explosions / homing missiles
   if (typeof drawDiamonds === 'function') {
     try { drawDiamonds(); } catch (e) {}
   }
@@ -227,6 +230,9 @@ export function renderFrame() {
   }
   if (typeof drawLightning === 'function') {
     try { drawLightning(); } catch (e) {}
+  }
+  if (typeof drawHomingMissiles === 'function') {
+    try { drawHomingMissiles(state.ctx); } catch (e) {}
   }
   if (typeof drawExplosions === 'function') {
     try { drawExplosions(); } catch (e) {}

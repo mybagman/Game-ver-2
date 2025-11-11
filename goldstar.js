@@ -142,6 +142,18 @@ export function updateGoldStar() {
             state.player.reflectAvailable = true;
             safeCall(createExplosion, pu.x, pu.y, "magenta");
             safeCall(state.addScore, 12);
+          }
+          else if (pu.type === "reflector-level") {
+            // Increase reflector level (max 10)
+            if (state.player.reflectorLevel < 10) {
+              state.player.reflectorLevel++;
+              safeCall(createExplosion, pu.x, pu.y, "cyan");
+              safeCall(state.addScore, 15);
+            } else {
+              // Already at max, give score
+              safeCall(createExplosion, pu.x, pu.y, "white");
+              safeCall(state.addScore, 5);
+            }
           } else {
             safeCall(createExplosion, pu.x, pu.y, "white");
             safeCall(state.addScore, 1);
