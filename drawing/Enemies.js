@@ -14,8 +14,8 @@ export function drawEnemies() {
       state.ctx.save();
       state.ctx.translate(e.x, e.y);
       
-      // Size increase for side-view
-      const sizeMultiplier = isSideView ? 1.5 : 1.0;
+      // Size increase for ALL waves (requirement: increase unit size while keeping design)
+      const sizeMultiplier = isSideView ? 2.0 : 1.8;
       const size = e.size * sizeMultiplier;
       const pulse = redSquarePulse;
       
@@ -139,7 +139,8 @@ export function drawEnemies() {
       state.ctx.save();
       state.ctx.translate(e.x, e.y);
       
-      const sizeMultiplier = isSideView ? 1.5 : 1.0;
+      // Size increase for ALL waves (requirement: increase unit size while keeping design)
+      const sizeMultiplier = isSideView ? 2.0 : 1.8;
       const size = e.size * sizeMultiplier;
       const pulse = Math.sin(state.frameCount * 0.08 + e.x) * 0.4 + 0.6;
       
@@ -261,113 +262,119 @@ export function drawEnemies() {
       } catch (err) {}
     }
     else if (e.type === "boss") { 
-      // After wave 11: 8-bit Unicron style
-      // Before wave 11: Raiden-style massive battleship/mothership boss
+      // REDESIGNED: Giant planet killer (Death Star/UNICRON style) - ALL WAVES
+      // Massive spherical mechanical appearance with planet-destroying aesthetic
       state.ctx.save();
       state.ctx.translate(e.x, e.y);
       
-      const size = e.size;
+      const size = e.size * 1.5; // Make boss even larger
       const pulse = Math.sin(state.frameCount * 0.05) * 0.2 + 0.8;
       
-      if (isSideView) {
-        // 8-bit Unicron - planet-eating robot with pixelated retro aesthetic
-        // Spherical body with menacing features
-        state.ctx.fillStyle = "#3a2a2a";
-        state.ctx.beginPath();
-        state.ctx.arc(0, 0, size/2, 0, Math.PI * 2);
-        state.ctx.fill();
-        
-        // Pixelated segments (8-bit style)
-        const segmentSize = size / 10;
-        for (let i = -4; i <= 4; i++) {
-          for (let j = -4; j <= 4; j++) {
-            const dist = Math.sqrt(i*i + j*j);
-            if (dist < 4.5) {
-              const shade = Math.floor((dist / 4.5) * 3);
-              const colors = ["#6a4a4a", "#5a3a3a", "#4a2a2a"];
-              state.ctx.fillStyle = colors[shade] || "#3a2a2a";
-              state.ctx.fillRect(i * segmentSize - segmentSize/2, j * segmentSize - segmentSize/2, segmentSize, segmentSize);
-            }
+      // Main spherical body (dark metallic)
+      const bodyGradient = state.ctx.createRadialGradient(0, 0, 0, 0, 0, size/2);
+      bodyGradient.addColorStop(0, "#3a3a3a");
+      bodyGradient.addColorStop(0.6, "#2a2a2a");
+      bodyGradient.addColorStop(1, "#1a1a1a");
+      state.ctx.fillStyle = bodyGradient;
+      state.ctx.beginPath();
+      state.ctx.arc(0, 0, size/2, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Mechanical segments (Death Star panels)
+      const segmentSize = size / 12;
+      for (let i = -5; i <= 5; i++) {
+        for (let j = -5; j <= 5; j++) {
+          const dist = Math.sqrt(i*i + j*j);
+          if (dist < 5.5) {
+            const shade = Math.floor((dist / 5.5) * 4);
+            const colors = ["#4a4a4a", "#3a3a3a", "#2a2a2a", "#1a1a1a"];
+            state.ctx.fillStyle = colors[shade] || "#1a1a1a";
+            state.ctx.fillRect(i * segmentSize - segmentSize/2, j * segmentSize - segmentSize/2, segmentSize * 0.9, segmentSize * 0.9);
+            
+            // Panel lines
+            state.ctx.strokeStyle = "#0a0a0a";
+            state.ctx.lineWidth = 1;
+            state.ctx.strokeRect(i * segmentSize - segmentSize/2, j * segmentSize - segmentSize/2, segmentSize * 0.9, segmentSize * 0.9);
           }
         }
-        
-        // Menacing red eye/core (glowing)
-        state.ctx.fillStyle = `rgba(255, 50, 50, ${pulse})`;
-        state.ctx.beginPath();
-        state.ctx.arc(0, 0, size/6, 0, Math.PI * 2);
-        state.ctx.fill();
-        
-        // Jaws/mandibles (opening/closing effect)
-        const jawOpen = Math.sin(state.frameCount * 0.03) * size/8;
-        state.ctx.fillStyle = "#5a4a4a";
-        // Upper jaw
-        state.ctx.fillRect(-size/3, -size/2 - jawOpen, size*0.6, size/8);
-        // Lower jaw
-        state.ctx.fillRect(-size/3, size/2 + jawOpen - size/8, size*0.6, size/8);
-        
-        // Teeth/spikes (8-bit style)
-        state.ctx.fillStyle = "#8a8a8a";
-        for (let t = -2; t <= 2; t++) {
-          state.ctx.fillRect(t * size/6, -size/2 - jawOpen + size/8, size/12, size/16);
-          state.ctx.fillRect(t * size/6, size/2 + jawOpen - size/8 - size/16, size/12, size/16);
-        }
-        
-        // Ring/halo segments (like Unicron's planet ring)
-        state.ctx.strokeStyle = `rgba(100, 100, 150, ${pulse * 0.7})`;
-        state.ctx.lineWidth = 3;
-        state.ctx.beginPath();
-        state.ctx.arc(0, 0, size * 0.7, 0, Math.PI * 2);
-        state.ctx.stroke();
-      } else {
-        // Original Raiden-style mothership
-        // Main hull (massive fortress-like structure)
-        state.ctx.fillStyle = "#4a4a3a";
-        state.ctx.fillRect(-size/2, -size/3, size, size*0.66);
-        
-        // Bridge tower
-        state.ctx.fillStyle = "#5a5a4a";
-        state.ctx.fillRect(-size/6, -size/2, size/3, size/4);
-        
-        // Command deck windows (glowing yellow)
-        state.ctx.fillStyle = `rgba(255, 220, 100, ${pulse})`;
-        state.ctx.fillRect(-size/8, -size/2.2, size/4, size/12);
-        
-        // Multiple turret emplacements
-        const turretPositions = [
-          [-size/3, -size/4], [size/3, -size/4],
-          [-size/3, size/4], [size/3, size/4],
-          [-size/6, 0], [size/6, 0]
-        ];
-        
-        turretPositions.forEach(([tx, ty]) => {
-          state.ctx.fillStyle = "#3a3a2a";
-          state.ctx.fillRect(tx - size/12, ty - size/12, size/6, size/6);
-          state.ctx.fillStyle = "#5a5a4a";
-          state.ctx.fillRect(tx - size/16, ty - size/16, size/8, size/8);
-        });
-        
-        // Engine banks (glowing)
-        state.ctx.fillStyle = `rgba(255, 150, 50, ${pulse * 0.9})`;
-        state.ctx.fillRect(-size/2.5, size/3, size/8, size/4);
-        state.ctx.fillRect(size/2.5 - size/8, size/3, size/8, size/4);
-        
-        // Armor plating detail
-        state.ctx.strokeStyle = "#2a2a1a";
-        state.ctx.lineWidth = 2;
-        for (let i = -2; i <= 2; i++) {
-          state.ctx.beginPath();
-          state.ctx.moveTo(-size/2, i * size/10);
-          state.ctx.lineTo(size/2, i * size/10);
-          state.ctx.stroke();
-        }
-        
-        // Warning lights
-        if (state.frameCount % 30 < 15) {
-          state.ctx.fillStyle = "#ff3333";
-          state.ctx.fillRect(-size/2.2, -size/3, size/20, size/20);
-          state.ctx.fillRect(size/2.2 - size/20, -size/3, size/20, size/20);
-        }
       }
+      
+      // Death Star superlaser dish (glowing red weapon)
+      const dishSize = size / 4;
+      state.ctx.save();
+      state.ctx.translate(size * 0.2, -size * 0.1);
+      
+      // Outer dish
+      state.ctx.fillStyle = "#2a2a2a";
+      state.ctx.beginPath();
+      state.ctx.arc(0, 0, dishSize, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Inner rings (concentric)
+      for (let r = 3; r >= 1; r--) {
+        const ringRadius = (dishSize * r) / 4;
+        state.ctx.strokeStyle = r === 1 ? `rgba(255, 50, 50, ${pulse})` : "#1a1a1a";
+        state.ctx.lineWidth = r === 1 ? 3 : 2;
+        state.ctx.beginPath();
+        state.ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+        state.ctx.stroke();
+      }
+      
+      // Central weapon core (glowing red)
+      const coreGradient = state.ctx.createRadialGradient(0, 0, 0, 0, 0, dishSize / 6);
+      coreGradient.addColorStop(0, `rgba(255, 100, 100, ${pulse})`);
+      coreGradient.addColorStop(0.7, `rgba(255, 50, 50, ${pulse * 0.7})`);
+      coreGradient.addColorStop(1, "rgba(200, 0, 0, 0)");
+      state.ctx.fillStyle = coreGradient;
+      state.ctx.beginPath();
+      state.ctx.arc(0, 0, dishSize / 4, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      state.ctx.restore();
+      
+      // Equatorial trench (like Death Star)
+      state.ctx.strokeStyle = "#0a0a0a";
+      state.ctx.lineWidth = size / 20;
+      state.ctx.beginPath();
+      state.ctx.arc(0, 0, size / 2.5, 0, Math.PI * 2);
+      state.ctx.stroke();
+      
+      state.ctx.strokeStyle = "#2a2a2a";
+      state.ctx.lineWidth = size / 25;
+      state.ctx.beginPath();
+      state.ctx.arc(0, 0, size / 2.5, 0, Math.PI * 2);
+      state.ctx.stroke();
+      
+      // Surface details (antenna, turrets scattered across surface)
+      const detailPositions = [
+        [size * 0.3, size * 0.3], [-size * 0.25, size * 0.35],
+        [size * 0.35, -size * 0.2], [-size * 0.3, -size * 0.3],
+        [0, size * 0.4], [size * 0.4, 0]
+      ];
+      
+      detailPositions.forEach(([dx, dy]) => {
+        if (Math.sqrt(dx*dx + dy*dy) < size/2) {
+          state.ctx.fillStyle = "#4a4a4a";
+          state.ctx.fillRect(dx - 3, dy - 3, 6, 6);
+          state.ctx.fillStyle = "#3a3a3a";
+          state.ctx.fillRect(dx - 2, dy - 2, 4, 4);
+        }
+      });
+      
+      // Warning lights (pulsing red around the sphere)
+      if (state.frameCount % 30 < 15) {
+        const lightPositions = [[0, -size/2.2], [size/2.2, 0], [0, size/2.2], [-size/2.2, 0]];
+        state.ctx.fillStyle = "#ff3333";
+        lightPositions.forEach(([lx, ly]) => {
+          state.ctx.fillRect(lx - 3, ly - 3, 6, 6);
+        });
+      }
+      
+      // Metallic highlight
+      state.ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+      state.ctx.beginPath();
+      state.ctx.arc(-size * 0.15, -size * 0.15, size / 4, 0, Math.PI * 2);
+      state.ctx.fill();
       
       state.ctx.restore();
     }
