@@ -345,58 +345,158 @@ export function drawGoldStar() {
     ctx.shadowBlur = 0;
   }
   
-  // === HOMING MISSILE DRONE POD ===
+  // === HOMING MISSILE SUPPORT DRONES ===
   if (gs.homingMissileLevel > 0) {
-    const podOffsetX = 12;
-    const podOffsetY = 0;
+    // Draw support drones orbiting around the Gold Star
+    const droneCount = gs.homingMissileLevel; // 1-3 drones based on level
+    const orbitRadius = gs.size/2 + 28;
+    const droneRotation = state.frameCount * 0.04;
     
-    ctx.fillStyle = "rgba(180, 180, 200, 0.9)";
-    ctx.fillRect(podOffsetX - 3, podOffsetY - 4, 6, 8);
-    
-    // Pod details (8-bit style)
-    ctx.fillStyle = "rgba(100, 150, 200, 0.9)";
-    ctx.fillRect(podOffsetX - 2, podOffsetY - 3, 4, 2);
-    ctx.fillRect(podOffsetX - 2, podOffsetY + 1, 4, 2);
+    for (let i = 0; i < droneCount; i++) {
+      const angle = (i / droneCount) * Math.PI * 2 + droneRotation;
+      const droneX = Math.cos(angle) * orbitRadius;
+      const droneY = Math.sin(angle) * orbitRadius;
+      
+      // Drone body (small hexagon)
+      ctx.save();
+      ctx.translate(droneX, droneY);
+      ctx.rotate(angle + Math.PI / 2);
+      
+      // Drone hull
+      ctx.fillStyle = "rgba(255, 150, 50, 0.9)";
+      ctx.beginPath();
+      for (let j = 0; j < 6; j++) {
+        const a = (j * Math.PI / 3);
+        const r = 5;
+        const x = Math.cos(a) * r;
+        const y = Math.sin(a) * r;
+        if (j === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      
+      // Drone core
+      ctx.fillStyle = "rgba(255, 200, 100, 0.9)";
+      ctx.fillRect(-2, -2, 4, 4);
+      
+      // Missile launchers
+      ctx.fillStyle = "rgba(180, 100, 50, 0.9)";
+      ctx.fillRect(-6, -1, 3, 2);
+      ctx.fillRect(3, -1, 3, 2);
+      
+      ctx.restore();
+      
+      // Connection beam to main body
+      ctx.strokeStyle = "rgba(255, 150, 50, 0.3)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(droneX, droneY);
+      ctx.stroke();
+    }
   }
   
   // === BASE GOLD STAR (Gundam-style futuristic drone) ===
   
-  // Calculate size multiplier based on power-up levels
+  // Calculate size multiplier based on power-up levels (moved earlier for visual additions)
   let sizeMultiplier = 1.0;
   if (gs.redPunchLevel === 2) sizeMultiplier = 1.1; // 10% larger at level 2
   else if (gs.redPunchLevel >= 3) sizeMultiplier = 1.2; // 20% larger at level 3+
   
   const effectiveSize = gs.size * sizeMultiplier;
   
-  // Rotating outer ring (mechanical)
-  const ringRotation = state.frameCount * 0.02;
-  ctx.rotate(ringRotation);
-  
-  // Outer mechanical ring with energy glow
-  ctx.shadowBlur = 15;
-  ctx.shadowColor = "rgba(255, 215, 0, 0.8)";
-  ctx.strokeStyle = "rgba(218, 165, 32, 0.9)";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.arc(0, 0, effectiveSize/2 + 2, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.shadowBlur = 0;
-  
-  // Mechanical segments on ring (4 parts)
-  for (let i = 0; i < 4; i++) {
-    const angle = (i * Math.PI / 2);
-    const x = Math.cos(angle) * (effectiveSize/2 + 2);
-    const y = Math.sin(angle) * (effectiveSize/2 + 2);
+  // === BLUE CANNON TURRET VISUAL ===
+  if (gs.blueCannonLevel > 0) {
+    // Draw a turret mounted on top of the Gold Star
+    const turretY = -effectiveSize/2 - 8;
     
-    ctx.fillStyle = "rgba(255, 215, 0, 1)";
-    ctx.fillRect(x - 3, y - 3, 6, 6);
+    // Turret base
+    ctx.fillStyle = "rgba(100, 150, 200, 0.9)";
+    ctx.fillRect(-6, turretY, 12, 8);
     
-    // Energy nodes
+    // Turret barrel
     ctx.fillStyle = "rgba(100, 200, 255, 0.9)";
-    ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
+    ctx.fillRect(-3, turretY - 8, 6, 8);
+    
+    // Turret tip with energy glow
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = "rgba(100, 200, 255, 0.8)";
+    ctx.fillStyle = "rgba(150, 220, 255, 0.9)";
+    ctx.fillRect(-2, turretY - 10, 4, 2);
+    ctx.shadowBlur = 0;
+    
+    // Level indicators
+    for (let i = 0; i < gs.blueCannonLevel; i++) {
+      ctx.fillStyle = "rgba(100, 200, 255, 0.9)";
+      ctx.fillRect(-5 + i * 3, turretY + 6, 2, 2);
+    }
   }
   
-  ctx.rotate(-ringRotation); // Reset rotation for core
+  // === SHIELD GENERATOR VISUAL ===
+  if (state.player.shieldActive && state.player.shieldHealth > 0) {
+    // Draw shield generator pods on sides
+    const podOffsetX = effectiveSize/2 + 8;
+    const podOffsetY = 0;
+    
+    // Left pod
+    ctx.fillStyle = "rgba(100, 200, 255, 0.8)";
+    ctx.fillRect(-podOffsetX - 4, podOffsetY - 6, 4, 12);
+    ctx.fillStyle = "rgba(150, 220, 255, 0.9)";
+    ctx.fillRect(-podOffsetX - 3, podOffsetY - 4, 2, 8);
+    
+    // Right pod
+    ctx.fillStyle = "rgba(100, 200, 255, 0.8)";
+    ctx.fillRect(podOffsetX, podOffsetY - 6, 4, 12);
+    ctx.fillStyle = "rgba(150, 220, 255, 0.9)";
+    ctx.fillRect(podOffsetX + 1, podOffsetY - 4, 2, 8);
+    
+    // Shield energy indicators
+    const shieldHealthRatio = state.player.shieldHealth / state.player.maxShieldHealth;
+    const pulseIntensity = 0.5 + Math.sin(state.frameCount * 0.15) * 0.3;
+    
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = `rgba(100, 200, 255, ${pulseIntensity * shieldHealthRatio})`;
+    ctx.fillStyle = `rgba(150, 220, 255, ${0.8 * shieldHealthRatio})`;
+    ctx.beginPath();
+    ctx.arc(-podOffsetX - 2, podOffsetY, 3, 0, Math.PI * 2);
+    ctx.arc(podOffsetX + 2, podOffsetY, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+  
+  // Rotating outer ring (mechanical) - Only show when upgraded
+  const hasUpgrades = gs.redPunchLevel > 0 || gs.blueCannonLevel > 0 || gs.homingMissileLevel > 0;
+  if (hasUpgrades) {
+    const ringRotation = state.frameCount * 0.02;
+    ctx.rotate(ringRotation);
+    
+    // Outer mechanical ring with energy glow
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = "rgba(255, 215, 0, 0.8)";
+    ctx.strokeStyle = "rgba(218, 165, 32, 0.9)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, effectiveSize/2 + 2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    
+    // Mechanical segments on ring (4 parts)
+    for (let i = 0; i < 4; i++) {
+      const angle = (i * Math.PI / 2);
+      const x = Math.cos(angle) * (effectiveSize/2 + 2);
+      const y = Math.sin(angle) * (effectiveSize/2 + 2);
+      
+      ctx.fillStyle = "rgba(255, 215, 0, 1)";
+      ctx.fillRect(x - 3, y - 3, 6, 6);
+      
+      // Energy nodes
+      ctx.fillStyle = "rgba(100, 200, 255, 0.9)";
+      ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
+    }
+    
+    ctx.rotate(-ringRotation); // Reset rotation for core
+  }
   
   // Main drone core (metallic hexagon)
   ctx.fillStyle = "rgba(218, 165, 32, 1)";

@@ -1,5 +1,6 @@
 import * as state from './state.js';
 import { createExplosion, spawnPowerUp, spawnRandomPowerUp, spawnDebris, handleTunnelCollisionForEntity, diamondReleaseAttachedEnemies } from './utils.js';
+import { applyPlayerDamage } from './collisions.js';
 
 export function updateBoss(boss) {
   boss.angle = boss.angle||0; boss.angle += 0.01;
@@ -627,13 +628,66 @@ export function updateEnemies() {
 
     if (e.type === "triangle" || e.type === "red-square") {
       const dx = state.player.x - e.x, dy = state.player.y - e.y, dist = Math.hypot(dx,dy)||1;
-      if (e.vx === undefined && e.vy === undefined) {
-        e.x += (dx/dist)*e.speed; e.y += (dy/dist)*e.speed;
-      }
-
+      
       if (e.type === "triangle") {
+        // Blue triangles: Support units that hang back and provide fire support
+        if (e.vx === undefined && e.vy === undefined) {
+          const optimalDistance = 200; // Maintain distance from player
+          
+          if (dist < optimalDistance - 50) {
+            // Too close - back away
+            e.x -= (dx/dist)*e.speed * 1.2;
+            e.y -= (dy/dist)*e.speed * 1.2;
+          } else if (dist > optimalDistance + 50) {
+            // Too far - move closer
+            e.x += (dx/dist)*e.speed * 0.8;
+            e.y += (dy/dist)*e.speed * 0.8;
+          } else {
+            // At optimal range - strafe perpendicular to player
+            const perpX = -dy/dist;
+            const perpY = dx/dist;
+            e.strafeDirection = e.strafeDirection || (Math.random() < 0.5 ? 1 : -1);
+            // Change strafe direction occasionally
+            if (Math.random() < 0.02) e.strafeDirection *= -1;
+            e.x += perpX * e.speed * 0.6 * e.strafeDirection;
+            e.y += perpY * e.speed * 0.6 * e.strafeDirection;
+          }
+          
+          // Dodge incoming player bullets
+          for (let bi = state.bullets.length - 1; bi >= 0; bi--) {
+            const b = state.bullets[bi];
+            const bulletDist = Math.hypot(b.x - e.x, b.y - e.y);
+            if (bulletDist < 80) { // Detect nearby bullets
+              // Dodge perpendicular to bullet trajectory
+              const bulletAngle = Math.atan2(b.dy, b.dx);
+              const dodgeAngle = bulletAngle + Math.PI / 2;
+              e.x += Math.cos(dodgeAngle) * e.speed * 2;
+              e.y += Math.sin(dodgeAngle) * e.speed * 2;
+            }
+          }
+        }
+        
+        // Fire at player more frequently with slight spread
         e.shootTimer = (e.shootTimer||0) + 1;
-        if (e.shootTimer > 100) { e.shootTimer = 0; state.pushLightning({x: e.x, y: e.y, dx: (dx/dist)*5, dy: (dy/dist)*5, size:6, damage:15}); }
+        if (e.shootTimer > 80) { // Faster fire rate (was 100)
+          e.shootTimer = 0;
+          const spread = (Math.random() - 0.5) * 0.2;
+          const angle = Math.atan2(dy, dx) + spread;
+          state.pushLightning({
+            x: e.x, 
+            y: e.y, 
+            dx: Math.cos(angle) * 5, 
+            dy: Math.sin(angle) * 5, 
+            size: 6, 
+            damage: 15
+          });
+        }
+      } else if (e.type === "red-square") {
+        // Red squares: Aggressive melee units that rush the player
+        if (e.vx === undefined && e.vy === undefined) {
+          e.x += (dx/dist)*e.speed;
+          e.y += (dy/dist)*e.speed;
+        }
       }
 
       for (let ti = 0; ti < state.tunnels.length; ti++) {
