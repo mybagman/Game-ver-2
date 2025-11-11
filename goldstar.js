@@ -155,19 +155,31 @@ export function updateGoldStar() {
           }
           else if (pu.type === "reflector-level") {
             // Increase reflector level (now adds shield strength instead of missiles)
+            // Requires 3 power-ups to level up
             if (state.player.reflectorLevel < 10) {
-              state.player.reflectorLevel++;
-              // Initialize or grow shield
-              if (!state.player.shieldActive) {
-                state.player.shieldActive = true;
-                state.player.maxShieldHealth = 30;
-                state.player.shieldHealth = 30;
+              state.player.reflectorPowerUpCount = (state.player.reflectorPowerUpCount || 0) + 1;
+              
+              if (state.player.reflectorPowerUpCount >= 3) {
+                // Level up after collecting 3 power-ups
+                state.player.reflectorLevel++;
+                state.player.reflectorPowerUpCount = 0;
+                
+                // Initialize or grow shield
+                if (!state.player.shieldActive) {
+                  state.player.shieldActive = true;
+                  state.player.maxShieldHealth = 30;
+                  state.player.shieldHealth = 30;
+                } else {
+                  state.player.maxShieldHealth = Math.min(200, state.player.maxShieldHealth + 20);
+                  state.player.shieldHealth = Math.min(state.player.maxShieldHealth, state.player.shieldHealth + 20);
+                }
+                safeCall(createExplosion, pu.x, pu.y, "cyan");
+                safeCall(state.addScore, 15);
               } else {
-                state.player.maxShieldHealth = Math.min(200, state.player.maxShieldHealth + 20);
-                state.player.shieldHealth = Math.min(state.player.maxShieldHealth, state.player.shieldHealth + 20);
+                // Collected but not enough to level up yet
+                safeCall(createExplosion, pu.x, pu.y, "lightblue");
+                safeCall(state.addScore, 5);
               }
-              safeCall(createExplosion, pu.x, pu.y, "cyan");
-              safeCall(state.addScore, 15);
             } else {
               // Already at max, give score
               safeCall(createExplosion, pu.x, pu.y, "white");
@@ -176,9 +188,26 @@ export function updateGoldStar() {
           }
           else if (pu.type === "homing-missile") {
             // New power-up type for homing missiles (goes to gold star)
-            gs.homingMissileLevel = Math.min(10, (gs.homingMissileLevel || 0) + 1);
-            safeCall(createExplosion, pu.x, pu.y, "orange");
-            safeCall(state.addScore, 15);
+            // Requires 3 power-ups to level up
+            if (gs.homingMissileLevel < 10) {
+              gs.homingMissilePowerUpCount = (gs.homingMissilePowerUpCount || 0) + 1;
+              
+              if (gs.homingMissilePowerUpCount >= 3) {
+                // Level up after collecting 3 power-ups
+                gs.homingMissileLevel = Math.min(10, (gs.homingMissileLevel || 0) + 1);
+                gs.homingMissilePowerUpCount = 0;
+                safeCall(createExplosion, pu.x, pu.y, "orange");
+                safeCall(state.addScore, 15);
+              } else {
+                // Collected but not enough to level up yet
+                safeCall(createExplosion, pu.x, pu.y, "yellow");
+                safeCall(state.addScore, 5);
+              }
+            } else {
+              // Already at max
+              safeCall(createExplosion, pu.x, pu.y, "white");
+              safeCall(state.addScore, 5);
+            }
           } else {
             safeCall(createExplosion, pu.x, pu.y, "white");
             safeCall(state.addScore, 1);

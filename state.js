@@ -34,6 +34,11 @@ export let waveTransition = false;
 export let waveTransitionTimer = 0;
 export const WAVE_BREAK_MS = 3000;
 
+// Perspective tracking - side view starts at wave 11
+export function isSideView() {
+  return wave >= 11;
+}
+
 export let highScore = 0;
 export let highScores = [];
 
@@ -72,6 +77,7 @@ export let player = {
   // Reflector power-up system (now creates shield instead of missiles)
   reflectorLevel: 0,
   reflectorCooldown: 0,
+  reflectorPowerUpCount: 0, // Track power-ups collected before leveling
   // Shield system
   shieldHealth: 0,
   maxShieldHealth: 0,
@@ -101,6 +107,7 @@ export let goldStar = {
   // New homing missile system (moved from player)
   homingMissileLevel: 0,
   homingMissileCooldown: 0,
+  homingMissilePowerUpCount: 0, // Track power-ups collected before leveling
   // Animation states for visual upgrades
   redPunchCharging: false,
   redPunchChargeTimer: 0,

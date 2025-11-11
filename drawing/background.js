@@ -1,8 +1,10 @@
 import * as state from '../state.js';
 
 export function drawClouds() {
-  // Lofi-style fluffy clouds inspired by Dragon Ball Z Nimbus
+  // Hand-drawn anime-style clouds for wave 11+, Lofi-style fluffy clouds before
   // Layered for depth (background, mid, foreground)
+  
+  const isAnimeStyle = state.wave >= 11;
   
   state.cloudParticles.forEach(c => {
     const layer = c.layer || 0;
@@ -16,31 +18,68 @@ export function drawClouds() {
     state.ctx.save();
     state.ctx.globalAlpha = c.opacity * alpha;
     
-    // Main fluffy cloud body (white/off-white)
-    state.ctx.fillStyle = `rgba(240, 245, 250, 1)`;
-    state.ctx.beginPath();
-    state.ctx.arc(c.x, c.y, c.size * scale, 0, Math.PI * 2);
-    state.ctx.fill();
-    
-    // Add 3-4 fluffy bumps for Nimbus-style puffiness
-    const bumps = 4;
-    for (let i = 0; i < bumps; i++) {
-      const angle = (i / bumps) * Math.PI * 2;
-      const offsetX = Math.cos(angle) * c.size * scale * 0.5;
-      const offsetY = Math.sin(angle) * c.size * scale * 0.4;
+    if (isAnimeStyle) {
+      // Hand-drawn anime style with more irregular edges
+      state.ctx.fillStyle = `rgba(250, 252, 255, 1)`;
       
-      state.ctx.globalAlpha = c.opacity * alpha * 0.7;
+      // Create more organic, hand-drawn bumpy outline
+      const bumps = 6;
       state.ctx.beginPath();
-      state.ctx.arc(c.x + offsetX, c.y + offsetY, c.size * scale * 0.6, 0, Math.PI * 2);
+      for (let i = 0; i <= bumps; i++) {
+        const angle = (i / bumps) * Math.PI * 2;
+        // Add randomness based on cloud index for consistent hand-drawn look
+        const wobble = Math.sin((c.x * 0.1 + i * 2.3)) * 0.2 + 0.9;
+        const radius = c.size * scale * wobble;
+        const px = c.x + Math.cos(angle) * radius * 0.8;
+        const py = c.y + Math.sin(angle) * radius * 0.6;
+        if (i === 0) {
+          state.ctx.moveTo(px, py);
+        } else {
+          state.ctx.lineTo(px, py);
+        }
+      }
+      state.ctx.closePath();
+      state.ctx.fill();
+      
+      // Add hand-drawn outline
+      state.ctx.strokeStyle = `rgba(200, 210, 230, ${alpha * 0.4})`;
+      state.ctx.lineWidth = 1.5;
+      state.ctx.stroke();
+      
+      // Soft shading in anime style
+      state.ctx.globalAlpha = c.opacity * alpha * 0.25;
+      state.ctx.fillStyle = `rgba(180, 200, 230, 1)`;
+      state.ctx.beginPath();
+      state.ctx.arc(c.x + c.size * scale * 0.2, c.y + c.size * scale * 0.3, c.size * scale * 0.5, 0, Math.PI * 2);
+      state.ctx.fill();
+    } else {
+      // Original Lofi-style fluffy clouds (pre-wave 11)
+      // Main fluffy cloud body (white/off-white)
+      state.ctx.fillStyle = `rgba(240, 245, 250, 1)`;
+      state.ctx.beginPath();
+      state.ctx.arc(c.x, c.y, c.size * scale, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Add 3-4 fluffy bumps for Nimbus-style puffiness
+      const bumps = 4;
+      for (let i = 0; i < bumps; i++) {
+        const angle = (i / bumps) * Math.PI * 2;
+        const offsetX = Math.cos(angle) * c.size * scale * 0.5;
+        const offsetY = Math.sin(angle) * c.size * scale * 0.4;
+        
+        state.ctx.globalAlpha = c.opacity * alpha * 0.7;
+        state.ctx.beginPath();
+        state.ctx.arc(c.x + offsetX, c.y + offsetY, c.size * scale * 0.6, 0, Math.PI * 2);
+        state.ctx.fill();
+      }
+      
+      // Soft highlight on top (lofi shading)
+      state.ctx.globalAlpha = c.opacity * alpha * 0.3;
+      state.ctx.fillStyle = `rgba(255, 255, 255, 1)`;
+      state.ctx.beginPath();
+      state.ctx.arc(c.x - c.size * scale * 0.15, c.y - c.size * scale * 0.2, c.size * scale * 0.5, 0, Math.PI * 2);
       state.ctx.fill();
     }
-    
-    // Soft highlight on top (lofi shading)
-    state.ctx.globalAlpha = c.opacity * alpha * 0.3;
-    state.ctx.fillStyle = `rgba(255, 255, 255, 1)`;
-    state.ctx.beginPath();
-    state.ctx.arc(c.x - c.size * scale * 0.15, c.y - c.size * scale * 0.2, c.size * scale * 0.5, 0, Math.PI * 2);
-    state.ctx.fill();
     
     state.ctx.restore();
     state.ctx.globalAlpha = 1;
