@@ -22,7 +22,7 @@ export function drawPowerUps() {
       state.ctx.fill();
 
       // fist icon - simple rectangle + notch
-      state.// shadowBlur removed for performance
+      // shadowBlur removed for performance
       state.ctx.fillStyle = "white";
       state.ctx.fillRect(-4, -4, 8, 8);
       state.ctx.clearRect(-1, -6, 2, 2); // thumb notch (works with some canvases)
@@ -33,7 +33,7 @@ export function drawPowerUps() {
       state.ctx.arc(0, 0, (p.size||18)/2, 0, Math.PI*2); 
       state.ctx.fill();
 
-      state.// shadowBlur removed for performance
+      // shadowBlur removed for performance
       state.ctx.fillStyle = "white";
       // small triangle cannon
       state.ctx.beginPath();
@@ -49,7 +49,7 @@ export function drawPowerUps() {
       state.ctx.arc(0, 0, (p.size||18)/2, 0, Math.PI*2); 
       state.ctx.fill();
 
-      state.// shadowBlur removed for performance
+      // shadowBlur removed for performance
       state.ctx.fillStyle = "white";
       // plus sign
       state.ctx.fillRect(-2, -6, 4, 12);
@@ -61,7 +61,7 @@ export function drawPowerUps() {
       state.ctx.arc(0, 0, (p.size||18)/2, 0, Math.PI*2); 
       state.ctx.fill();
 
-      state.// shadowBlur removed for performance
+      // shadowBlur removed for performance
       state.ctx.strokeStyle = "cyan";
       state.ctx.lineWidth = 2;
       state.ctx.beginPath(); 
@@ -78,7 +78,7 @@ export function drawPowerUps() {
       state.ctx.arc(0, 0, (p.size||18)/2, 0, Math.PI*2); 
       state.ctx.fill();
 
-      state.// shadowBlur removed for performance
+      // shadowBlur removed for performance
       state.ctx.fillStyle = "white";
       // Missile shape icon
       state.ctx.beginPath();
@@ -99,7 +99,7 @@ export function drawPowerUps() {
       state.ctx.arc(0, 0, (p.size||18)/2, 0, Math.PI*2); 
       state.ctx.fill();
 
-      state.// shadowBlur removed for performance
+      // shadowBlur removed for performance
       state.ctx.fillStyle = "rgba(255,255,255,0.9)";
       state.ctx.font = "10px 'Orbitron', monospace";
       state.ctx.textAlign = "center";
@@ -109,17 +109,17 @@ export function drawPowerUps() {
 
     // small floating label (count) if applicable
     if (typeof p.count === 'number' && p.count > 1) {
-      state.// shadowBlur removed for performance
+      // shadowBlur removed for performance
       state.ctx.fillStyle = "rgba(20,20,30,0.9)";
       state.ctx.fillRect(8, -10, 16, 12);
-      state.// shadowBlur removed for performance
+      // shadowBlur removed for performance
       state.ctx.fillStyle = "white";
       state.ctx.font = "10px 'Orbitron', monospace";
       state.ctx.fillText(String(p.count), 16, -4);
     }
 
     // restore to avoid leaking visual state
-    state.// shadowBlur removed for performance
+    // shadowBlur removed for performance
     state.ctx.globalAlpha = 1;
     state.ctx.restore();
   });
