@@ -38,26 +38,94 @@ export function drawEnemies() {
       } catch (err) {}
     }
     else if (e.type === "triangle") { 
+      // 8-bit TIE Fighter design
+      state.ctx.save();
+      state.ctx.translate(e.x, e.y);
+      
       state.ctx.shadowBlur = 15;
       state.ctx.shadowColor = "cyan";
-      state.ctx.fillStyle = "cyan"; 
-      state.ctx.beginPath(); 
-      state.ctx.moveTo(e.x, e.y-e.size/2); 
-      state.ctx.lineTo(e.x-e.size/2, e.y+e.size/2); 
-      state.ctx.lineTo(e.x+e.size/2, e.y+e.size/2); 
-      state.ctx.closePath(); 
-      state.ctx.fill();
-      state.ctx.shadowBlur = 0;
-
+      
+      const wingWidth = e.size / 2;
+      const wingHeight = e.size * 0.8;
+      const cockpitSize = e.size / 3;
       const pulse = Math.sin(state.frameCount * 0.08 + e.x) * 0.4 + 0.6;
+      
+      // Left solar panel wing
+      state.ctx.fillStyle = "#333";
+      state.ctx.fillRect(-wingWidth - cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
+      
+      // Left wing grid lines
+      state.ctx.strokeStyle = "#555";
+      state.ctx.lineWidth = 1;
+      for (let i = 1; i < 3; i++) {
+        state.ctx.beginPath();
+        state.ctx.moveTo(-wingWidth - cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
+        state.ctx.lineTo(-cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
+        state.ctx.stroke();
+      }
+      
+      // Right solar panel wing
+      state.ctx.fillStyle = "#333";
+      state.ctx.fillRect(cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
+      
+      // Right wing grid lines
+      state.ctx.strokeStyle = "#555";
+      state.ctx.lineWidth = 1;
+      for (let i = 1; i < 3; i++) {
+        state.ctx.beginPath();
+        state.ctx.moveTo(cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
+        state.ctx.lineTo(wingWidth + cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
+        state.ctx.stroke();
+      }
+      
+      // Central cockpit pod (hexagonal)
+      state.ctx.fillStyle = "#555";
+      state.ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        const px = Math.cos(angle) * cockpitSize/2;
+        const py = Math.sin(angle) * cockpitSize/2;
+        if (i === 0) state.ctx.moveTo(px, py);
+        else state.ctx.lineTo(px, py);
+      }
+      state.ctx.closePath();
+      state.ctx.fill();
+      
+      // Cockpit window (cyan glow)
+      state.ctx.fillStyle = `rgba(0,255,255,${pulse})`;
+      state.ctx.fillRect(-cockpitSize/4, -cockpitSize/8, cockpitSize/2, cockpitSize/4);
+      
+      // Engine glow at back
+      state.ctx.fillStyle = `rgba(100,200,255,${pulse * 0.8})`;
+      state.ctx.beginPath();
+      state.ctx.arc(0, cockpitSize/3, cockpitSize/6, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      state.ctx.shadowBlur = 0;
+      
+      // Outline glow
       state.ctx.strokeStyle = `rgba(100,255,255,${pulse})`;
       state.ctx.lineWidth = 2;
-      state.ctx.beginPath(); 
-      state.ctx.moveTo(e.x, e.y-e.size/2); 
-      state.ctx.lineTo(e.x-e.size/2, e.y+e.size/2); 
-      state.ctx.lineTo(e.x+e.size/2, e.y+e.size/2); 
-      state.ctx.closePath(); 
+      
+      // Left wing outline
+      state.ctx.strokeRect(-wingWidth - cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
+      
+      // Right wing outline
+      state.ctx.strokeRect(cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
+      
+      // Cockpit outline
+      state.ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        const px = Math.cos(angle) * cockpitSize/2;
+        const py = Math.sin(angle) * cockpitSize/2;
+        if (i === 0) state.ctx.moveTo(px, py);
+        else state.ctx.lineTo(px, py);
+      }
+      state.ctx.closePath();
       state.ctx.stroke();
+      
+      state.ctx.restore();
 
       try {
         const fireRate = 100;

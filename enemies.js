@@ -653,17 +653,26 @@ export function updateEnemies() {
             e.y += perpY * e.speed * 0.6 * e.strafeDirection;
           }
           
-          // Dodge incoming player bullets
+          // Sophisticated danger avoidance for incoming player bullets
+          let dangerX = 0, dangerY = 0;
+          const DANGER_RADIUS = 120;
+          
           for (let bi = state.bullets.length - 1; bi >= 0; bi--) {
             const b = state.bullets[bi];
-            const bulletDist = Math.hypot(b.x - e.x, b.y - e.y);
-            if (bulletDist < 80) { // Detect nearby bullets
-              // Dodge perpendicular to bullet trajectory
-              const bulletAngle = Math.atan2(b.dy, b.dx);
-              const dodgeAngle = bulletAngle + Math.PI / 2;
-              e.x += Math.cos(dodgeAngle) * e.speed * 2;
-              e.y += Math.sin(dodgeAngle) * e.speed * 2;
+            if (b.owner === "player") {
+              const bulletDist = Math.hypot(b.x - e.x, b.y - e.y);
+              if (bulletDist < DANGER_RADIUS && bulletDist > 0) {
+                const weight = (DANGER_RADIUS - bulletDist) / DANGER_RADIUS;
+                dangerX += ((e.x || 0) - b.x) / bulletDist * weight;
+                dangerY += ((e.y || 0) - b.y) / bulletDist * weight;
+              }
             }
+          }
+          
+          // Apply danger avoidance movement
+          if (dangerX !== 0 || dangerY !== 0) {
+            e.x += dangerX * e.speed * 1.5;
+            e.y += dangerY * e.speed * 1.5;
           }
         }
         
