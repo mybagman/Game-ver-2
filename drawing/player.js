@@ -103,7 +103,6 @@ export function drawPlayer() {
   // ensure any lingering canvas state is reset before drawing player
   state.ctx.save();
   state.ctx.filter = 'none';
-  state.ctx.shadowBlur = 0;
   state.ctx.globalAlpha = 1;
   state.ctx.globalCompositeOperation = 'source-over';
 
@@ -126,8 +125,7 @@ export function drawPlayer() {
     const dotY = state.player.y + Math.sin(state.firingIndicatorAngle) * indicatorDistance;
 
     state.ctx.save();
-    state.ctx.shadowBlur = 10;
-    state.ctx.shadowColor = "yellow";
+    // No blur for performance
     state.ctx.fillStyle = "yellow";
     state.ctx.beginPath();
     state.ctx.arc(dotX, dotY, 4, 0, Math.PI * 2);

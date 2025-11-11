@@ -217,13 +217,10 @@ export function drawEnemies() {
     }
     else if (e.type === "boss") { 
       const pulse = Math.sin(state.frameCount * 0.05) * 10 + e.size/2;
-      state.ctx.shadowBlur = 30;
-      state.ctx.shadowColor = "yellow";
       state.ctx.fillStyle = "yellow"; 
       state.ctx.beginPath(); 
       state.ctx.arc(e.x, e.y, pulse, 0, Math.PI*2); 
       state.ctx.fill();
-      state.ctx.shadowBlur = 0;
 
       state.ctx.strokeStyle = "rgba(255,255,0,0.5)";
       state.ctx.lineWidth = 3;
@@ -233,26 +230,18 @@ export function drawEnemies() {
     }
     else if (e.type === "mini-boss") { 
       const pulse = Math.sin(state.frameCount * 0.07) * 5 + e.size/2;
-      state.ctx.shadowBlur = 25;
-      state.ctx.shadowColor = "orange";
       state.ctx.fillStyle = "orange"; 
       state.ctx.beginPath(); 
       state.ctx.arc(e.x, e.y, pulse, 0, Math.PI * 2); 
       state.ctx.fill();
-      state.ctx.shadowBlur = 0;
     }
     else if (e.type === "reflector") {
       state.ctx.save();
       state.ctx.translate(e.x, e.y);
       state.ctx.rotate(e.angle||0);
 
-      if (e.shieldActive) {
-        state.ctx.shadowBlur = 20;
-        state.ctx.shadowColor = "purple";
-      }
       state.ctx.fillStyle = e.shieldActive ? "rgba(138,43,226,0.8)" : "purple";
       state.ctx.fillRect(-e.width/2, -e.height/2, e.width, e.height);
-      state.ctx.shadowBlur = 0;
 
       if (e.shieldActive) {
         const shieldPulse = Math.sin(state.frameCount * 0.1) * 5 + 60;
@@ -270,8 +259,6 @@ export function drawEnemies() {
       state.ctx.rotate(e.angle);
 
       const glowIntensity = Math.sin(state.frameCount * 0.05) * 0.3 + 0.7;
-      state.ctx.shadowBlur = 50;
-      state.ctx.shadowColor = "rgba(0,200,255,0.8)";
       state.ctx.strokeStyle = `rgba(0,150,255,${glowIntensity})`;
       state.ctx.lineWidth = 8;
       state.ctx.beginPath();
@@ -283,18 +270,14 @@ export function drawEnemies() {
       state.ctx.fillStyle = "rgba(20,40,80,0.9)";
       state.ctx.fill();
       state.ctx.stroke();
-      state.ctx.shadowBlur = 0;
       state.ctx.restore();
 
       e.cores.forEach(core => {
         state.ctx.save();
-        state.ctx.shadowBlur = 20;
-        state.ctx.shadowColor = "cyan";
         state.ctx.fillStyle = "cyan";
         state.ctx.beginPath();
         state.ctx.arc(core.x, core.y, 20, 0, Math.PI * 2);
         state.ctx.fill();
-        state.ctx.shadowBlur = 0;
         state.ctx.restore();
       });
 
@@ -386,12 +369,9 @@ export function drawMechs() {
       state.ctx.fill();
       state.ctx.stroke();
       
-      // Cockpit windows (glowing cyan)
+      // Cockpit windows (glowing cyan) - no blur for performance
       state.ctx.fillStyle = '#00ccff';
-      state.ctx.shadowBlur = 8;
-      state.ctx.shadowColor = '#00ccff';
       state.ctx.fillRect(-size/6, -size/2, size/3, size/8);
-      state.ctx.shadowBlur = 0;
       
       // Side thrusters
       state.ctx.fillStyle = '#555';
@@ -411,8 +391,7 @@ export function drawMechs() {
       state.ctx.fillStyle = '#333';
       state.ctx.fillRect(-size/3, size/4, size/1.5, size/6);
       
-      state.ctx.shadowBlur = 15;
-      state.ctx.shadowColor = `rgba(100, 200, 255, ${engineFlicker})`;
+      // Engine glow (no blur for performance)
       state.ctx.fillStyle = `rgba(100, 200, 255, ${engineFlicker * enginePulse})`;
       state.ctx.beginPath();
       state.ctx.moveTo(-size/4, size/4 + size/6);
@@ -421,7 +400,6 @@ export function drawMechs() {
       state.ctx.lineTo(size/4, size/4 + size/6);
       state.ctx.closePath();
       state.ctx.fill();
-      state.ctx.shadowBlur = 0;
       
       // Deployment bay door (opening during deploy)
       if (mech.deploying) {
@@ -432,13 +410,11 @@ export function drawMechs() {
         state.ctx.fillRect(0 + (size/4) * doorOpen, size/6, (size/4) * (1 - doorOpen), size/8);
         
         if (doorOpen > 0.3) {
-          state.ctx.shadowBlur = 10;
-          state.ctx.shadowColor = 'rgba(255, 50, 50, 0.8)';
+          // Deployment light (no blur for performance)
           state.ctx.fillStyle = `rgba(255, 100, 100, ${doorOpen})`;
           state.ctx.beginPath();
           state.ctx.arc(0, size/5, 3, 0, Math.PI * 2);
           state.ctx.fill();
-          state.ctx.shadowBlur = 0;
         }
       }
       
@@ -652,12 +628,9 @@ export function drawDiamonds() {
     // Mid-layer boss aura (pulsing energy ring)
     state.ctx.strokeStyle = `rgba(255, 150, 255, ${0.6 * bossAuraPulse})`;
     state.ctx.lineWidth = 3;
-    state.ctx.shadowBlur = 20;
-    state.ctx.shadowColor = `rgba(255, 150, 255, ${bossAuraPulse})`;
     state.ctx.beginPath();
     state.ctx.arc(0, 0, bossAuraSize * 0.7, 0, Math.PI * 2);
     state.ctx.stroke();
-    state.ctx.shadowBlur = 0;
     
     // Inner boss energy field
     const innerAuraGradient = state.ctx.createRadialGradient(0, 0, 0, 0, 0, bossAuraSize * 0.5);
@@ -674,12 +647,9 @@ export function drawDiamonds() {
       const pullIntensity = d.gravitonCharge / 600;
       state.ctx.strokeStyle = `rgba(100,200,255,${pullIntensity * 0.7})`;
       state.ctx.lineWidth = 5;
-      state.ctx.shadowBlur = 25;
-      state.ctx.shadowColor = `rgba(100,200,255,${pullIntensity})`;
       state.ctx.beginPath();
       state.ctx.arc(0, 0, d.size/2 + 80 + Math.sin(state.frameCount * 0.1) * 25, 0, Math.PI * 2);
       state.ctx.stroke();
-      state.ctx.shadowBlur = 0;
 
       state.ctx.strokeStyle = `rgba(150,220,255,${pullIntensity * 0.5})`;
       state.ctx.lineWidth = 3;
@@ -707,13 +677,11 @@ export function drawDiamonds() {
         state.ctx.arc(px, py, particleSize, 0, Math.PI * 2);
         state.ctx.fill();
         
-        // Add glow effect to particles
-        state.ctx.shadowBlur = 10 + chargeProgress * 20;
-        state.ctx.shadowColor = "rgba(255, 255, 100, 0.8)";
+        // Particle center glow (no blur for performance)
+        state.ctx.fillStyle = `rgba(255, 255, 150, ${opacity * 1.2})`;
         state.ctx.beginPath();
         state.ctx.arc(px, py, particleSize * 0.5, 0, Math.PI * 2);
         state.ctx.fill();
-        state.ctx.shadowBlur = 0;
       }
       
       // Add energy lines from particles to center
@@ -734,11 +702,7 @@ export function drawDiamonds() {
       }
     }
 
-    if (d.vulnerable) {
-      const vulnPulse = Math.sin(state.frameCount * 0.2) * 0.3 + 0.7;
-      state.ctx.shadowBlur = 50;
-      state.ctx.shadowColor = `rgba(255,100,100,${vulnPulse})`;
-    }
+    // Vulnerable state indicated by color only (no blur for performance)
 
     // === ENHANCED DIAMOND BOSS BODY ===
     const glowIntensity = Math.sin(state.frameCount * 0.05) * 0.3 + 0.7;
@@ -757,9 +721,7 @@ export function drawDiamonds() {
     state.ctx.closePath();
     state.ctx.fill();
     
-    // Main boss body with enhanced glow
-    state.ctx.shadowBlur = d.vulnerable ? 50 : 40;
-    state.ctx.shadowColor = d.canReflect ? "cyan" : (d.vulnerable ? "red" : "white");
+    // Main boss body (no blur for performance)
     
     // Fill with gradient for depth
     const bodyGradient = state.ctx.createRadialGradient(0, 0, 0, 0, 0, enhancedSize/2);
@@ -819,7 +781,6 @@ export function drawDiamonds() {
     state.ctx.arc(0, 0, coreSize, 0, Math.PI * 2);
     state.ctx.fill();
     
-    state.ctx.shadowBlur = 0;
     state.ctx.restore();
     
     // === BOSS HEALTH BAR (Enhanced) ===
@@ -913,16 +874,13 @@ export function drawDiamonds() {
         state.ctx.fillStyle = "rgba(100, 100, 140, 0.9)";
         state.ctx.fillRect(0, -3, 15, 6);
         
-        // Turret glow when charging
+        // Turret glow when charging (no blur for performance)
         if (turret.shootTimer > turret.fireRate - 20) {
           const chargePulse = (turret.shootTimer - (turret.fireRate - 20)) / 20;
-          state.ctx.shadowBlur = 15 * chargePulse;
-          state.ctx.shadowColor = "rgba(255, 100, 100, 0.8)";
           state.ctx.fillStyle = `rgba(255, 100, 100, ${chargePulse * 0.8})`;
           state.ctx.beginPath();
           state.ctx.arc(12, 0, 4, 0, Math.PI * 2);
           state.ctx.fill();
-          state.ctx.shadowBlur = 0;
         }
         
         state.ctx.restore();
@@ -1021,12 +979,9 @@ export function drawDropships() {
     ctx.fill();
     ctx.stroke();
     
-    // Cockpit windows (glowing cyan)
+    // Cockpit windows (glowing cyan) - no blur for performance
     ctx.fillStyle = '#00ccff';
-    ctx.shadowBlur = 8;
-    ctx.shadowColor = '#00ccff';
     ctx.fillRect(-size/6, -size/2, size/3, size/8);
-    ctx.shadowBlur = 0;
     
     // Side thrusters
     ctx.fillStyle = '#555';
@@ -1046,8 +1001,7 @@ export function drawDropships() {
     ctx.fillStyle = '#333';
     ctx.fillRect(-size/3, size/4, size/1.5, size/6);
     
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = `rgba(100, 200, 255, ${engineFlicker})`;
+    // Engine glow (no blur for performance)
     ctx.fillStyle = `rgba(100, 200, 255, ${engineFlicker * enginePulse})`;
     ctx.beginPath();
     ctx.moveTo(-size/4, size/4 + size/6);
@@ -1056,7 +1010,6 @@ export function drawDropships() {
     ctx.lineTo(size/4, size/4 + size/6);
     ctx.closePath();
     ctx.fill();
-    ctx.shadowBlur = 0;
     
     // Panel lines
     ctx.strokeStyle = '#1a1a1a';
@@ -1129,12 +1082,9 @@ export function drawDropship(mech) {
   ctx.fill();
   ctx.stroke();
   
-  // Cockpit windows (glowing cyan)
+  // Cockpit windows (glowing cyan) - no blur for performance
   ctx.fillStyle = '#00ccff';
-  ctx.shadowBlur = 8;
-  ctx.shadowColor = '#00ccff';
   ctx.fillRect(-size/6, -size/2, size/3, size/8);
-  ctx.shadowBlur = 0;
   
   // Side thrusters (mechanical details)
   ctx.fillStyle = '#555';
@@ -1157,9 +1107,7 @@ export function drawDropship(mech) {
   ctx.fillStyle = '#333';
   ctx.fillRect(-size/3, size/4, size/1.5, size/6);
   
-  // Engine glow (blue thrust)
-  ctx.shadowBlur = 15;
-  ctx.shadowColor = `rgba(100, 200, 255, ${engineFlicker})`;
+  // Engine glow (blue thrust) - no blur for performance
   ctx.fillStyle = `rgba(100, 200, 255, ${engineFlicker * enginePulse})`;
   ctx.beginPath();
   ctx.moveTo(-size/4, size/4 + size/6);
@@ -1168,7 +1116,6 @@ export function drawDropship(mech) {
   ctx.lineTo(size/4, size/4 + size/6);
   ctx.closePath();
   ctx.fill();
-  ctx.shadowBlur = 0;
   
   // Side engine particles
   for (let side = -1; side <= 1; side += 2) {
@@ -1189,15 +1136,12 @@ export function drawDropship(mech) {
     ctx.fillRect(-size/4, size/6, (size/4) * (1 - doorOpen), size/8);
     ctx.fillRect(0 + (size/4) * doorOpen, size/6, (size/4) * (1 - doorOpen), size/8);
     
-    // Deployment light
+    // Deployment light (no blur for performance)
     if (doorOpen > 0.3) {
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = 'rgba(255, 50, 50, 0.8)';
       ctx.fillStyle = `rgba(255, 100, 100, ${doorOpen})`;
       ctx.beginPath();
       ctx.arc(0, size/5, 3, 0, Math.PI * 2);
       ctx.fill();
-      ctx.shadowBlur = 0;
     }
   }
   

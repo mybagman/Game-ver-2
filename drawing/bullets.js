@@ -38,13 +38,12 @@ function drawBossBullet(ctx, b) {
   ctx.fill();
 
   // core
-  ctx.shadowBlur = 20;
-  ctx.shadowColor = "orange";
+  // shadowBlur removed for performance
   ctx.fillStyle = b.color || "orange";
   ctx.beginPath();
   ctx.arc(x, y, size, 0, Math.PI * 2);
   ctx.fill();
-  ctx.shadowBlur = 0;
+  // shadowBlur removed for performance
 
   // rotating spikes to emphasize menace
   ctx.save();
@@ -84,13 +83,12 @@ function drawMiniBossBullet(ctx, b) {
   ctx.globalCompositeOperation = 'lighter';
 
   // halo
-  ctx.shadowBlur = 14;
-  ctx.shadowColor = "cyan";
+  // shadowBlur removed for performance
   ctx.fillStyle = b.color || "cyan";
   ctx.beginPath();
   ctx.arc(x, y, size + 4 + Math.sin(t * 0.2) * 1.5, 0, Math.PI * 2);
   ctx.fill();
-  ctx.shadowBlur = 0;
+  // shadowBlur removed for performance
 
   // core diamond shape
   ctx.save();
@@ -195,13 +193,12 @@ export function drawEmpProjectiles() {
     state.ctx.fill();
     
     // Core sphere
-    state.ctx.shadowBlur = 20;
-    state.ctx.shadowColor = "rgba(100, 200, 255, 0.9)";
+    state.// shadowBlur removed for performance
     state.ctx.fillStyle = `rgba(150, 220, 255, ${pulse})`;
     state.ctx.beginPath();
     state.ctx.arc(x, y, size, 0, Math.PI * 2);
     state.ctx.fill();
-    state.ctx.shadowBlur = 0;
+    state.// shadowBlur removed for performance
     
     // Electric arcs rotating around core
     state.ctx.save();
