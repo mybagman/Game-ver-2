@@ -514,12 +514,15 @@ export function updateMechs() {
         mech.y = groundY;
       }
     } else {
-      // Grounded mech (legacy behavior)
+      // Grounded mech (spider bot behavior)
       const dx = state.player.x - mech.x;
       const distX = Math.abs(dx) || 1;
       mech.x += Math.sign(dx) * Math.min(mech.speed, distX);
 
       mech.y += (groundY - mech.y) * 0.15;
+      
+      // Animate spider legs
+      mech.legPhase = (mech.legPhase || 0) + 0.15;
 
       mech.shootTimer = (mech.shootTimer || 0) + 1;
       if (mech.shootTimer > 60) {
@@ -632,16 +635,22 @@ export function updateEnemies() {
       if (e.type === "triangle") {
         // Blue triangles: Support units that hang back and provide fire support
         if (e.vx === undefined && e.vy === undefined) {
+          // Calculate speed multiplier based on damage taken (reduces speed when damaged)
+          // Assumes triangle has 40 health initially
+          const initialHealth = 40;
+          const healthPercent = e.health / initialHealth;
+          const damageSpeedMultiplier = 0.5 + (healthPercent * 0.5); // Ranges from 0.5 (at 0 health) to 1.0 (at full health)
+          
           const optimalDistance = 200; // Maintain distance from player
           
           if (dist < optimalDistance - 50) {
             // Too close - back away
-            e.x -= (dx/dist)*e.speed * 1.2;
-            e.y -= (dy/dist)*e.speed * 1.2;
+            e.x -= (dx/dist)*e.speed * 1.2 * damageSpeedMultiplier;
+            e.y -= (dy/dist)*e.speed * 1.2 * damageSpeedMultiplier;
           } else if (dist > optimalDistance + 50) {
             // Too far - move closer
-            e.x += (dx/dist)*e.speed * 0.8;
-            e.y += (dy/dist)*e.speed * 0.8;
+            e.x += (dx/dist)*e.speed * 0.8 * damageSpeedMultiplier;
+            e.y += (dy/dist)*e.speed * 0.8 * damageSpeedMultiplier;
           } else {
             // At optimal range - strafe perpendicular to player
             const perpX = -dy/dist;
@@ -649,11 +658,12 @@ export function updateEnemies() {
             e.strafeDirection = e.strafeDirection || (Math.random() < 0.5 ? 1 : -1);
             // Change strafe direction occasionally
             if (Math.random() < 0.02) e.strafeDirection *= -1;
-            e.x += perpX * e.speed * 0.6 * e.strafeDirection;
-            e.y += perpY * e.speed * 0.6 * e.strafeDirection;
+            e.x += perpX * e.speed * 0.6 * e.strafeDirection * damageSpeedMultiplier;
+            e.y += perpY * e.speed * 0.6 * e.strafeDirection * damageSpeedMultiplier;
           }
           
           // Sophisticated danger avoidance for incoming player bullets
+          // Speed reduced when damaged to make dodge less effective
           let dangerX = 0, dangerY = 0;
           const DANGER_RADIUS = 120;
           
@@ -669,10 +679,10 @@ export function updateEnemies() {
             }
           }
           
-          // Apply danger avoidance movement
+          // Apply danger avoidance movement with reduced effectiveness when damaged
           if (dangerX !== 0 || dangerY !== 0) {
-            e.x += dangerX * e.speed * 1.5;
-            e.y += dangerY * e.speed * 1.5;
+            e.x += dangerX * e.speed * 1.5 * damageSpeedMultiplier;
+            e.y += dangerY * e.speed * 1.5 * damageSpeedMultiplier;
           }
         }
         
