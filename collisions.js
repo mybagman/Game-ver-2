@@ -1,5 +1,5 @@
 import * as state from './state.js';
-import { createExplosion, spawnPowerUp } from './utils.js';
+import { createExplosion, spawnPowerUp, spawnRandomPowerUp } from './utils.js';
 
 export function updateLightning() {
   state.filterLightning(l => {
@@ -136,8 +136,8 @@ export function checkBulletCollisions() {
             if (!e.fromBoss) {
               if (e.type === "boss") state.addScore(100);
               else if (e.type === "mini-boss") state.addScore(50);
-              else if (e.type === "triangle") { state.addScore(10); spawnPowerUp(e.x, e.y, "blue-cannon"); }
-              else if (e.type === "red-square") { state.addScore(10); spawnPowerUp(e.x, e.y, "red-punch"); }
+              else if (e.type === "triangle") { state.addScore(10); spawnRandomPowerUp(e.x, e.y); }
+              else if (e.type === "red-square") { state.addScore(10); spawnRandomPowerUp(e.x, e.y); }
             }
           }
           break;

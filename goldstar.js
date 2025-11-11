@@ -1,6 +1,6 @@
 // goldstar.js
 import * as state from './state.js';
-import { createExplosion, spawnPowerUp, respawnGoldStar } from './utils.js';
+import { createExplosion, spawnPowerUp, spawnRandomPowerUp, respawnGoldStar } from './utils.js';
 import { levelUpGoldStar } from './aura.js';
 
 function safeCall(fn, ...args) {
@@ -47,8 +47,8 @@ export function performRedPunch() {
       if (idx !== -1) {
         const e = state.enemies[idx];
         if (!e.fromBoss) {
-          if (e.type === "triangle") { safeCall(state.addScore, 10); safeCall(spawnPowerUp, e.x, e.y, "blue-cannon"); }
-          else if (e.type === "red-square") { safeCall(state.addScore, 10); safeCall(spawnPowerUp, e.x, e.y, "red-punch"); }
+          if (e.type === "triangle") { safeCall(state.addScore, 10); safeCall(spawnRandomPowerUp, e.x, e.y); }
+          else if (e.type === "red-square") { safeCall(state.addScore, 10); safeCall(spawnRandomPowerUp, e.x, e.y); }
           else if (e.type === "boss") safeCall(state.addScore, 100);
           else if (e.type === "mini-boss") safeCall(state.addScore, 50);
         }
@@ -115,7 +115,7 @@ export function updateGoldStar() {
 
           if (pu.type === "red-punch") {
             gs.redKills = (gs.redKills || 0) + 1;
-            if (gs.redKills % 5 === 0 && (gs.redPunchLevel || 0) < 5) {
+            if (gs.redKills % 3 === 0 && (gs.redPunchLevel || 0) < 5) {
               gs.redPunchLevel = (gs.redPunchLevel || 0) + 1;
               safeCall(levelUpGoldStar, state);
             }
@@ -124,7 +124,7 @@ export function updateGoldStar() {
           }
           else if (pu.type === "blue-cannon") {
             gs.blueKills = (gs.blueKills || 0) + 1;
-            if (gs.blueKills % 5 === 0 && (gs.blueCannonLevel || 0) < 5) {
+            if (gs.blueKills % 3 === 0 && (gs.blueCannonLevel || 0) < 5) {
               gs.blueCannonLevel = (gs.blueCannonLevel || 0) + 1;
               safeCall(levelUpGoldStar, state);
             }

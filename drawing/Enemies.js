@@ -371,27 +371,17 @@ export function drawDiamonds() {
     state.ctx.shadowBlur = 0;
     state.ctx.restore();
 
+    // Draw visual formation lines connecting attached enemies to diamond
     d.attachments.forEach(a => {
-      if (a.type === "triangle") {
-        state.ctx.fillStyle = "cyan";
-        state.ctx.beginPath(); 
-        state.ctx.moveTo(a.x, a.y-(a.size||20)/2); 
-        state.ctx.lineTo(a.x-(a.size||20)/2, a.y+(a.size||20)/2); 
-        state.ctx.lineTo(a.x+(a.size||20)/2, a.y+(a.size||20)/2); 
-        state.ctx.closePath(); 
-        state.ctx.fill();
-      }
-      else if (a.type === "reflector") {
-        state.ctx.save(); 
-        state.ctx.translate(a.x, a.y); 
-        state.ctx.rotate(a.orbitAngle||0); 
-        state.ctx.fillStyle = "magenta"; 
-        state.ctx.fillRect(-(a.width||20)/2, -(a.height||10)/2, a.width||20, a.height||10); 
+      if (a.visualOrbitX && a.visualOrbitY) {
+        state.ctx.save();
+        state.ctx.strokeStyle = "rgba(100, 200, 255, 0.3)";
+        state.ctx.lineWidth = 1;
+        state.ctx.beginPath();
+        state.ctx.moveTo(d.x, d.y);
+        state.ctx.lineTo(a.visualOrbitX, a.visualOrbitY);
+        state.ctx.stroke();
         state.ctx.restore();
-      }
-      else {
-        state.ctx.fillStyle = "lime"; 
-        state.ctx.fillRect(a.x-(a.size||20)/2, a.y-(a.size||20)/2, a.size||20, a.size||20);
       }
     });
   });
