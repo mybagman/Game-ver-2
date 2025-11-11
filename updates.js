@@ -1,6 +1,18 @@
 import * as state from './state.js';
+import { DASH_SPEED_MULTIPLIER } from './input.js';
 
 export function updatePlayerMovement() {
+  // Update dash timers
+  if (state.player.dashing) {
+    state.player.dashTimer--;
+    if (state.player.dashTimer <= 0) {
+      state.player.dashing = false;
+    }
+  }
+  if (state.player.dashCooldown > 0) {
+    state.player.dashCooldown--;
+  }
+
   // Read input and apply movement.
   // NOTE: Movement is restricted to WASD to avoid arrow-key shooting also moving the player.
   let dirX = 0, dirY = 0;
@@ -19,12 +31,16 @@ export function updatePlayerMovement() {
     const normalizedDirX = dirX / mag;
     const normalizedDirY = dirY / mag;
     
-    state.player.x += normalizedDirX * state.player.speed;
-    state.player.y += normalizedDirY * state.player.speed;
+    // Apply dash speed multiplier if dashing
+    const speedMultiplier = state.player.dashing ? DASH_SPEED_MULTIPLIER : 1;
+    const effectiveSpeed = state.player.speed * speedMultiplier;
+    
+    state.player.x += normalizedDirX * effectiveSpeed;
+    state.player.y += normalizedDirY * effectiveSpeed;
     
     // Update velocity for effects
-    state.player.vx = normalizedDirX * state.player.speed;
-    state.player.vy = normalizedDirY * state.player.speed;
+    state.player.vx = normalizedDirX * effectiveSpeed;
+    state.player.vy = normalizedDirY * effectiveSpeed;
     
     // Calculate target rotation based on movement direction
     state.player.targetRotation = Math.atan2(normalizedDirY, normalizedDirX);
@@ -93,7 +109,33 @@ export function handleShooting() {
   if (state.keys["arrowright"]) dirX = 1;
   if ((dirX !== 0 || dirY !== 0) && state.shootCooldown === 0) {
     const mag = Math.hypot(dirX, dirY) || 1;
-    state.pushBullet({x: state.player.x, y: state.player.y, dx: (dirX/mag)*10, dy: (dirY/mag)*10, size: 6, owner: "player"});
+    const baseAngle = Math.atan2(dirY, dirX);
+    
+    // Double shot at aura level 10 or higher
+    if (state.goldStarAura && state.goldStarAura.level >= 10) {
+      const spreadAngle = 0.2; // ~11.5 degrees spread
+      // Fire two bullets with slight angle spread
+      state.pushBullet({
+        x: state.player.x, 
+        y: state.player.y, 
+        dx: Math.cos(baseAngle - spreadAngle) * 10, 
+        dy: Math.sin(baseAngle - spreadAngle) * 10, 
+        size: 6, 
+        owner: "player"
+      });
+      state.pushBullet({
+        x: state.player.x, 
+        y: state.player.y, 
+        dx: Math.cos(baseAngle + spreadAngle) * 10, 
+        dy: Math.sin(baseAngle + spreadAngle) * 10, 
+        size: 6, 
+        owner: "player"
+      });
+    } else {
+      // Single shot for aura level < 10
+      state.pushBullet({x: state.player.x, y: state.player.y, dx: (dirX/mag)*10, dy: (dirY/mag)*10, size: 6, owner: "player"});
+    }
+    
     state.setShootCooldown(Math.max(5, Math.floor(10 / state.player.fireRateBoost)));
 
     state.setFireIndicatorAngle(state.firingIndicatorAngle + Math.PI / 2);
@@ -164,15 +206,17 @@ export function updateCloudParticles() {
 function addThrusterParticles() {
   if (!state.player.thrusterParticles) state.player.thrusterParticles = [];
   
-  // Add particles less frequently for better performance
-  if (state.frameCount % 2 !== 0) return;
+  // Add particles more frequently during dash
+  const frameSkip = state.player.dashing ? 1 : 2;
+  if (state.frameCount % frameSkip !== 0) return;
   
   // Calculate the back of the ship (opposite to movement direction)
   const rotation = state.player.rotation;
   const thrusterOffset = state.player.size * 0.4; // Position behind the ship
   
-  // Create 1-2 particles per frame when moving
-  const particleCount = Math.random() > 0.5 ? 2 : 1;
+  // Create more particles during dash for intense visual feedback
+  const baseParticleCount = Math.random() > 0.5 ? 2 : 1;
+  const particleCount = state.player.dashing ? baseParticleCount * 3 : baseParticleCount;
   
   for (let i = 0; i < particleCount; i++) {
     // Position particles at the back of the ship
@@ -180,19 +224,23 @@ function addThrusterParticles() {
     const offsetY = -Math.sin(rotation) * thrusterOffset;
     
     // Add some randomness to particle spawn position
-    const spread = state.player.size * 0.15;
+    const spread = state.player.size * (state.player.dashing ? 0.3 : 0.15);
     const perpX = -Math.sin(rotation) * (Math.random() - 0.5) * spread;
     const perpY = Math.cos(rotation) * (Math.random() - 0.5) * spread;
+    
+    // Dash particles are more intense - brighter and faster
+    const dashBoost = state.player.dashing ? 2 : 1;
+    const hueShift = state.player.dashing ? 40 : 0; // More cyan/white during dash
     
     state.player.thrusterParticles.push({
       x: state.player.x + offsetX + perpX,
       y: state.player.y + offsetY + perpY,
-      vx: -Math.cos(rotation) * (2 + Math.random() * 2) - state.player.vx * 0.3,
-      vy: -Math.sin(rotation) * (2 + Math.random() * 2) - state.player.vy * 0.3,
+      vx: -Math.cos(rotation) * (2 + Math.random() * 2) * dashBoost - state.player.vx * 0.3,
+      vy: -Math.sin(rotation) * (2 + Math.random() * 2) * dashBoost - state.player.vy * 0.3,
       life: 15 + Math.random() * 10,
       maxLife: 25,
-      size: 2 + Math.random() * 3,
-      hue: 20 + Math.random() * 40 // Orange to yellow
+      size: (2 + Math.random() * 3) * (state.player.dashing ? 1.5 : 1),
+      hue: 20 + Math.random() * 40 + hueShift // Orange to yellow, or cyan/white during dash
     });
   }
 }

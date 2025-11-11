@@ -121,6 +121,7 @@ export function checkBulletCollisions() {
               state.addScore(20); 
               spawnPowerUp(e.x, e.y, "health"); 
               spawnPowerUp(e.x, e.y, "reflect"); 
+              spawnPowerUp(e.x, e.y, "reflector-level"); 
             } 
           }
           break;
@@ -156,6 +157,7 @@ export function checkBulletCollisions() {
             if (a.type === "reflector" && !a.fromBoss) {
               spawnPowerUp(a.x, a.y, "health");
               spawnPowerUp(a.x, a.y, "reflect");
+              spawnPowerUp(a.x, a.y, "reflector-level");
               state.addScore(20);
             }
             d.attachments.splice(ai,1);

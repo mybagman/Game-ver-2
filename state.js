@@ -19,6 +19,7 @@ export let powerUps = [];
 export let reflectionEffects = [];
 export let redPunchEffects = [];
 export let minionsToAdd = [];
+export let homingMissiles = [];
 
 export let keys = {};
 export let shootCooldown = 0;
@@ -60,7 +61,15 @@ export let player = {
   targetRotation: -Math.PI / 2,
   vx: 0, // velocity x
   vy: 0, // velocity y
-  thrusterParticles: [] // engine particles
+  thrusterParticles: [], // engine particles
+  // Dash system properties
+  dashing: false,
+  dashTimer: 0,
+  dashCooldown: 0,
+  lastKeyPress: { key: null, time: 0 },
+  // Reflector power-up system
+  reflectorLevel: 0,
+  reflectorCooldown: 0
 };
 
 export let goldStar = {
@@ -72,7 +81,7 @@ export let goldStar = {
   alive: true,
   collecting: false,
   collectTimer: 0,
-  speed: 2,
+  speed: 3.5,  // Increased from 2 to 3.5 (1.75x faster)
   reflectAvailable: false,
   redPunchLevel: 0,
   blueCannonnLevel: 0,
@@ -179,9 +188,15 @@ export function pushReflectionEffect(r) { reflectionEffects.push(r); }
 export function pushRedPunchEffect(e) { redPunchEffects.push(e); }
 export function pushAuraSpark(s) { auraSparks.push(s); }
 export function pushAuraShockwave(s) { auraShockwaves.push(s); }
+export function pushHomingMissile(m) { homingMissiles.push(m); }
 
 export function filterAuraSparks(fn) { auraSparks = auraSparks.filter(fn); }
 export function filterAuraShockwaves(fn) { auraShockwaves = auraShockwaves.filter(fn); }
+export function filterHomingMissiles(fn) { 
+  for (let i = homingMissiles.length - 1; i >= 0; i--) {
+    if (!fn(homingMissiles[i])) homingMissiles.splice(i, 1);
+  }
+}
 
 export function pushMinion(m) { minionsToAdd.push(m); }
 export function flushMinions() { 
@@ -213,6 +228,7 @@ export function resetGame() {
   minionsToAdd.length = 0;
   auraSparks.length = 0;
   auraShockwaves.length = 0;
+  homingMissiles.length = 0;
 
   // reset simple state
   keys = {};
@@ -246,6 +262,12 @@ export function resetGame() {
   player.vx = 0;
   player.vy = 0;
   player.thrusterParticles = [];
+  player.dashing = false;
+  player.dashTimer = 0;
+  player.dashCooldown = 0;
+  player.lastKeyPress = { key: null, time: 0 };
+  player.reflectorLevel = 0;
+  player.reflectorCooldown = 0;
 
   // reset gold star
   goldStar.x = 0;
@@ -255,7 +277,7 @@ export function resetGame() {
   goldStar.alive = true;
   goldStar.collecting = false;
   goldStar.collectTimer = 0;
-  goldStar.speed = 2;
+  goldStar.speed = 3.5;  // Increased from 2 to 3.5 (1.75x faster)
   goldStar.reflectAvailable = false;
   goldStar.redPunchLevel = 0;
   goldStar.blueCannonnLevel = 0;
