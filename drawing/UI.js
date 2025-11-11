@@ -11,271 +11,457 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// Modified drawUI: removed high score, and spread out Gold Star UI content inside same-sized box
-export function drawUI() {
-  const pad = 12;
-  const hudW = 260;
-  const hudH = 84;
-  const x = pad;
-  const y = pad;
-
-  state.ctx.save();
-  state.ctx.globalCompositeOperation = 'source-over';
-  state.ctx.shadowColor = "rgba(0,255,255,0.08)";
-  state.ctx.shadowBlur = 18;
-  state.ctx.fillStyle = "rgba(10,14,20,0.6)";
-  roundRect(state.ctx, x, y, hudW, hudH, 10);
-  state.ctx.fill();
-  state.ctx.restore();
-
-  state.ctx.save();
-  state.ctx.strokeStyle = "rgba(0,255,255,0.12)";
-  state.ctx.lineWidth = 1;
-  roundRect(state.ctx, x+0.5, y+0.5, hudW-1, hudH-1, 10);
-  state.ctx.stroke();
-  state.ctx.restore();
-
-  state.ctx.font = "12px 'Orbitron', monospace";
-  state.ctx.textBaseline = "top";
-
-  const hbX = x + 12, hbY = y + 10, hbW = hudW - 24, hbH = 10;
-  state.ctx.fillStyle = "rgba(255,255,255,0.06)";
-  roundRect(state.ctx, hbX, hbY, hbW, hbH, 6);
-  state.ctx.fill();
-
-  const healthRatio = Math.max(0, state.player.health / state.player.maxHealth);
-  const grad = state.ctx.createLinearGradient(hbX, hbY, hbX+hbW, hbY);
-  grad.addColorStop(0, "rgba(0,255,180,0.95)");
-  grad.addColorStop(0.5, "rgba(0,200,255,0.95)");
-  grad.addColorStop(1, "rgba(100,50,255,0.95)");
-
-  state.ctx.save();
-  state.ctx.shadowColor = "rgba(0,200,255,0.15)";
-  state.ctx.shadowBlur = 8;
-  state.ctx.fillStyle = grad;
-  roundRect(state.ctx, hbX+1, hbY+1, (hbW-2) * healthRatio, hbH-2, 6);
-  state.ctx.fill();
-  state.ctx.restore();
-
-  state.ctx.fillStyle = "rgba(220,230,255,0.95)";
-  state.ctx.font = "11px 'Orbitron', monospace";
-  state.ctx.fillText(`HP ${Math.floor(state.player.health)}/${state.player.maxHealth}`, hbX + 6, hbY - 14);
+// Helper function to draw corner brackets (Gundam-style HUD element)
+function drawCornerBrackets(ctx, x, y, width, height, size) {
+  const color = 'rgba(0, 255, 136, 0.8)';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
   
-  // Shield bar (if active)
+  // Top-left
+  ctx.beginPath();
+  ctx.moveTo(x, y + size);
+  ctx.lineTo(x, y);
+  ctx.lineTo(x + size, y);
+  ctx.stroke();
+  
+  // Top-right
+  ctx.beginPath();
+  ctx.moveTo(x + width - size, y);
+  ctx.lineTo(x + width, y);
+  ctx.lineTo(x + width, y + size);
+  ctx.stroke();
+  
+  // Bottom-left
+  ctx.beginPath();
+  ctx.moveTo(x, y + height - size);
+  ctx.lineTo(x, y + height);
+  ctx.lineTo(x + size, y + height);
+  ctx.stroke();
+  
+  // Bottom-right
+  ctx.beginPath();
+  ctx.moveTo(x + width - size, y + height);
+  ctx.lineTo(x + width, y + height);
+  ctx.lineTo(x + width, y + height - size);
+  ctx.stroke();
+}
+
+// Helper function to draw angular panel (Gundam-style)
+function drawAngularPanel(ctx, x, y, width, height, color = 'rgba(0, 255, 136, 0.15)') {
+  ctx.save();
+  ctx.fillStyle = 'rgba(5, 15, 10, 0.85)';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  
+  // Angular panel shape
+  const bevel = 8;
+  ctx.beginPath();
+  ctx.moveTo(x + bevel, y);
+  ctx.lineTo(x + width - bevel, y);
+  ctx.lineTo(x + width, y + bevel);
+  ctx.lineTo(x + width, y + height - bevel);
+  ctx.lineTo(x + width - bevel, y + height);
+  ctx.lineTo(x + bevel, y + height);
+  ctx.lineTo(x, y + height - bevel);
+  ctx.lineTo(x, y + bevel);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  
+  ctx.restore();
+}
+
+// Helper function to draw targeting reticle
+function drawTargetingReticle(ctx, x, y, radius) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0, 255, 136, 0.6)';
+  ctx.lineWidth = 1;
+  
+  // Center crosshair
+  const crossSize = radius * 0.7;
+  ctx.beginPath();
+  ctx.moveTo(x - crossSize, y);
+  ctx.lineTo(x - radius * 0.3, y);
+  ctx.moveTo(x + radius * 0.3, y);
+  ctx.lineTo(x + crossSize, y);
+  ctx.moveTo(x, y - crossSize);
+  ctx.lineTo(x, y - radius * 0.3);
+  ctx.moveTo(x, y + radius * 0.3);
+  ctx.lineTo(x, y + crossSize);
+  ctx.stroke();
+  
+  // Rotating outer ring
+  const rotation = (state.frameCount * 0.02) % (Math.PI * 2);
+  for (let i = 0; i < 4; i++) {
+    const angle = (i / 4) * Math.PI * 2 + rotation;
+    const startAngle = angle - 0.2;
+    const endAngle = angle + 0.2;
+    
+    ctx.beginPath();
+    ctx.arc(x, y, radius, startAngle, endAngle);
+    ctx.stroke();
+  }
+  
+  ctx.restore();
+}
+
+// Helper function to draw radar mini-map
+function drawRadar(ctx, x, y, radius) {
+  ctx.save();
+  
+  // Radar background
+  ctx.fillStyle = 'rgba(5, 15, 10, 0.9)';
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Radar border
+  ctx.strokeStyle = 'rgba(0, 255, 136, 0.8)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  
+  // Range rings
+  ctx.strokeStyle = 'rgba(0, 255, 136, 0.2)';
+  ctx.lineWidth = 1;
+  for (let i = 1; i <= 3; i++) {
+    ctx.beginPath();
+    ctx.arc(x, y, radius * (i / 3), 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  
+  // Center (player)
+  ctx.fillStyle = 'rgba(0, 255, 255, 0.9)';
+  ctx.beginPath();
+  ctx.arc(x, y, 3, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Enemy blips (red dots)
+  const radarScale = radius / 400; // Map 400px game distance to radar radius
+  state.enemies.forEach(e => {
+    if (!e) return;
+    const dx = (e.x - state.player.x) * radarScale;
+    const dy = (e.y - state.player.y) * radarScale;
+    const dist = Math.hypot(dx, dy);
+    
+    if (dist < radius) {
+      ctx.fillStyle = 'rgba(255, 50, 50, 0.8)';
+      ctx.beginPath();
+      ctx.arc(x + dx, y + dy, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+  
+  // Rotating scan line
+  const scanAngle = (state.frameCount * 0.05) % (Math.PI * 2);
+  ctx.strokeStyle = 'rgba(0, 255, 136, 0.6)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + Math.cos(scanAngle) * radius, y + Math.sin(scanAngle) * radius);
+  ctx.stroke();
+  
+  ctx.restore();
+}
+
+// Helper function to draw scanline overlay
+function drawScanlines(ctx, width, height) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0, 255, 136, 0.03)';
+  ctx.lineWidth = 1;
+  
+  const lineSpacing = 4;
+  for (let y = 0; y < height; y += lineSpacing) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+  }
+  
+  ctx.restore();
+}
+
+// Modified drawUI: Gundam cockpit style
+export function drawUI() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // === CORNER BRACKETS (Cockpit frame) ===
+  drawCornerBrackets(ctx, 20, 20, width - 40, height - 40, 40);
+  
+  // === TARGETING RETICLE (Center screen) ===
+  drawTargetingReticle(ctx, width / 2, height / 2, 50);
+  
+  // === SCANLINE OVERLAY ===
+  drawScanlines(ctx, width, height);
+  
+  // === LEFT SIDE: MOBILE SUIT STATUS PANEL ===
+  const leftPanelX = 30;
+  const leftPanelY = 80;
+  const leftPanelW = 200;
+  const leftPanelH = 180;
+  
+  drawAngularPanel(ctx, leftPanelX, leftPanelY, leftPanelW, leftPanelH);
+  
+  // Panel title
+  ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+  ctx.font = '12px Orbitron, monospace';
+  ctx.fillText('MOBILE SUIT', leftPanelX + 10, leftPanelY + 18);
+  ctx.fillText('STATUS', leftPanelX + 10, leftPanelY + 32);
+  
+  // Health bar (vertical)
+  const hbX = leftPanelX + 20;
+  const hbY = leftPanelY + 50;
+  const hbW = 40;
+  const hbH = 100;
+  
+  // Health bar background
+  ctx.fillStyle = 'rgba(0, 50, 30, 0.6)';
+  ctx.fillRect(hbX, hbY, hbW, hbH);
+  
+  // Health bar border
+  ctx.strokeStyle = 'rgba(0, 255, 136, 0.6)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(hbX, hbY, hbW, hbH);
+  
+  // Health fill
+  const healthRatio = Math.max(0, state.player.health / state.player.maxHealth);
+  const healthHeight = hbH * healthRatio;
+  
+  // Gradient based on health level
+  const healthGrad = ctx.createLinearGradient(hbX, hbY + hbH - healthHeight, hbX, hbY + hbH);
+  if (healthRatio > 0.5) {
+    healthGrad.addColorStop(0, 'rgba(0, 255, 136, 0.9)');
+    healthGrad.addColorStop(1, 'rgba(0, 200, 100, 0.9)');
+  } else if (healthRatio > 0.3) {
+    healthGrad.addColorStop(0, 'rgba(255, 200, 0, 0.9)');
+    healthGrad.addColorStop(1, 'rgba(255, 150, 0, 0.9)');
+  } else {
+    healthGrad.addColorStop(0, 'rgba(255, 50, 50, 0.9)');
+    healthGrad.addColorStop(1, 'rgba(200, 0, 0, 0.9)');
+  }
+  
+  ctx.fillStyle = healthGrad;
+  ctx.fillRect(hbX + 2, hbY + hbH - healthHeight + 2, hbW - 4, healthHeight - 4);
+  
+  // Warning light (red when health < 30%)
+  if (healthRatio < 0.3) {
+    const flashIntensity = Math.sin(state.frameCount * 0.2) * 0.5 + 0.5;
+    ctx.fillStyle = `rgba(255, 50, 50, ${flashIntensity})`;
+    ctx.beginPath();
+    ctx.arc(hbX + hbW + 15, hbY + 10, 6, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = 'rgba(255, 50, 50, 0.9)';
+    ctx.font = '10px Orbitron, monospace';
+    ctx.fillText('WARN', hbX + hbW + 30, hbY + 15);
+  }
+  
+  // Technical readout lines
+  ctx.strokeStyle = 'rgba(0, 255, 136, 0.3)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 5; i++) {
+    ctx.beginPath();
+    ctx.moveTo(hbX, hbY + (hbH / 5) * i);
+    ctx.lineTo(hbX + hbW, hbY + (hbH / 5) * i);
+    ctx.stroke();
+  }
+
+  // Shield bar (vertical, below health)
   if (state.player.shieldActive && state.player.maxShieldHealth > 0) {
-    const shbY = hbY + hbH + 4;
-    const shbH = 8;
+    const shbX = leftPanelX + 80;
+    const shbY = leftPanelY + 50;
+    const shbW = 40;
+    const shbH = 100;
     
     // Shield bar background
-    state.ctx.fillStyle = "rgba(100,150,255,0.08)";
-    roundRect(state.ctx, hbX, shbY, hbW, shbH, 4);
-    state.ctx.fill();
+    ctx.fillStyle = 'rgba(0, 30, 50, 0.6)';
+    ctx.fillRect(shbX, shbY, shbW, shbH);
     
-    // Shield bar fill
+    // Shield bar border
+    ctx.strokeStyle = 'rgba(100, 200, 255, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(shbX, shbY, shbW, shbH);
+    
+    // Shield fill
     const shieldRatio = Math.max(0, state.player.shieldHealth / state.player.maxShieldHealth);
-    const shieldGrad = state.ctx.createLinearGradient(hbX, shbY, hbX+hbW, shbY);
-    shieldGrad.addColorStop(0, "rgba(100,200,255,0.95)");
-    shieldGrad.addColorStop(0.5, "rgba(150,220,255,0.95)");
-    shieldGrad.addColorStop(1, "rgba(100,180,255,0.95)");
+    const shieldHeight = shbH * shieldRatio;
     
-    state.ctx.save();
-    state.ctx.shadowColor = "rgba(100,200,255,0.15)";
-    state.ctx.shadowBlur = 6;
-    state.ctx.fillStyle = shieldGrad;
-    roundRect(state.ctx, hbX+1, shbY+1, (hbW-2) * shieldRatio, shbH-2, 4);
-    state.ctx.fill();
-    state.ctx.restore();
+    const shieldGrad = ctx.createLinearGradient(shbX, shbY + shbH - shieldHeight, shbX, shbY + shbH);
+    shieldGrad.addColorStop(0, 'rgba(100, 200, 255, 0.9)');
+    shieldGrad.addColorStop(1, 'rgba(100, 150, 255, 0.9)');
+    
+    ctx.fillStyle = shieldGrad;
+    ctx.fillRect(shbX + 2, shbY + shbH - shieldHeight + 2, shbW - 4, shieldHeight - 4);
+    
+    // Technical readout lines
+    ctx.strokeStyle = 'rgba(100, 200, 255, 0.3)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 5; i++) {
+      ctx.beginPath();
+      ctx.moveTo(shbX, shbY + (shbH / 5) * i);
+      ctx.lineTo(shbX + shbW, shbY + (shbH / 5) * i);
+      ctx.stroke();
+    }
     
     // Shield label
-    state.ctx.fillStyle = "rgba(200,220,255,0.9)";
-    state.ctx.font = "10px 'Orbitron', monospace";
-    state.ctx.fillText(`SHIELD ${Math.floor(state.player.shieldHealth)}/${state.player.maxShieldHealth}`, hbX + 6, shbY - 2);
+    ctx.fillStyle = 'rgba(100, 200, 255, 0.9)';
+    ctx.font = '10px Orbitron, monospace';
+    ctx.fillText('SHIELD', shbX + 3, shbY - 8);
   }
-
-  state.ctx.fillStyle = "rgba(200,220,255,0.95)";
-  state.ctx.font = "12px 'Orbitron', monospace";
-  state.ctx.fillText(`SCORE: ${state.score}`, hbX, hbY + hbH + 10);
-  // Removed high score from UI per request:
-  // state.ctx.fillText(`BEST: ${state.highScore}`, hbX + 100, hbY + hbH + 10);
-  state.ctx.fillText(`WAVE: ${state.wave+1}`, hbX + 180, hbY + hbH + 10);
-
-  const livesX = x + hudW - 12 - 18;
-  const livesY = y + 12;
+  
+  // Lives indicator
+  ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+  ctx.font = '10px Orbitron, monospace';
+  ctx.fillText('LIVES', leftPanelX + 140, leftPanelY + 55);
+  
   for (let i = 0; i < 5; i++) {
-    const cx = livesX - i * 14;
-    state.ctx.beginPath();
-    state.ctx.arc(cx, livesY, 5, 0, Math.PI*2);
-    if (i < state.player.lives) {
-      state.ctx.fillStyle = "rgba(255,120,80,0.98)";
-      state.ctx.shadowColor = "rgba(255,80,40,0.35)";
-      state.ctx.shadowBlur = 6;
-      state.ctx.fill();
-      state.ctx.shadowBlur = 0;
-    } else {
-      state.ctx.fillStyle = "rgba(255,255,255,0.06)";
-      state.ctx.fill();
-    }
-    state.ctx.closePath();
-  }
-  state.ctx.fillStyle = "rgba(180,200,255,0.8)";
-  state.ctx.font = "10px 'Orbitron', monospace";
-  state.ctx.fillText("LIVES", livesX - 3*14, livesY + 10);
-
-  const badgeX = x + hudW - 62, badgeY = y + hudH - 26;
-  roundRect(state.ctx, badgeX, badgeY, 50, 16, 6);
-  state.ctx.fillStyle = state.player.reflectAvailable ? "rgba(0,220,255,0.08)" : "rgba(255,255,255,0.03)";
-  state.ctx.fill();
-  state.ctx.strokeStyle = state.player.reflectAvailable ? "rgba(0,220,255,0.35)" : "rgba(255,255,255,0.04)";
-  state.ctx.lineWidth = 1;
-  roundRect(state.ctx, badgeX + 0.5, badgeY + 0.5, 49, 15, 6);
-  state.ctx.stroke();
-
-  state.ctx.fillStyle = state.player.reflectAvailable ? "rgba(0,220,255,0.95)" : "rgba(180,200,255,0.35)";
-  state.ctx.font = "11px 'Orbitron', monospace";
-  state.ctx.fillText("REFLECT", badgeX + 6, badgeY + 2);
-  
-  // Reflector level indicator
-  if (state.player.reflectorLevel > 0) {
-    const refLvlX = badgeX - 58;
-    const refLvlY = badgeY;
-    roundRect(state.ctx, refLvlX, refLvlY, 50, 16, 6);
-    state.ctx.fillStyle = "rgba(100,200,255,0.08)";
-    state.ctx.fill();
-    state.ctx.strokeStyle = "rgba(100,200,255,0.35)";
-    state.ctx.lineWidth = 1;
-    roundRect(state.ctx, refLvlX + 0.5, refLvlY + 0.5, 49, 15, 6);
-    state.ctx.stroke();
+    const lifeY = leftPanelY + 70 + i * 18;
+    ctx.strokeStyle = i < state.player.lives ? 'rgba(0, 255, 136, 0.8)' : 'rgba(100, 100, 100, 0.3)';
+    ctx.fillStyle = i < state.player.lives ? 'rgba(0, 255, 136, 0.3)' : 'rgba(50, 50, 50, 0.2)';
+    ctx.lineWidth = 2;
     
-    state.ctx.fillStyle = "rgba(100,200,255,0.95)";
-    state.ctx.font = "11px 'Orbitron', monospace";
-    state.ctx.fillText(`HMLV ${state.player.reflectorLevel}`, refLvlX + 4, refLvlY + 2);
+    ctx.beginPath();
+    ctx.moveTo(leftPanelX + 145, lifeY);
+    ctx.lineTo(leftPanelX + 150, lifeY - 5);
+    ctx.lineTo(leftPanelX + 160, lifeY - 5);
+    ctx.lineTo(leftPanelX + 165, lifeY);
+    ctx.lineTo(leftPanelX + 160, lifeY + 5);
+    ctx.lineTo(leftPanelX + 150, lifeY + 5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
   }
 
-  // Gold Star panel (same sized box, but reflowed content)
-  const gsX = x + hudW + 12;
-  const gsY = y + 8;
-  const gsW = 150;
-  const gsH = 56;
-
-  state.ctx.save();
-  state.ctx.fillStyle = "rgba(10,14,20,0.5)";
-  roundRect(state.ctx, gsX, gsY, gsW, gsH, 8);
-  state.ctx.fill();
-  state.ctx.strokeStyle = "rgba(100,120,255,0.06)";
-  state.ctx.stroke();
-  state.ctx.restore();
-
-  // Row 1: Title (left) and Aura level (right)
-  state.ctx.fillStyle = state.goldStar.alive ? "rgba(255,210,90,0.98)" : "rgba(255,100,100,0.9)";
-  state.ctx.font = "12px 'Orbitron', monospace";
-  state.ctx.fillText("GOLD STAR", gsX + 10, gsY + 6);
-
-  state.ctx.font = "10px 'Orbitron', monospace";
-  state.ctx.fillStyle = "rgba(190,210,255,0.9)";
-  const auraLabel = `Aura Lv ${state.goldStarAura.level}`;
-  // right-align the aura label in the panel
-  const auraLabelX = gsX + gsW - 10 - (state.ctx.measureText ? state.ctx.measureText(auraLabel).width : 40);
-  state.ctx.fillText(auraLabel, auraLabelX, gsY + 6);
-
-  // Row 2: Aura bar (centered across)
-  const alX = gsX + 10;
-  const alY = gsY + 22;
-  const barW = gsW - 20;
-  const barH = 8;
-  state.ctx.fillStyle = "rgba(255,255,255,0.04)";
-  roundRect(state.ctx, alX, alY, barW, barH, 6);
-  state.ctx.fill();
-
-  const fillRatio = Math.min(1, state.goldStarAura.level / 5);
-  const auraGrad = state.ctx.createLinearGradient(alX, alY, alX + barW, alY);
-  auraGrad.addColorStop(0, "rgba(255,220,100,0.9)");
-  auraGrad.addColorStop(1, "rgba(255,100,40,0.9)");
-
-  state.ctx.fillStyle = auraGrad;
-  roundRect(state.ctx, alX + 1, alY + 1, (barW - 2) * fillRatio, barH - 2, 5);
-  state.ctx.fill();
-
-  // R: radius label to the right of the bar
-  state.ctx.fillStyle = "rgba(180,200,255,0.75)";
-  state.ctx.font = "10px 'Orbitron', monospace";
-  state.ctx.fillText(`R: ${Math.floor(state.goldStarAura.radius)}`, alX + barW - 38, alY - 12);
-
-  // Row 3: Power-up icons + counts (spaced across)
-  const iconsY = gsY + 36;
-  let iconX = gsX + 10;
-  const iconSpacing = 44;
-
-  // Red punch
+  // === BOTTOM-LEFT: RADAR ===
+  const radarX = 80;
+  const radarY = height - 100;
+  const radarRadius = 60;
+  
+  drawRadar(ctx, radarX, radarY, radarRadius);
+  
+  // Radar label
+  ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+  ctx.font = '10px Orbitron, monospace';
+  ctx.fillText('RADAR', radarX - 20, radarY + radarRadius + 15);
+  
+  // === TOP-RIGHT: WEAPONS SYSTEM PANEL ===
+  const weaponPanelX = width - 230;
+  const weaponPanelY = 30;
+  const weaponPanelW = 200;
+  const weaponPanelH = 150;
+  
+  drawAngularPanel(ctx, weaponPanelX, weaponPanelY, weaponPanelW, weaponPanelH);
+  
+  // Panel title
+  ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+  ctx.font = '12px Orbitron, monospace';
+  ctx.fillText('WEAPONS', weaponPanelX + 10, weaponPanelY + 18);
+  ctx.fillText('SYSTEM', weaponPanelX + 10, weaponPanelY + 32);
+  
+  // Gold Star status
+  ctx.fillStyle = state.goldStar.alive ? 'rgba(255, 200, 50, 0.9)' : 'rgba(255, 50, 50, 0.9)';
+  ctx.font = '10px Orbitron, monospace';
+  ctx.fillText(state.goldStar.alive ? 'GOLD STAR: ACTIVE' : 'GOLD STAR: DOWN', weaponPanelX + 10, weaponPanelY + 50);
+  
+  // Weapon readouts
+  let weaponY = weaponPanelY + 70;
+  const weaponSpacing = 25;
+  
+  // Red Punch
   if (state.goldStar.redPunchLevel > 0) {
-    state.ctx.fillStyle = "red";
-    state.ctx.fillRect(iconX, iconsY, 12, 12);
-    state.ctx.fillStyle = "rgba(220,230,255,0.95)";
-    state.ctx.font = "10px 'Orbitron', monospace";
-    state.ctx.fillText(state.goldStar.redPunchLevel.toString(), iconX + 16, iconsY + 0);
-    iconX += iconSpacing;
+    ctx.fillStyle = 'rgba(255, 100, 100, 0.9)';
+    ctx.fillText(`RED PUNCH`, weaponPanelX + 10, weaponY);
+    ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+    ctx.fillText(`LV ${state.goldStar.redPunchLevel}`, weaponPanelX + 140, weaponY);
+    weaponY += weaponSpacing;
   }
-
-  // Blue cannon
+  
+  // Blue Cannon
   if (state.goldStar.blueCannonLevel > 0) {
-    state.ctx.fillStyle = "cyan";
-    state.ctx.beginPath();
-    // draw a small triangle cannon icon
-    state.ctx.moveTo(iconX + 6, iconsY);
-    state.ctx.lineTo(iconX, iconsY + 12);
-    state.ctx.lineTo(iconX + 12, iconsY + 12);
-    state.ctx.closePath();
-    state.ctx.fill();
-    state.ctx.fillStyle = "rgba(220,230,255,0.95)";
-    state.ctx.font = "10px 'Orbitron', monospace";
-    state.ctx.fillText(state.goldStar.blueCannonLevel.toString(), iconX + 16, iconsY + 0);
-    iconX += iconSpacing;
+    ctx.fillStyle = 'rgba(100, 200, 255, 0.9)';
+    ctx.fillText(`BLUE CANNON`, weaponPanelX + 10, weaponY);
+    ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+    ctx.fillText(`LV ${state.goldStar.blueCannonLevel}`, weaponPanelX + 140, weaponY);
+    weaponY += weaponSpacing;
   }
   
-  // Homing missiles
+  // Homing Missiles
   if (state.goldStar.homingMissileLevel > 0) {
-    state.ctx.fillStyle = "rgba(255,150,50,0.95)";
-    state.ctx.beginPath();
-    // draw a small missile icon
-    state.ctx.moveTo(iconX + 8, iconsY + 6);
-    state.ctx.lineTo(iconX + 2, iconsY + 9);
-    state.ctx.lineTo(iconX + 2, iconsY + 3);
-    state.ctx.closePath();
-    state.ctx.fill();
-    state.ctx.fillStyle = "rgba(220,230,255,0.95)";
-    state.ctx.font = "10px 'Orbitron', monospace";
-    state.ctx.fillText(state.goldStar.homingMissileLevel.toString(), iconX + 16, iconsY + 0);
-    iconX += iconSpacing;
+    ctx.fillStyle = 'rgba(255, 150, 50, 0.9)';
+    ctx.fillText(`HOMING MSL`, weaponPanelX + 10, weaponY);
+    ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+    ctx.fillText(`LV ${state.goldStar.homingMissileLevel}`, weaponPanelX + 140, weaponY);
+    weaponY += weaponSpacing;
   }
   
-  // If no powerups present, show a dim placeholder
-  if (state.goldStar.redPunchLevel === 0 && state.goldStar.blueCannonLevel === 0 && state.goldStar.homingMissileLevel === 0) {
-    state.ctx.fillStyle = "rgba(255,255,255,0.06)";
-    state.ctx.font = "10px 'Orbitron', monospace";
-    state.ctx.fillText("No power-ups", gsX + 10, iconsY + 0);
+  // Reflector system
+  if (state.player.reflectorLevel > 0) {
+    ctx.fillStyle = 'rgba(100, 200, 255, 0.9)';
+    ctx.fillText(`REFLECTOR`, weaponPanelX + 10, weaponY);
+    ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+    ctx.fillText(`LV ${state.player.reflectorLevel}`, weaponPanelX + 140, weaponY);
+  }
+  
+  // === TOP-CENTER: SCORE/WAVE DISPLAY ===
+  const scorePanelX = width / 2 - 150;
+  const scorePanelY = 20;
+  const scorePanelW = 300;
+  const scorePanelH = 50;
+  
+  drawAngularPanel(ctx, scorePanelX, scorePanelY, scorePanelW, scorePanelH, 'rgba(0, 255, 136, 0.2)');
+  
+  // Score
+  ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+  ctx.font = '14px Orbitron, monospace';
+  ctx.fillText(`SCORE: ${state.score}`, scorePanelX + 20, scorePanelY + 20);
+  
+  // Wave
+  ctx.fillText(`WAVE: ${state.wave + 1}`, scorePanelX + 180, scorePanelY + 20);
+  
+  // Aura level indicator
+  if (state.goldStarAura.level > 0) {
+    ctx.fillStyle = 'rgba(255, 200, 50, 0.9)';
+    ctx.font = '10px Orbitron, monospace';
+    ctx.fillText(`AURA LV ${state.goldStarAura.level}`, scorePanelX + 110, scorePanelY + 38);
   }
 
+  // === WAVE TRANSITION BANNER ===
   if (state.waveTransition) {
-    const bannerW = 320, bannerH = 48;
-    const bx = (state.canvas.width - bannerW) / 2;
-    const by = 22;
-    state.ctx.save();
-    state.ctx.fillStyle = "rgba(5,6,10,0.75)";
-    roundRect(state.ctx, bx, by, bannerW, bannerH, 10);
-    state.ctx.fill();
-
-    state.ctx.strokeStyle = "rgba(0,200,255,0.14)";
-    state.ctx.lineWidth = 1;
-    roundRect(state.ctx, bx + 0.5, by + 0.5, bannerW - 1, bannerH - 1, 10);
-    state.ctx.stroke();
-
-    state.ctx.fillStyle = "rgba(200,230,255,0.96)";
-    state.ctx.font = "14px 'Orbitron', monospace";
-    state.ctx.fillText("WAVE CLEARED", bx + 18, by + 8);
+    const bannerW = 400;
+    const bannerH = 80;
+    const bx = (width - bannerW) / 2;
+    const by = height / 2 - 40;
+    
+    // Angular banner panel
+    drawAngularPanel(ctx, bx, by, bannerW, bannerH, 'rgba(0, 255, 136, 0.8)');
+    
+    // Flashing border effect
+    const flashIntensity = Math.sin(state.frameCount * 0.15) * 0.3 + 0.7;
+    ctx.strokeStyle = `rgba(0, 255, 136, ${flashIntensity})`;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(bx, by, bannerW, bannerH);
+    
+    // Title
+    ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+    ctx.font = '20px Orbitron, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('WAVE CLEARED', bx + bannerW / 2, by + 30);
+    
+    // Timer
     const timeRemaining = Math.ceil((state.WAVE_BREAK_MS - state.waveTransitionTimer * (1000/60)) / 1000);
-    state.ctx.fillStyle = "rgba(160,200,255,0.86)";
-    state.ctx.font = "12px 'Orbitron', monospace";
-    state.ctx.fillText(`Next in ${timeRemaining}s`, bx + 18, by + 28);
-    state.ctx.restore();
+    ctx.fillStyle = 'rgba(255, 200, 50, 0.9)';
+    ctx.font = '16px Orbitron, monospace';
+    ctx.fillText(`NEXT WAVE IN: ${timeRemaining}s`, bx + bannerW / 2, by + 55);
+    
+    ctx.textAlign = 'left';
+  }
+  
+  // === FLICKER EFFECT ON LOW HEALTH ===
+  if (healthRatio < 0.2) {
+    const flickerIntensity = Math.sin(state.frameCount * 0.3) * 0.1 + 0.1;
+    ctx.fillStyle = `rgba(255, 50, 50, ${flickerIntensity})`;
+    ctx.fillRect(0, 0, width, height);
   }
 }
 

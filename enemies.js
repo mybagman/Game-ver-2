@@ -257,7 +257,10 @@ export function updateDiamond(d) {
   if (d.attachments.some(a=>a.spawnMini) && d.shootTimer % 200 === 0) {
     state.pushMinion({x: d.x+(Math.random()-0.5)*80, y: d.y+(Math.random()-0.5)*80, size: 25, speed: 2, health: 30, type: "red-square", fromBoss: true});
   }
-  if (d.attachments.length >= 3 && d.shootTimer % 180 === 0) {
+  if (d.attachments.length >= 3 && d.shootTimer % 100 === 0) {
+    [{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}].forEach(dv => state.pushLightning({x: d.x, y: d.y, dx: dv.x*6, dy: dv.y*6, size: 8, damage: 20}));
+  } else if (d.shootTimer % 120 === 0) {
+    // Standard 4-direction shot when less than 3 attachments
     [{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}].forEach(dv => state.pushLightning({x: d.x, y: d.y, dx: dv.x*6, dy: dv.y*6, size: 8, damage: 20}));
   }
 
@@ -387,10 +390,21 @@ export function updateMechs() {
           }
         }
       } else {
-        // Deployment complete
+        // Deployment complete - convert dropship into active enemy
         mech.deploying = false;
         mech.dropshipVisible = false;
         mech.flying = false; // Land on ground after deployment
+        
+        // Create dropship as active enemy
+        state.pushDropship({
+          x: mech.x,
+          y: mech.y - mech.size/2,
+          size: mech.size,
+          health: 300,
+          shootTimer: 0,
+          burstCount: 0,
+          patrolX: Math.random() * state.canvas.width
+        });
       }
     }
 
@@ -728,6 +742,82 @@ export function updateEnemies() {
   updateTanks();
   updateWalkers();
   updateMechs();
+  updateDropships();
 
   if (state.minionsToAdd.length > 0) { state.flushMinions(); }
+}
+
+export function updateDropships() {
+  const topThirdY = state.canvas.height / 3;
+  
+  for (let i = state.dropships.length - 1; i >= 0; i--) {
+    const dropship = state.dropships[i];
+    
+    // Fly to patrol position in top 1/3 of screen
+    const targetY = Math.min(topThirdY, 80 + Math.random() * 40);
+    dropship.y += (targetY - dropship.y) * 0.03;
+    
+    // Horizontal patrol movement
+    if (!dropship.patrolX || Math.abs(dropship.x - dropship.patrolX) < 20) {
+      dropship.patrolX = Math.random() * state.canvas.width;
+    }
+    
+    const dx = dropship.patrolX - dropship.x;
+    const distX = Math.abs(dx) || 1;
+    dropship.x += Math.sign(dx) * Math.min(2.5, distX);
+    
+    // Shooting behavior - burst fire every 120-150 frames
+    dropship.shootTimer = (dropship.shootTimer || 0) + 1;
+    const shootInterval = 120 + Math.random() * 30; // 120-150 frames
+    
+    if (dropship.shootTimer > shootInterval) {
+      // Fire burst of 3-5 projectiles
+      const burstSize = 3 + Math.floor(Math.random() * 3);
+      dropship.burstCount = 0;
+      dropship.burstSize = burstSize;
+      dropship.burstTimer = 0;
+      dropship.shootTimer = 0;
+    }
+    
+    // Handle burst firing
+    if (dropship.burstCount !== undefined && dropship.burstCount < dropship.burstSize) {
+      dropship.burstTimer = (dropship.burstTimer || 0) + 1;
+      if (dropship.burstTimer >= 10) { // 10 frames between each projectile in burst
+        dropship.burstTimer = 0;
+        dropship.burstCount++;
+        
+        // Fire at player with slight spread
+        const angle = Math.atan2(state.player.y - dropship.y, state.player.x - dropship.x);
+        const spread = (Math.random() - 0.5) * 0.3;
+        state.pushLightning({
+          x: dropship.x,
+          y: dropship.y + dropship.size/2,
+          dx: Math.cos(angle + spread) * 5,
+          dy: Math.sin(angle + spread) * 5,
+          size: 7,
+          damage: 18
+        });
+      }
+    }
+    
+    // Collision with player bullets
+    for (let bi = state.bullets.length - 1; bi >= 0; bi--) {
+      const b = state.bullets[bi];
+      const dist = Math.hypot(b.x - dropship.x, b.y - dropship.y);
+      if (dist < dropship.size / 2) {
+        state.bullets.splice(bi, 1);
+        dropship.health -= b.damage || 10;
+        state.pushExplosion({ x: b.x, y: b.y, dx: 0, dy: 0, radius: 3, color: "yellow", life: 12 });
+      }
+    }
+    
+    // Death handling
+    if (dropship.health <= 0) {
+      createExplosion(dropship.x, dropship.y, "orange");
+      spawnDebris(dropship.x, dropship.y, 12);
+      state.dropships.splice(i, 1);
+      state.addScore(50);
+      spawnRandomPowerUp(dropship.x, dropship.y);
+    }
+  }
 }

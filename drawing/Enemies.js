@@ -328,12 +328,47 @@ export function drawMechs() {
     state.ctx.translate(mech.x, mech.y);
 
     if (mech.shieldActive) {
+      const shieldHealthRatio = (mech.shieldHealth || 150) / 150;
       const pulse = Math.sin(state.frameCount * 0.1) * 5;
-      state.ctx.strokeStyle = "rgba(100,200,255,0.6)";
+      const shieldRadius = mech.size/2 + 15 + pulse;
+      const shieldRotation = state.frameCount * 0.02;
+      
+      state.ctx.save();
+      state.ctx.rotate(shieldRotation);
+      
+      // Hexagonal shield outline (matching player shield)
+      state.ctx.strokeStyle = `rgba(100, 200, 255, ${0.6 * shieldHealthRatio})`;
       state.ctx.lineWidth = 3;
       state.ctx.beginPath();
-      state.ctx.arc(0, 0, mech.size/2 + 15 + pulse, 0, Math.PI * 2);
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        const x = Math.cos(angle) * shieldRadius;
+        const y = Math.sin(angle) * shieldRadius;
+        if (i === 0) state.ctx.moveTo(x, y);
+        else state.ctx.lineTo(x, y);
+      }
+      state.ctx.closePath();
       state.ctx.stroke();
+      
+      // Shield glow fill
+      state.ctx.fillStyle = `rgba(100, 200, 255, ${0.1 * shieldHealthRatio})`;
+      state.ctx.fill();
+      
+      // Decorative lines from center to vertices
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        const x1 = Math.cos(angle) * shieldRadius;
+        const y1 = Math.sin(angle) * shieldRadius;
+        
+        state.ctx.strokeStyle = `rgba(150, 220, 255, ${0.3 * shieldHealthRatio})`;
+        state.ctx.lineWidth = 1;
+        state.ctx.beginPath();
+        state.ctx.moveTo(0, 0);
+        state.ctx.lineTo(x1, y1);
+        state.ctx.stroke();
+      }
+      
+      state.ctx.restore();
     }
 
     state.ctx.fillStyle = "rgba(150,50,50,0.9)";
@@ -620,6 +655,115 @@ export function drawDiamonds() {
         state.ctx.restore();
       }
     });
+  });
+}
+
+export function drawDropships() {
+  state.dropships.forEach(dropship => {
+    const ctx = state.ctx;
+    const size = dropship.size;
+    const x = dropship.x;
+    const y = dropship.y;
+
+    ctx.save();
+    ctx.translate(x, y);
+    
+    // Main hull (angular military design)
+    ctx.fillStyle = '#2a2a2a';
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 2;
+    
+    // Top angular hull
+    ctx.beginPath();
+    ctx.moveTo(-size/2, -size/3);
+    ctx.lineTo(-size/3, -size/2);
+    ctx.lineTo(size/3, -size/2);
+    ctx.lineTo(size/2, -size/3);
+    ctx.lineTo(size/2, size/4);
+    ctx.lineTo(-size/2, size/4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    // Cockpit/bridge section (angular)
+    ctx.fillStyle = '#3a3a3a';
+    ctx.beginPath();
+    ctx.moveTo(-size/4, -size/2.2);
+    ctx.lineTo(-size/5, -size/1.7);
+    ctx.lineTo(size/5, -size/1.7);
+    ctx.lineTo(size/4, -size/2.2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    // Cockpit windows (glowing cyan)
+    ctx.fillStyle = '#00ccff';
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = '#00ccff';
+    ctx.fillRect(-size/6, -size/2, size/3, size/8);
+    ctx.shadowBlur = 0;
+    
+    // Side thrusters
+    ctx.fillStyle = '#555';
+    ctx.fillRect(-size/2 - 4, -size/6, 4, size/3);
+    ctx.fillStyle = '#666';
+    ctx.fillRect(-size/2 - 3, -size/6 + 2, 2, size/3 - 4);
+    
+    ctx.fillStyle = '#555';
+    ctx.fillRect(size/2, -size/6, 4, size/3);
+    ctx.fillStyle = '#666';
+    ctx.fillRect(size/2 + 1, -size/6 + 2, 2, size/3 - 4);
+    
+    // Main engine exhaust
+    const engineFlicker = 0.5 + Math.random() * 0.5;
+    const enginePulse = Math.sin(state.frameCount * 0.2) * 0.2 + 0.8;
+    
+    ctx.fillStyle = '#333';
+    ctx.fillRect(-size/3, size/4, size/1.5, size/6);
+    
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = `rgba(100, 200, 255, ${engineFlicker})`;
+    ctx.fillStyle = `rgba(100, 200, 255, ${engineFlicker * enginePulse})`;
+    ctx.beginPath();
+    ctx.moveTo(-size/4, size/4 + size/6);
+    ctx.lineTo(-size/5, size/4 + size/4);
+    ctx.lineTo(size/5, size/4 + size/4);
+    ctx.lineTo(size/4, size/4 + size/6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    // Panel lines
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-size/3, -size/4);
+    ctx.lineTo(-size/3, size/4);
+    ctx.moveTo(size/3, -size/4);
+    ctx.lineTo(size/3, size/4);
+    ctx.stroke();
+    
+    // Weapon indicators (red when about to fire)
+    if (dropship.burstCount !== undefined && dropship.burstCount < dropship.burstSize) {
+      ctx.fillStyle = 'rgba(255, 50, 50, 0.9)';
+      ctx.beginPath();
+      ctx.arc(-size/3, size/5, 3, 0, Math.PI * 2);
+      ctx.arc(size/3, size/5, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    ctx.restore();
+    
+    // Health bar
+    const barWidth = size;
+    const barHeight = 4;
+    const barX = x - barWidth/2;
+    const barY = y - size/2 - 12;
+    
+    ctx.fillStyle = "rgba(50, 50, 50, 0.8)";
+    ctx.fillRect(barX, barY, barWidth, barHeight);
+    ctx.fillStyle = "rgba(255, 100, 50, 0.9)";
+    ctx.fillRect(barX, barY, barWidth * (dropship.health / 300), barHeight);
   });
 }
 

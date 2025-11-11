@@ -12,6 +12,7 @@ export let tunnels = [];
 export let tanks = [];
 export let walkers = [];
 export let mechs = [];
+export let dropships = [];
 export let debris = [];
 export let explosions = [];
 export let lightning = [];
@@ -105,7 +106,11 @@ export let goldStar = {
   blueCannonTurretDeployed: false,
   blueCannonTurretDeployTimer: 0,
   dronePodDetached: false,
-  dronePodReturnTimer: 0
+  dronePodReturnTimer: 0,
+  // Power-up visual effect animations
+  redPunchAnimation: { active: false, frame: 0, particles: [] },
+  blueCannonAnimation: { active: false, frame: 0, energyLines: [] },
+  homingMissileAnimation: { active: false, frame: 0, pods: [] }
 };
 
 export const GOLD_STAR_PICKUP_FRAMES = 30;
@@ -196,6 +201,7 @@ export function pushDiamond(d) { diamonds.push(d); }
 export function pushTank(t) { tanks.push(t); }
 export function pushWalker(w) { walkers.push(w); }
 export function pushMech(m) { mechs.push(m); }
+export function pushDropship(d) { dropships.push(d); }
 export function pushDebris(d) { debris.push(d); }
 export function pushCloudParticle(c) { cloudParticles.push(c); }
 export function pushReflectionEffect(r) { reflectionEffects.push(r); }
@@ -233,6 +239,7 @@ export function resetGame() {
   tanks.length = 0;
   walkers.length = 0;
   mechs.length = 0;
+  dropships.length = 0;
   debris.length = 0;
   explosions.length = 0;
   lightning.length = 0;
@@ -313,6 +320,9 @@ export function resetGame() {
   goldStar.blueCannonTurretDeployTimer = 0;
   goldStar.dronePodDetached = false;
   goldStar.dronePodReturnTimer = 0;
+  goldStar.redPunchAnimation = { active: false, frame: 0, particles: [] };
+  goldStar.blueCannonAnimation = { active: false, frame: 0, energyLines: [] };
+  goldStar.homingMissileAnimation = { active: false, frame: 0, pods: [] };
 
   // aura
   goldStarAura.radius = goldStarAura.baseRadius = 50;
