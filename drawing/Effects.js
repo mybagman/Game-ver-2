@@ -25,10 +25,8 @@ export function drawTunnels() {
 
 export function drawLightning() { 
   state.lightning.forEach(l => {
-    state.// shadowBlur removed for performance
     state.ctx.fillStyle = "cyan"; 
     state.ctx.fillRect(l.x-(l.size||6)/2, l.y-(l.size||6)/2, l.size||6, l.size||6);
-    state.// shadowBlur removed for performance
   });
 }
 
