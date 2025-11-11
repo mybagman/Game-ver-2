@@ -257,7 +257,10 @@ export function updateDiamond(d) {
   if (d.attachments.some(a=>a.spawnMini) && d.shootTimer % 200 === 0) {
     state.pushMinion({x: d.x+(Math.random()-0.5)*80, y: d.y+(Math.random()-0.5)*80, size: 25, speed: 2, health: 30, type: "red-square", fromBoss: true});
   }
-  if (d.attachments.length >= 3 && d.shootTimer % 180 === 0) {
+  if (d.attachments.length >= 3 && d.shootTimer % 100 === 0) {
+    [{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}].forEach(dv => state.pushLightning({x: d.x, y: d.y, dx: dv.x*6, dy: dv.y*6, size: 8, damage: 20}));
+  } else if (d.shootTimer % 120 === 0) {
+    // Standard 4-direction shot when less than 3 attachments
     [{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}].forEach(dv => state.pushLightning({x: d.x, y: d.y, dx: dv.x*6, dy: dv.y*6, size: 8, damage: 20}));
   }
 

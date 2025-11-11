@@ -7,7 +7,7 @@ const MISSILE_SPEED = 6;
 const MISSILE_TURN_RATE = 0.08;
 const MISSILE_LIFETIME = 180; // frames (~3 seconds)
 const AOE_RADIUS = 50;  // Reduced from 70 for better balance
-const AOE_DAMAGE = 20;  // Reduced from 35 for better balance
+const AOE_DAMAGE = 12;  // Reduced to 60% of original (20 -> 12) for better balance
 
 export function updateReflectorSystem() {
   // Update cooldowns for both player and gold star

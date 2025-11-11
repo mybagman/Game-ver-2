@@ -328,12 +328,47 @@ export function drawMechs() {
     state.ctx.translate(mech.x, mech.y);
 
     if (mech.shieldActive) {
+      const shieldHealthRatio = (mech.shieldHealth || 150) / 150;
       const pulse = Math.sin(state.frameCount * 0.1) * 5;
-      state.ctx.strokeStyle = "rgba(100,200,255,0.6)";
+      const shieldRadius = mech.size/2 + 15 + pulse;
+      const shieldRotation = state.frameCount * 0.02;
+      
+      state.ctx.save();
+      state.ctx.rotate(shieldRotation);
+      
+      // Hexagonal shield outline (matching player shield)
+      state.ctx.strokeStyle = `rgba(100, 200, 255, ${0.6 * shieldHealthRatio})`;
       state.ctx.lineWidth = 3;
       state.ctx.beginPath();
-      state.ctx.arc(0, 0, mech.size/2 + 15 + pulse, 0, Math.PI * 2);
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        const x = Math.cos(angle) * shieldRadius;
+        const y = Math.sin(angle) * shieldRadius;
+        if (i === 0) state.ctx.moveTo(x, y);
+        else state.ctx.lineTo(x, y);
+      }
+      state.ctx.closePath();
       state.ctx.stroke();
+      
+      // Shield glow fill
+      state.ctx.fillStyle = `rgba(100, 200, 255, ${0.1 * shieldHealthRatio})`;
+      state.ctx.fill();
+      
+      // Decorative lines from center to vertices
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        const x1 = Math.cos(angle) * shieldRadius;
+        const y1 = Math.sin(angle) * shieldRadius;
+        
+        state.ctx.strokeStyle = `rgba(150, 220, 255, ${0.3 * shieldHealthRatio})`;
+        state.ctx.lineWidth = 1;
+        state.ctx.beginPath();
+        state.ctx.moveTo(0, 0);
+        state.ctx.lineTo(x1, y1);
+        state.ctx.stroke();
+      }
+      
+      state.ctx.restore();
     }
 
     state.ctx.fillStyle = "rgba(150,50,50,0.9)";

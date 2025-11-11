@@ -57,9 +57,10 @@ export function drawUI() {
   state.ctx.fill();
   state.ctx.restore();
 
-  state.ctx.fillStyle = "rgba(220,230,255,0.95)";
-  state.ctx.font = "11px 'Orbitron', monospace";
-  state.ctx.fillText(`HP ${Math.floor(state.player.health)}/${state.player.maxHealth}`, hbX + 6, hbY - 14);
+  // Health bar text removed for cleaner look
+  // state.ctx.fillStyle = "rgba(220,230,255,0.95)";
+  // state.ctx.font = "11px 'Orbitron', monospace";
+  // state.ctx.fillText(`HP ${Math.floor(state.player.health)}/${state.player.maxHealth}`, hbX + 6, hbY - 14);
   
   // Shield bar (if active)
   if (state.player.shieldActive && state.player.maxShieldHealth > 0) {
@@ -86,10 +87,10 @@ export function drawUI() {
     state.ctx.fill();
     state.ctx.restore();
     
-    // Shield label
-    state.ctx.fillStyle = "rgba(200,220,255,0.9)";
-    state.ctx.font = "10px 'Orbitron', monospace";
-    state.ctx.fillText(`SHIELD ${Math.floor(state.player.shieldHealth)}/${state.player.maxShieldHealth}`, hbX + 6, shbY - 2);
+    // Shield label removed for cleaner look
+    // state.ctx.fillStyle = "rgba(200,220,255,0.9)";
+    // state.ctx.font = "10px 'Orbitron', monospace";
+    // state.ctx.fillText(`SHIELD ${Math.floor(state.player.shieldHealth)}/${state.player.maxShieldHealth}`, hbX + 6, shbY - 2);
   }
 
   state.ctx.fillStyle = "rgba(200,220,255,0.95)";
