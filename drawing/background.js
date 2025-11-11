@@ -1,36 +1,49 @@
 import * as state from '../state.js';
 
 export function drawClouds() {
-  // Three-layer parallax clouds with depth - optimized to reduce blur usage
-  const layers = [
-    { speed: 0.3, scale: 0.6, alpha: 0.3, blur: 0 }, // Removed blur
-    { speed: 0.6, scale: 0.8, alpha: 0.5, blur: 0 }, // Removed blur
-    { speed: 1.0, scale: 1.0, alpha: 0.7, blur: 0 }
-  ];
+  // Lofi-style fluffy clouds inspired by Dragon Ball Z Nimbus
+  // Layered for depth (background, mid, foreground)
   
-  layers.forEach((layer, layerIdx) => {
-    state.cloudParticles.forEach((c, idx) => {
-      if (idx % 3 !== layerIdx) return; // distribute clouds across layers
+  state.cloudParticles.forEach(c => {
+    const layer = c.layer || 0;
+    // Layer-based scale and alpha
+    const scales = [0.7, 0.9, 1.1]; // background smaller, foreground larger
+    const alphas = [0.35, 0.5, 0.65]; // background fainter, foreground brighter
+    
+    const scale = scales[layer] || 1.0;
+    const alpha = alphas[layer] || 0.5;
+    
+    state.ctx.save();
+    state.ctx.globalAlpha = c.opacity * alpha;
+    
+    // Main fluffy cloud body (white/off-white)
+    state.ctx.fillStyle = `rgba(240, 245, 250, 1)`;
+    state.ctx.beginPath();
+    state.ctx.arc(c.x, c.y, c.size * scale, 0, Math.PI * 2);
+    state.ctx.fill();
+    
+    // Add 3-4 fluffy bumps for Nimbus-style puffiness
+    const bumps = 4;
+    for (let i = 0; i < bumps; i++) {
+      const angle = (i / bumps) * Math.PI * 2;
+      const offsetX = Math.cos(angle) * c.size * scale * 0.5;
+      const offsetY = Math.sin(angle) * c.size * scale * 0.4;
       
-      const layerOffset = (state.frameCount * layer.speed * 0.5) % state.canvas.width;
-      const x = (c.x + layerOffset) % state.canvas.width;
-      
-      state.ctx.save();
-      state.ctx.globalAlpha = c.opacity * layer.alpha;
-      state.ctx.fillStyle = `rgba(220,230,240,1)`;
+      state.ctx.globalAlpha = c.opacity * alpha * 0.7;
       state.ctx.beginPath();
-      state.ctx.arc(x, c.y, c.size * layer.scale, 0, Math.PI * 2);
+      state.ctx.arc(c.x + offsetX, c.y + offsetY, c.size * scale * 0.6, 0, Math.PI * 2);
       state.ctx.fill();
-      
-      // Simplified wispy edges
-      state.ctx.globalAlpha = c.opacity * layer.alpha * 0.4;
-      state.ctx.beginPath();
-      state.ctx.arc(x + c.size * 0.3, c.y, c.size * layer.scale * 0.7, 0, Math.PI * 2);
-      state.ctx.fill();
-      
-      state.ctx.restore();
-      state.ctx.globalAlpha = 1;
-    });
+    }
+    
+    // Soft highlight on top (lofi shading)
+    state.ctx.globalAlpha = c.opacity * alpha * 0.3;
+    state.ctx.fillStyle = `rgba(255, 255, 255, 1)`;
+    state.ctx.beginPath();
+    state.ctx.arc(c.x - c.size * scale * 0.15, c.y - c.size * scale * 0.2, c.size * scale * 0.5, 0, Math.PI * 2);
+    state.ctx.fill();
+    
+    state.ctx.restore();
+    state.ctx.globalAlpha = 1;
   });
 }
 

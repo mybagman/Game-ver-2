@@ -236,20 +236,63 @@ export function drawEnemies() {
       state.ctx.fill();
     }
     else if (e.type === "reflector") {
+      // 8-bit Gundam-style support ship with shield generator
       state.ctx.save();
       state.ctx.translate(e.x, e.y);
       state.ctx.rotate(e.angle||0);
 
-      state.ctx.fillStyle = e.shieldActive ? "rgba(138,43,226,0.8)" : "purple";
+      // Main hull (angular military design)
+      state.ctx.fillStyle = "#3a3a50";
       state.ctx.fillRect(-e.width/2, -e.height/2, e.width, e.height);
+      
+      // Cockpit section (front)
+      state.ctx.fillStyle = "#4a4a60";
+      state.ctx.fillRect(e.width/4, -e.height/3, e.width/4, e.height * 0.66);
+      
+      // Cockpit window (cyan glow)
+      state.ctx.fillStyle = "#00ccff";
+      state.ctx.fillRect(e.width/3, -e.height/6, e.width/8, e.height/3);
+      
+      // Shield generator pods on sides
+      const podWidth = 8;
+      const podHeight = 12;
+      state.ctx.fillStyle = e.shieldActive ? "#8844ff" : "#6633cc";
+      // Left pod
+      state.ctx.fillRect(-e.width/2 - podWidth, -podHeight/2, podWidth, podHeight);
+      // Right pod
+      state.ctx.fillRect(e.width/2, -podHeight/2, podWidth, podHeight);
+      
+      // Shield generator energy cores (pulsing)
+      const pulse = e.shieldActive ? (0.6 + Math.sin(state.frameCount * 0.15) * 0.4) : 0.3;
+      state.ctx.fillStyle = `rgba(138, 100, 255, ${pulse})`;
+      state.ctx.beginPath();
+      state.ctx.arc(-e.width/2 - podWidth/2, 0, 3, 0, Math.PI * 2);
+      state.ctx.arc(e.width/2 + podWidth/2, 0, 3, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Panel lines (8-bit detailing)
+      state.ctx.strokeStyle = "#2a2a40";
+      state.ctx.lineWidth = 1;
+      state.ctx.beginPath();
+      state.ctx.moveTo(-e.width/4, -e.height/2);
+      state.ctx.lineTo(-e.width/4, e.height/2);
+      state.ctx.moveTo(e.width/8, -e.height/2);
+      state.ctx.lineTo(e.width/8, e.height/2);
+      state.ctx.stroke();
 
+      // Active shield field
       if (e.shieldActive) {
         const shieldPulse = Math.sin(state.frameCount * 0.1) * 5 + 60;
-        state.ctx.strokeStyle = `rgba(138,43,226,${0.5 + Math.sin(state.frameCount * 0.1) * 0.3})`;
+        state.ctx.strokeStyle = `rgba(138,100,255,${0.5 + Math.sin(state.frameCount * 0.1) * 0.3})`;
         state.ctx.lineWidth = 2;
         state.ctx.beginPath();
         state.ctx.arc(0, 0, shieldPulse, 0, Math.PI*2);
         state.ctx.stroke();
+        
+        // Shield energy beams connecting to nearby allies
+        state.ctx.strokeStyle = `rgba(138,100,255,0.4)`;
+        state.ctx.lineWidth = 1;
+        // Visual only - actual shield logic in enemies.js
       }
       state.ctx.restore();
     }
