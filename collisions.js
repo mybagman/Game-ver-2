@@ -46,7 +46,7 @@ export function updateLightning() {
         return false;
       } else {
         state.goldStar.health -= l.damage;
-        if (state.goldStar.health <= 0) { state.goldStar.alive = false; state.goldStar.respawnTimer = 0; createExplosion(state.goldStar.x, state.goldStar.y, "gold"); }
+        if (state.goldStar.health <= 0) { state.goldStar.alive = false; state.goldStar.respawnTimer = 0; state.player.reflectorLevel = 0; createExplosion(state.goldStar.x, state.goldStar.y, "gold"); }
         return false;
       }
     }
@@ -91,6 +91,16 @@ export function checkBulletCollisions() {
         }
         state.bullets.splice(bi, 1);
         createExplosion(mech.x, mech.y, "yellow");
+        break;
+      }
+    }
+
+    for (let di = state.dropships.length - 1; di >= 0; di--) {
+      const dropship = state.dropships[di];
+      if (Math.hypot(b.x - dropship.x, b.y - dropship.y) < 35) {
+        dropship.health -= 10;
+        state.bullets.splice(bi, 1);
+        createExplosion(dropship.x, dropship.y, "orange");
         break;
       }
     }

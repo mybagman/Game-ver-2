@@ -3,6 +3,7 @@ import {
   updatePlayerMovement,
   handleShooting,
   updateBullets,
+  updateEmpProjectiles,
   updatePowerUps,
   updateTunnels,
   updateExplosions,
@@ -19,7 +20,7 @@ import { updateReflectorSystem, updateHomingMissiles, drawHomingMissiles } from 
 /* patched imports: consolidated drawing helpers from drawing.js */
 // Replace the single `from './drawing.js'` import with these direct imports:
 import { drawBackground, drawPlanetBackground, drawClouds } from './drawing/background.js';
-import { drawBullets } from './drawing/bullets.js';
+import { drawBullets, drawEmpProjectiles } from './drawing/bullets.js';
 import { drawDiamonds, drawEnemies, drawDropship, drawDropships, drawTanks, drawWalkers, drawMechs } from './drawing/Enemies.js';
 import { drawGoldStarAura, drawGoldStar } from './drawing/goldstar.js';
 import { drawUI } from './drawing/UI.js';
@@ -61,6 +62,7 @@ export function gameLoop(now) {
   try { updatePlayerMovement(); } catch (e) {}
   try { handleShooting(); } catch (e) {}
   try { updateBullets(); } catch (e) {}
+  try { updateEmpProjectiles(); } catch (e) {}
   try { updateLightning(); } catch (e) {}
   try { updateExplosions(); } catch (e) {}
   try { updatePowerUps(); } catch (e) {}
@@ -219,6 +221,9 @@ export function renderFrame() {
   // 6) Bullets and related effects
   if (typeof drawBullets === 'function') {
     try { drawBullets(); } catch (e) {}
+  }
+  if (typeof drawEmpProjectiles === 'function') {
+    try { drawEmpProjectiles(); } catch (e) {}
   }
   if (typeof updateAndDrawReflectionEffects === 'function') {
     try { updateAndDrawReflectionEffects(); } catch (e) {}

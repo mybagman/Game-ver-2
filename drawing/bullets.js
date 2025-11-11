@@ -168,3 +168,81 @@ export function drawBullets() {
     }
   }
 }
+
+// Draw EMP projectiles
+export function drawEmpProjectiles() {
+  for (let i = 0; i < state.empProjectiles.length; i++) {
+    const emp = state.empProjectiles[i];
+    if (!emp) continue;
+    
+    const x = emp.x, y = emp.y;
+    const size = emp.size || 12;
+    const t = state.frameCount;
+    
+    // EMP outer glow (electric blue)
+    state.ctx.save();
+    state.ctx.globalCompositeOperation = 'lighter';
+    const pulse = Math.sin(t * 0.2) * 0.3 + 0.7;
+    
+    // Outer electric aura
+    const grad = state.ctx.createRadialGradient(x, y, 0, x, y, size * 2.5);
+    grad.addColorStop(0, `rgba(100, 200, 255, ${0.8 * pulse})`);
+    grad.addColorStop(0.5, `rgba(50, 150, 255, ${0.4 * pulse})`);
+    grad.addColorStop(1, 'rgba(0, 100, 200, 0)');
+    state.ctx.fillStyle = grad;
+    state.ctx.beginPath();
+    state.ctx.arc(x, y, size * 2.5, 0, Math.PI * 2);
+    state.ctx.fill();
+    
+    // Core sphere
+    state.ctx.shadowBlur = 20;
+    state.ctx.shadowColor = "rgba(100, 200, 255, 0.9)";
+    state.ctx.fillStyle = `rgba(150, 220, 255, ${pulse})`;
+    state.ctx.beginPath();
+    state.ctx.arc(x, y, size, 0, Math.PI * 2);
+    state.ctx.fill();
+    state.ctx.shadowBlur = 0;
+    
+    // Electric arcs rotating around core
+    state.ctx.save();
+    state.ctx.translate(x, y);
+    state.ctx.rotate(t * 0.05);
+    state.ctx.strokeStyle = `rgba(200, 240, 255, ${0.8 * pulse})`;
+    state.ctx.lineWidth = 2;
+    
+    for (let a = 0; a < 4; a++) {
+      const angle = (a / 4) * Math.PI * 2;
+      const arcSize = size + 5;
+      state.ctx.beginPath();
+      state.ctx.moveTo(Math.cos(angle) * arcSize, Math.sin(angle) * arcSize);
+      state.ctx.lineTo(
+        Math.cos(angle + 0.5) * (arcSize + 4 + Math.sin(t * 0.3 + a) * 3),
+        Math.sin(angle + 0.5) * (arcSize + 4 + Math.cos(t * 0.3 + a) * 3)
+      );
+      state.ctx.stroke();
+    }
+    state.ctx.restore();
+    
+    // Inner ring pulse
+    state.ctx.beginPath();
+    state.ctx.strokeStyle = `rgba(180, 230, 255, ${0.6 * pulse})`;
+    state.ctx.lineWidth = 1.5;
+    state.ctx.arc(x, y, size + 3 + Math.sin(t * 0.15) * 2, 0, Math.PI * 2);
+    state.ctx.stroke();
+    
+    state.ctx.restore();
+    
+    // Trail particles
+    if (Math.random() > 0.5) {
+      state.pushExplosion({
+        x: x - emp.dx * 0.5,
+        y: y - emp.dy * 0.5,
+        dx: (Math.random() - 0.5) * 0.5,
+        dy: (Math.random() - 0.5) * 0.5,
+        radius: 3,
+        color: "rgba(100, 200, 255, 0.6)",
+        life: 10
+      });
+    }
+  }
+}

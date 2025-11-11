@@ -116,90 +116,75 @@ export function drawEnemies() {
       state.ctx.restore();
     }
     else if (e.type === "triangle") { 
-      // 8-bit TIE Fighter design
+      // 8-bit TIE Fighter design - Optimized for performance
       state.ctx.save();
       state.ctx.translate(e.x, e.y);
       
-      state.ctx.shadowBlur = 15;
-      state.ctx.shadowColor = "cyan";
+      // Removed expensive shadowBlur for performance
       
       const wingWidth = e.size / 2;
       const wingHeight = e.size * 0.8;
       const cockpitSize = e.size / 3;
       const pulse = Math.sin(state.frameCount * 0.08 + e.x) * 0.4 + 0.6;
       
-      // Left solar panel wing
+      // Batch wing fills and strokes together to reduce draw calls
       state.ctx.fillStyle = "#333";
       state.ctx.fillRect(-wingWidth - cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
-      
-      // Left wing grid lines
-      state.ctx.strokeStyle = "#555";
-      state.ctx.lineWidth = 1;
-      for (let i = 1; i < 3; i++) {
-        state.ctx.beginPath();
-        state.ctx.moveTo(-wingWidth - cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
-        state.ctx.lineTo(-cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
-        state.ctx.stroke();
-      }
-      
-      // Right solar panel wing
-      state.ctx.fillStyle = "#333";
       state.ctx.fillRect(cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
       
-      // Right wing grid lines
+      // Draw all wing grid lines in one path
       state.ctx.strokeStyle = "#555";
       state.ctx.lineWidth = 1;
+      state.ctx.beginPath();
       for (let i = 1; i < 3; i++) {
-        state.ctx.beginPath();
+        // Left wing lines
+        state.ctx.moveTo(-wingWidth - cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
+        state.ctx.lineTo(-cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
+        // Right wing lines
         state.ctx.moveTo(cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
         state.ctx.lineTo(wingWidth + cockpitSize/2, -wingHeight/2 + (wingHeight * i / 3));
-        state.ctx.stroke();
       }
+      state.ctx.stroke();
       
-      // Central cockpit pod (hexagonal)
+      // Central cockpit pod (hexagonal) - cached calculation
       state.ctx.fillStyle = "#555";
       state.ctx.beginPath();
-      for (let i = 0; i < 6; i++) {
-        const angle = (i / 6) * Math.PI * 2;
-        const px = Math.cos(angle) * cockpitSize/2;
-        const py = Math.sin(angle) * cockpitSize/2;
-        if (i === 0) state.ctx.moveTo(px, py);
-        else state.ctx.lineTo(px, py);
-      }
+      // Hexagon points pre-calculated for efficiency
+      const r = cockpitSize/2;
+      state.ctx.moveTo(r, 0);
+      state.ctx.lineTo(r * 0.5, r * 0.866);
+      state.ctx.lineTo(-r * 0.5, r * 0.866);
+      state.ctx.lineTo(-r, 0);
+      state.ctx.lineTo(-r * 0.5, -r * 0.866);
+      state.ctx.lineTo(r * 0.5, -r * 0.866);
       state.ctx.closePath();
       state.ctx.fill();
       
-      // Cockpit window (cyan glow)
+      // Cockpit window and engine in one fill operation
       state.ctx.fillStyle = `rgba(0,255,255,${pulse})`;
       state.ctx.fillRect(-cockpitSize/4, -cockpitSize/8, cockpitSize/2, cockpitSize/4);
       
-      // Engine glow at back
+      // Engine glow
       state.ctx.fillStyle = `rgba(100,200,255,${pulse * 0.8})`;
       state.ctx.beginPath();
       state.ctx.arc(0, cockpitSize/3, cockpitSize/6, 0, Math.PI * 2);
       state.ctx.fill();
       
-      state.ctx.shadowBlur = 0;
-      
-      // Outline glow
+      // Outline glow - batch all outline strokes together
       state.ctx.strokeStyle = `rgba(100,255,255,${pulse})`;
       state.ctx.lineWidth = 2;
-      
-      // Left wing outline
-      state.ctx.strokeRect(-wingWidth - cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
-      
-      // Right wing outline
-      state.ctx.strokeRect(cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
-      
-      // Cockpit outline
       state.ctx.beginPath();
-      for (let i = 0; i < 6; i++) {
-        const angle = (i / 6) * Math.PI * 2;
-        const px = Math.cos(angle) * cockpitSize/2;
-        const py = Math.sin(angle) * cockpitSize/2;
-        if (i === 0) state.ctx.moveTo(px, py);
-        else state.ctx.lineTo(px, py);
-      }
+      // Left wing outline
+      state.ctx.rect(-wingWidth - cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
+      // Right wing outline
+      state.ctx.rect(cockpitSize/2, -wingHeight/2, wingWidth, wingHeight);
+      // Cockpit outline (hexagon)
+      state.ctx.moveTo(r, 0);
+      state.ctx.lineTo(r * 0.5, r * 0.866);
+      state.ctx.lineTo(-r * 0.5, r * 0.866);
+      state.ctx.lineTo(-r, 0);
+      state.ctx.lineTo(-r * 0.5, -r * 0.866);
+      state.ctx.lineTo(r * 0.5, -r * 0.866);
       state.ctx.closePath();
       state.ctx.stroke();
       
@@ -902,6 +887,99 @@ export function drawDiamonds() {
         state.ctx.restore();
       }
     });
+
+    // Draw turrets
+    if (d.turrets) {
+      for (let i = 0; i < d.turrets.length; i++) {
+        const turret = d.turrets[i];
+        const turretDist = enhancedSize/2 + 15;
+        const turretX = d.x + Math.cos(turret.angle) * turretDist;
+        const turretY = d.y + Math.sin(turret.angle) * turretDist;
+        
+        state.ctx.save();
+        state.ctx.translate(turretX, turretY);
+        
+        // Turret base
+        state.ctx.fillStyle = "rgba(80, 80, 120, 0.9)";
+        state.ctx.beginPath();
+        state.ctx.arc(0, 0, 8, 0, Math.PI * 2);
+        state.ctx.fill();
+        
+        // Turret barrel (aimed at player)
+        const dx = state.player.x - turretX;
+        const dy = state.player.y - turretY;
+        const barrelAngle = Math.atan2(dy, dx);
+        state.ctx.rotate(barrelAngle);
+        state.ctx.fillStyle = "rgba(100, 100, 140, 0.9)";
+        state.ctx.fillRect(0, -3, 15, 6);
+        
+        // Turret glow when charging
+        if (turret.shootTimer > turret.fireRate - 20) {
+          const chargePulse = (turret.shootTimer - (turret.fireRate - 20)) / 20;
+          state.ctx.shadowBlur = 15 * chargePulse;
+          state.ctx.shadowColor = "rgba(255, 100, 100, 0.8)";
+          state.ctx.fillStyle = `rgba(255, 100, 100, ${chargePulse * 0.8})`;
+          state.ctx.beginPath();
+          state.ctx.arc(12, 0, 4, 0, Math.PI * 2);
+          state.ctx.fill();
+          state.ctx.shadowBlur = 0;
+        }
+        
+        state.ctx.restore();
+      }
+    }
+
+    // Draw laser charging effect
+    if (d.laserCharging && d.laserChargeTimer > 0) {
+      const chargeProgress = d.laserChargeTimer / 60;
+      
+      // Laser charge core
+      state.ctx.save();
+      state.ctx.translate(d.x, d.y);
+      
+      // Pulsing core
+      const coreSize = 20 + chargeProgress * 30;
+      const coreGradient = state.ctx.createRadialGradient(0, 0, 0, 0, 0, coreSize);
+      coreGradient.addColorStop(0, `rgba(255, 100, 255, ${chargeProgress})`);
+      coreGradient.addColorStop(0.5, `rgba(200, 50, 200, ${chargeProgress * 0.6})`);
+      coreGradient.addColorStop(1, "rgba(150, 0, 150, 0)");
+      
+      state.ctx.fillStyle = coreGradient;
+      state.ctx.beginPath();
+      state.ctx.arc(0, 0, coreSize, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Energy rings converging
+      for (let r = 0; r < 4; r++) {
+        const ringPhase = (state.frameCount * 0.1 + r * 0.5) % 1;
+        const ringRadius = 60 * (1 - ringPhase * chargeProgress);
+        const ringAlpha = (1 - ringPhase) * chargeProgress;
+        
+        state.ctx.strokeStyle = `rgba(255, 150, 255, ${ringAlpha * 0.6})`;
+        state.ctx.lineWidth = 2;
+        state.ctx.beginPath();
+        state.ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+        state.ctx.stroke();
+      }
+      
+      // Laser aim line to player
+      if (chargeProgress > 0.3) {
+        const dx = state.player.x - d.x;
+        const dy = state.player.y - d.y;
+        const dist = Math.hypot(dx, dy);
+        
+        state.ctx.strokeStyle = `rgba(255, 100, 255, ${chargeProgress * 0.4})`;
+        state.ctx.lineWidth = 3;
+        state.ctx.setLineDash([10, 5]);
+        state.ctx.beginPath();
+        state.ctx.moveTo(0, 0);
+        state.ctx.lineTo(dx, dy);
+        state.ctx.stroke();
+        state.ctx.setLineDash([]);
+      }
+      
+      state.ctx.restore();
+    }
   });
 }
 

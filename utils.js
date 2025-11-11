@@ -243,6 +243,8 @@ export function respawnGoldStar() {
   // Reset homing missile state
   state.goldStar.homingMissileLevel = 0;
   state.goldStar.homingMissileCooldown = 0;
+  // Reset player reflector level when gold star dies
+  state.player.reflectorLevel = 0;
 }
 
 export function respawnPlayer() {
