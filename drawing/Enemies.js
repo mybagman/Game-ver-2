@@ -366,41 +366,102 @@ export function drawEnemies() {
 }
 
 export function drawTanks() {
+  // Raiden-style ground tanks
   state.tanks.forEach(tank => {
     state.ctx.save();
     state.ctx.translate(tank.x, tank.y);
 
-    state.ctx.fillStyle = "rgba(100,100,100,0.9)";
+    // Tank chassis (military olive/gray)
+    state.ctx.fillStyle = "#5a5a4a";
     state.ctx.fillRect(-tank.width/2, -tank.height/2, tank.width, tank.height);
+    
+    // Treads/tracks
+    state.ctx.fillStyle = "#3a3a2a";
+    state.ctx.fillRect(-tank.width/2, -tank.height/2 + 2, tank.width, 4);
+    state.ctx.fillRect(-tank.width/2, tank.height/2 - 6, tank.width, 4);
+    
+    // Armor panels
+    state.ctx.fillStyle = "#6a6a5a";
+    state.ctx.fillRect(-tank.width/3, -tank.height/3, tank.width*0.66, tank.height*0.4);
+    
+    // Turret base
+    state.ctx.fillStyle = "#5a5a5a";
+    state.ctx.fillRect(-12, -12, 24, 24);
 
+    // Turret barrel (rotates toward player)
     state.ctx.rotate(tank.turretAngle);
-    state.ctx.fillStyle = "rgba(80,80,80,0.9)";
-    state.ctx.fillRect(0, -5, 25, 10);
+    state.ctx.fillStyle = "#4a4a4a";
+    state.ctx.fillRect(0, -6, 28, 12);
+    
+    // Barrel tip
+    state.ctx.fillStyle = "#3a3a3a";
+    state.ctx.fillRect(26, -7, 4, 14);
+    
+    // Muzzle brake details
+    state.ctx.strokeStyle = "#2a2a2a";
+    state.ctx.lineWidth = 1;
+    state.ctx.beginPath();
+    state.ctx.moveTo(4, -5);
+    state.ctx.lineTo(24, -5);
+    state.ctx.moveTo(4, 5);
+    state.ctx.lineTo(24, 5);
+    state.ctx.stroke();
 
     state.ctx.restore();
   });
 }
 
 export function drawWalkers() {
+  // Raiden-style bipedal walkers
   state.walkers.forEach(walker => {
     state.ctx.save();
     state.ctx.translate(walker.x, walker.y);
 
-    state.ctx.fillStyle = "rgba(120,120,150,0.9)";
+    // Main body (military blue-gray)
+    state.ctx.fillStyle = "#4a5a6a";
     state.ctx.fillRect(-walker.width/2, -walker.height/2, walker.width, walker.height/2);
+    
+    // Command module on top
+    state.ctx.fillStyle = "#5a6a7a";
+    state.ctx.fillRect(-walker.width/3, -walker.height/1.8, walker.width*0.66, walker.height/4);
+    
+    // Sensor array (glowing)
+    const pulse = 0.6 + Math.sin(state.frameCount * 0.1) * 0.4;
+    state.ctx.fillStyle = `rgba(100, 200, 255, ${pulse})`;
+    state.ctx.fillRect(-walker.width/6, -walker.height/1.6, walker.width/3, walker.height/12);
+    
+    // Weapons pods on sides
+    state.ctx.fillStyle = "#3a4a5a";
+    state.ctx.fillRect(-walker.width/2 - 4, -walker.height/6, 6, walker.height/4);
+    state.ctx.fillRect(walker.width/2 - 2, -walker.height/6, 6, walker.height/4);
 
-    const legOffset = Math.sin(walker.legPhase) * 10;
-    state.ctx.strokeStyle = "rgba(100,100,130,0.9)";
-    state.ctx.lineWidth = 3;
+    // Animated legs (bipedal walker)
+    const legOffset = Math.sin(walker.legPhase) * 12;
+    state.ctx.strokeStyle = "#5a6a7a";
+    state.ctx.lineWidth = 4;
+    state.ctx.lineCap = "round";
+    
+    // Left leg
     state.ctx.beginPath();
-    state.ctx.moveTo(-10, walker.height/4);
-    state.ctx.lineTo(-10 + legOffset, walker.height/2 + 10);
+    state.ctx.moveTo(-walker.width/4, walker.height/4);
+    state.ctx.lineTo(-walker.width/4 + legOffset, walker.height/2 + 12);
     state.ctx.stroke();
-
+    
+    // Right leg
     state.ctx.beginPath();
-    state.ctx.moveTo(10, walker.height/4);
-    state.ctx.lineTo(10 - legOffset, walker.height/2 + 10);
+    state.ctx.moveTo(walker.width/4, walker.height/4);
+    state.ctx.lineTo(walker.width/4 - legOffset, walker.height/2 + 12);
     state.ctx.stroke();
+    
+    // Leg joints
+    state.ctx.fillStyle = "#6a7a8a";
+    state.ctx.fillRect(-walker.width/4 - 3, walker.height/4 - 3, 6, 6);
+    state.ctx.fillRect(walker.width/4 - 3, walker.height/4 - 3, 6, 6);
+    
+    // Foot pads
+    state.ctx.fillStyle = "#4a5a6a";
+    state.ctx.fillRect(-walker.width/4 + legOffset - 4, walker.height/2 + 10, 8, 4);
+    state.ctx.fillRect(walker.width/4 - legOffset - 4, walker.height/2 + 10, 8, 4);
 
     state.ctx.restore();
   });
@@ -901,19 +962,69 @@ export function drawDiamonds() {
     state.ctx.strokeText("◆ DIAMOND BOSS ◆", d.x, barY - 8);
     state.ctx.fillText("◆ DIAMOND BOSS ◆", d.x, barY - 8);
 
-    // Draw visual formation lines connecting attached enemies to diamond
-    d.attachments.forEach(a => {
-      if (a.visualOrbitX && a.visualOrbitY) {
+    // Draw enhanced barrier/shield formation with attached enemies
+    if (d.attachments && d.attachments.length > 0) {
+      // Draw shield energy field connecting all attached enemies
+      const shieldAlpha = Math.min(0.3 + d.attachments.length * 0.05, 0.6);
+      const shieldPulse = Math.sin(state.frameCount * 0.08) * 0.15 + 0.85;
+      
+      // Draw shield polygon connecting all attached enemy positions
+      if (d.attachments.length >= 3) {
         state.ctx.save();
-        state.ctx.strokeStyle = "rgba(100, 200, 255, 0.3)";
-        state.ctx.lineWidth = 1;
+        state.ctx.fillStyle = `rgba(100, 200, 255, ${shieldAlpha * 0.3 * shieldPulse})`;
+        state.ctx.strokeStyle = `rgba(100, 200, 255, ${shieldAlpha * shieldPulse})`;
+        state.ctx.lineWidth = 2;
+        
         state.ctx.beginPath();
-        state.ctx.moveTo(d.x, d.y);
-        state.ctx.lineTo(a.visualOrbitX, a.visualOrbitY);
+        d.attachments.forEach((a, i) => {
+          if (a.visualOrbitX && a.visualOrbitY) {
+            if (i === 0) {
+              state.ctx.moveTo(a.visualOrbitX, a.visualOrbitY);
+            } else {
+              state.ctx.lineTo(a.visualOrbitX, a.visualOrbitY);
+            }
+          }
+        });
+        state.ctx.closePath();
+        state.ctx.fill();
         state.ctx.stroke();
         state.ctx.restore();
       }
-    });
+      
+      // Draw energy beams from diamond core to each attached enemy
+      d.attachments.forEach(a => {
+        if (a.visualOrbitX && a.visualOrbitY) {
+          state.ctx.save();
+          
+          // Pulsing energy beam
+          const beamAlpha = 0.4 + Math.sin(state.frameCount * 0.1 + a.orbitAngle) * 0.2;
+          state.ctx.strokeStyle = `rgba(150, 220, 255, ${beamAlpha * shieldPulse})`;
+          state.ctx.lineWidth = 2;
+          state.ctx.beginPath();
+          state.ctx.moveTo(d.x, d.y);
+          state.ctx.lineTo(a.visualOrbitX, a.visualOrbitY);
+          state.ctx.stroke();
+          
+          // Energy nodes at attachment points
+          state.ctx.fillStyle = `rgba(100, 200, 255, ${beamAlpha * 1.2})`;
+          state.ctx.beginPath();
+          state.ctx.arc(a.visualOrbitX, a.visualOrbitY, 4, 0, Math.PI * 2);
+          state.ctx.fill();
+          
+          state.ctx.restore();
+        }
+      });
+      
+      // Barrier strength indicator text
+      if (d.attachments.length >= 5) {
+        state.ctx.save();
+        state.ctx.font = "bold 12px Orbitron, monospace";
+        state.ctx.textAlign = "center";
+        state.ctx.fillStyle = `rgba(100, 255, 255, ${shieldPulse})`;
+        state.ctx.fillText(`⬢ BARRIER ACTIVE ⬢`, d.x, d.y + enhancedSize/2 + 60);
+        state.ctx.restore();
+      }
+    }
 
     // Draw turrets
     if (d.turrets) {
