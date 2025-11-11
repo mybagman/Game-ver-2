@@ -1,6 +1,9 @@
 import * as state from '../state.js';
 
 export function drawEnemies() {
+  // Cache pulse value - calculated once per frame and reused for all red squares
+  const redSquarePulse = Math.sin(state.frameCount * 0.1) * 0.3 + 0.7;
+  
   state.enemies.forEach(e => {
     if (!e) return;
 
@@ -15,11 +18,10 @@ export function drawEnemies() {
       const angle = Math.atan2(dy, dx);
       state.ctx.rotate(angle);
       
-      state.ctx.shadowBlur = 15;
-      state.ctx.shadowColor = "red";
+      // Removed expensive shadowBlur for performance - visual style remains clear without it
       
       const size = e.size;
-      const pulse = Math.sin(state.frameCount * 0.1) * 0.3 + 0.7;
+      const pulse = redSquarePulse;
       
       // Main fuselage (angular, aggressive design)
       state.ctx.fillStyle = "#8B0000"; // Dark red
@@ -98,7 +100,6 @@ export function drawEnemies() {
       state.ctx.fill();
       
       // Outline glow
-      state.ctx.shadowBlur = 0;
       state.ctx.strokeStyle = `rgba(255, 100, 100, ${pulse})`;
       state.ctx.lineWidth = 1.5;
       state.ctx.beginPath();
