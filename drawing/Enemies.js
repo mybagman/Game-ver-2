@@ -748,6 +748,8 @@ export function drawWalkers() {
 }
 
 export function drawMechs() {
+  const isSideView = state.wave >= 11;
+  
   state.mechs.forEach(mech => {
     // Draw dropship if visible (Gundam-style military transport)
     if (mech.dropshipVisible) {
@@ -849,7 +851,64 @@ export function drawMechs() {
     state.ctx.save();
     state.ctx.translate(mech.x, mech.y);
 
-    if (mech.shieldActive) {
+    if (isSideView) {
+      // 8-bit Army mech - side view Gundam-style
+      const blockSize = mech.size / 12;
+      
+      // Legs (bipedal, side profile)
+      const legPhase = mech.legPhase || 0;
+      const legOffset = Math.sin(legPhase) * blockSize * 2;
+      
+      state.ctx.fillStyle = "#5a5a6a";
+      // Front leg
+      state.ctx.fillRect(-blockSize * 2, blockSize * 2 + legOffset, blockSize * 2.5, blockSize * 6);
+      // Back leg  
+      state.ctx.fillRect(blockSize, blockSize * 2 - legOffset, blockSize * 2.5, blockSize * 6);
+      
+      // Feet (8-bit blocks)
+      state.ctx.fillStyle = "#4a4a5a";
+      state.ctx.fillRect(-blockSize * 2.5, blockSize * 8 + legOffset, blockSize * 3.5, blockSize * 1.5);
+      state.ctx.fillRect(blockSize * 0.5, blockSize * 8 - legOffset, blockSize * 3.5, blockSize * 1.5);
+      
+      // Torso (main body, blocky 8-bit)
+      state.ctx.fillStyle = "#6a6a7a";
+      state.ctx.fillRect(-blockSize * 3, -blockSize * 2, blockSize * 6, blockSize * 4);
+      
+      // Chest armor plate
+      state.ctx.fillStyle = "#7a7a8a";
+      state.ctx.fillRect(-blockSize * 2.5, -blockSize * 1.5, blockSize * 5, blockSize * 2);
+      
+      // Head/cockpit (small blocky head)
+      state.ctx.fillStyle = "#5a6a7a";
+      state.ctx.fillRect(-blockSize * 1.5, -blockSize * 4.5, blockSize * 3, blockSize * 2.5);
+      
+      // Sensor eye (glowing)
+      const sensorPulse = 0.6 + Math.sin(state.frameCount * 0.1) * 0.4;
+      state.ctx.fillStyle = `rgba(255, 80, 80, ${sensorPulse})`;
+      state.ctx.fillRect(-blockSize * 0.5, -blockSize * 3.5, blockSize, blockSize * 0.8);
+      
+      // Arms (side view - one arm visible)
+      state.ctx.fillStyle = "#5a5a6a";
+      // Shoulder
+      state.ctx.fillRect(-blockSize * 4, -blockSize, blockSize * 1.5, blockSize * 2);
+      // Upper arm
+      state.ctx.fillRect(-blockSize * 5, 0, blockSize * 1.5, blockSize * 4);
+      // Forearm
+      state.ctx.fillRect(-blockSize * 5.5, blockSize * 3.5, blockSize * 2, blockSize * 3);
+      
+      // Weapon in hand (8-bit gun)
+      state.ctx.fillStyle = "#3a3a4a";
+      state.ctx.fillRect(-blockSize * 7, blockSize * 5, blockSize * 4, blockSize * 1.5);
+      
+      // Back-mounted equipment (8-bit jetpack/thrusters)
+      state.ctx.fillStyle = "#4a4a5a";
+      state.ctx.fillRect(blockSize * 2.5, -blockSize, blockSize * 2, blockSize * 3);
+      
+      // Thruster glow
+      const thrusterPulse = 0.5 + Math.sin(state.frameCount * 0.15) * 0.5;
+      state.ctx.fillStyle = `rgba(100, 200, 255, ${thrusterPulse * 0.7})`;
+      state.ctx.fillRect(blockSize * 2.5, blockSize * 2, blockSize * 2, blockSize);
+    } else if (mech.shieldActive) {
       const shieldHealthRatio = (mech.shieldHealth || 150) / 150;
       const pulse = Math.sin(state.frameCount * 0.1) * 5;
       const shieldRadius = mech.size/2 + 15 + pulse;
@@ -893,8 +952,9 @@ export function drawMechs() {
       state.ctx.restore();
     }
 
-    // Raiden-style heavy ground mech/tank with 4 legs
-    const legPhase = (mech.legPhase || 0);
+    if (!isSideView) {
+      // Raiden-style heavy ground mech/tank with 4 legs (top-down only)
+      const legPhase = (mech.legPhase || 0);
     
     // Draw 4 mechanical legs (animated, Raiden military style)
     for (let i = 0; i < 4; i++) {
@@ -987,15 +1047,16 @@ export function drawMechs() {
       state.ctx.fillRect(24, -4, 6, 8);
     }
     
-    // Barrel details
-    state.ctx.strokeStyle = "#2a2a2a";
-    state.ctx.lineWidth = 1;
-    state.ctx.beginPath();
-    state.ctx.moveTo(2, -4);
-    state.ctx.lineTo(20, -4);
-    state.ctx.moveTo(2, 4);
-    state.ctx.lineTo(20, 4);
-    state.ctx.stroke();
+      // Barrel details
+      state.ctx.strokeStyle = "#2a2a2a";
+      state.ctx.lineWidth = 1;
+      state.ctx.beginPath();
+      state.ctx.moveTo(2, -4);
+      state.ctx.lineTo(20, -4);
+      state.ctx.moveTo(2, 4);
+      state.ctx.lineTo(20, 4);
+      state.ctx.stroke();
+    }
 
     state.ctx.restore();
   });
