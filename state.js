@@ -72,7 +72,7 @@ export let goldStar = {
   alive: true,
   collecting: false,
   collectTimer: 0,
-  speed: 2,
+  speed: 3.5,  // Increased from 2 to 3.5 (1.75x faster)
   reflectAvailable: false,
   redPunchLevel: 0,
   blueCannonnLevel: 0,
@@ -255,7 +255,7 @@ export function resetGame() {
   goldStar.alive = true;
   goldStar.collecting = false;
   goldStar.collectTimer = 0;
-  goldStar.speed = 2;
+  goldStar.speed = 3.5;  // Increased from 2 to 3.5 (1.75x faster)
   goldStar.reflectAvailable = false;
   goldStar.redPunchLevel = 0;
   goldStar.blueCannonnLevel = 0;
