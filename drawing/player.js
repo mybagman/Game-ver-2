@@ -1,71 +1,90 @@
 import * as state from '../state.js';
 
-// New 8-bit style player sprite drawing with rotation
+// Raiden-style military fighter jet sprite drawing with rotation
 function drawPlayer8Bit(ctx, player) {
-  // Pixel-art 'canvas' is 9 x 9 logical pixels; scale with player.size
-  const grid = [
-    "001010100", // nose tip
-    "011111110", // upper angled wings
-    "111111111", // full hull
-    "111121111", // cockpit center
-    "011131110", // lower angled wings with accents
-    "001111100", // fuselage taper
-    "001101100", // tail stabilizers
-    "010000010", // dual thruster base
-    "010010010"  // exhaust glow
-  ];
+  // Raiden-inspired sleek military fighter with detailed pixel art
+  const size = player.size || 28;
   
-  const hullColor = player.hullColor || "#88ff88";
-  const accentColor = player.accentColor || "#00e0ff";
-  const cockpitColor = player.cockpitColor || "#ffffff";
-  const exhaustColor = player.exhaustColor || "rgba(255,120,40,0.9)";
-
-  const size = player.size || 24;
-  const pixels = grid.length;
-  const px = Math.max(1, Math.floor(size / pixels));
-  const totalPixelSize = px * pixels;
-  const remainder = Math.max(0, size - totalPixelSize);
-
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   
   // Apply rotation transformation
   ctx.translate(player.x, player.y);
-  ctx.rotate(player.rotation + Math.PI / 2); // +90 degrees because sprite points up by default
-  ctx.translate(-player.x, -player.y);
+  ctx.rotate(player.rotation + Math.PI / 2);
   
-  // Center offset so sprite matches player.x,y center
-  const offsetX = Math.round(player.x - (totalPixelSize + remainder) / 2);
-  const offsetY = Math.round(player.y - (totalPixelSize + remainder) / 2);
-
-  ctx.fillStyle = hullColor;
-
-  for (let gy = 0; gy < pixels; gy++) {
-    const row = grid[gy];
-    for (let gx = 0; gx < row.length; gx++) {
-      const v = row[gx];
-      if (v === "0") continue;
-      
-      let color = hullColor;
-      // cockpit center
-      if (gy >= 2 && gy <= 3 && gx >= 3 && gx <= 5) color = cockpitColor;
-      // accent on wing tips
-      if (gx === 0 || gx === row.length - 1) color = accentColor;
-      // tail/exhaust rows
-      if (gy === 8) color = exhaustColor;
-      
-      ctx.fillStyle = color;
-      const drawX = offsetX + gx * px + Math.floor(remainder / 2);
-      const drawY = offsetY + gy * px + Math.floor(remainder / 2);
-      ctx.fillRect(Math.round(drawX), Math.round(drawY), px, px);
-    }
-  }
+  // Main fuselage (metallic blue-gray)
+  ctx.fillStyle = "#4a6e8a";
+  ctx.fillRect(-size/6, -size/2, size/3, size*0.8);
+  
+  // Nose cone (pointed)
+  ctx.fillStyle = "#5a7e9a";
+  ctx.beginPath();
+  ctx.moveTo(0, -size/2);
+  ctx.lineTo(-size/6, -size/2 + size/8);
+  ctx.lineTo(size/6, -size/2 + size/8);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Main wings (swept back, Raiden style)
+  ctx.fillStyle = "#3a5e7a";
+  // Left wing
+  ctx.beginPath();
+  ctx.moveTo(-size/6, -size/6);
+  ctx.lineTo(-size/2, 0);
+  ctx.lineTo(-size/2.5, size/8);
+  ctx.lineTo(-size/6, 0);
+  ctx.closePath();
+  ctx.fill();
+  // Right wing
+  ctx.beginPath();
+  ctx.moveTo(size/6, -size/6);
+  ctx.lineTo(size/2, 0);
+  ctx.lineTo(size/2.5, size/8);
+  ctx.lineTo(size/6, 0);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Wing weapons pods
+  ctx.fillStyle = "#2a4e6a";
+  ctx.fillRect(-size/2.2, -size/12, size/12, size/4);
+  ctx.fillRect(size/2.2 - size/12, -size/12, size/12, size/4);
+  
+  // Cockpit canopy (glowing cyan)
+  ctx.fillStyle = "#00ccff";
+  ctx.fillRect(-size/8, -size/3, size/4, size/5);
+  ctx.strokeStyle = "#008899";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(-size/8, -size/3, size/4, size/5);
+  
+  // Tail stabilizers
+  ctx.fillStyle = "#3a5e7a";
+  ctx.fillRect(-size/10, size/4, size/5, size/6);
+  
+  // Twin engine exhausts (glowing)
+  const exhaustGlow = 0.7 + Math.sin(Date.now() * 0.01) * 0.3;
+  ctx.fillStyle = `rgba(255, 150, 50, ${exhaustGlow})`;
+  ctx.fillRect(-size/8, size/2.5, size/16, size/8);
+  ctx.fillRect(size/8 - size/16, size/2.5, size/16, size/8);
+  
+  // Panel lines (Raiden detailing)
+  ctx.strokeStyle = "#2a4e6a";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(-size/12, -size/4);
+  ctx.lineTo(-size/12, size/3);
+  ctx.moveTo(size/12, -size/4);
+  ctx.lineTo(size/12, size/3);
+  ctx.stroke();
+  
+  // Nose sensor array (red dot)
+  ctx.fillStyle = "#ff3333";
+  ctx.fillRect(-size/20, -size/2.5, size/10, size/20);
 
   // invulnerability flicker overlay
   if (player.invulnerable) {
     ctx.globalAlpha = 0.6;
     ctx.fillStyle = "rgba(255,255,255,0.12)";
-    ctx.fillRect(offsetX, offsetY, px * pixels + remainder, px * pixels + remainder);
+    ctx.fillRect(-size/2, -size/2, size, size);
     ctx.globalAlpha = 1;
   }
 
