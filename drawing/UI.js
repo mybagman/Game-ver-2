@@ -186,34 +186,32 @@ export function drawUI() {
   const width = state.canvas.width;
   const height = state.canvas.height;
   
-  // === CORNER BRACKETS (Cockpit frame) ===
-  drawCornerBrackets(ctx, 20, 20, width - 40, height - 40, 40);
+  // === CORNER BRACKETS (Cockpit frame) - Made smaller ===
+  drawCornerBrackets(ctx, 20, 20, width - 40, height - 40, 30);
   
-  // === TARGETING RETICLE (Center screen) ===
-  drawTargetingReticle(ctx, width / 2, height / 2, 50);
+  // === CENTER TARGETING RETICLE REMOVED ===
   
   // === SCANLINE OVERLAY ===
   drawScanlines(ctx, width, height);
   
-  // === LEFT SIDE: MOBILE SUIT STATUS PANEL ===
+  // === LEFT SIDE: STATUS PANEL (MOBILE SUIT text removed) ===
   const leftPanelX = 30;
   const leftPanelY = 80;
-  const leftPanelW = 200;
-  const leftPanelH = 180;
+  const leftPanelW = 160;  // Reduced from 200
+  const leftPanelH = 150;  // Reduced from 180
   
   drawAngularPanel(ctx, leftPanelX, leftPanelY, leftPanelW, leftPanelH);
   
-  // Panel title
+  // Panel title (removed "MOBILE SUIT" text)
   ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
-  ctx.font = '12px Orbitron, monospace';
-  ctx.fillText('MOBILE SUIT', leftPanelX + 10, leftPanelY + 18);
-  ctx.fillText('STATUS', leftPanelX + 10, leftPanelY + 32);
+  ctx.font = '11px Orbitron, monospace';  // Slightly smaller font
+  ctx.fillText('STATUS', leftPanelX + 10, leftPanelY + 20);
   
-  // Health bar (vertical)
-  const hbX = leftPanelX + 20;
-  const hbY = leftPanelY + 50;
-  const hbW = 40;
-  const hbH = 100;
+  // Health bar (vertical) - Made smaller
+  const hbX = leftPanelX + 15;
+  const hbY = leftPanelY + 35;
+  const hbW = 32;  // Reduced from 40
+  const hbH = 85;  // Reduced from 100
   
   // Health bar background
   ctx.fillStyle = 'rgba(0, 50, 30, 0.6)';
@@ -267,12 +265,12 @@ export function drawUI() {
     ctx.stroke();
   }
 
-  // Shield bar (vertical, below health)
+  // Shield bar (vertical, below health) - Made smaller
   if (state.player.shieldActive && state.player.maxShieldHealth > 0) {
-    const shbX = leftPanelX + 80;
-    const shbY = leftPanelY + 50;
-    const shbW = 40;
-    const shbH = 100;
+    const shbX = leftPanelX + 60;
+    const shbY = leftPanelY + 35;
+    const shbW = 32;  // Reduced from 40
+    const shbH = 85;  // Reduced from 100
     
     // Shield bar background
     ctx.fillStyle = 'rgba(0, 30, 50, 0.6)';
@@ -310,63 +308,62 @@ export function drawUI() {
     ctx.fillText('SHIELD', shbX + 3, shbY - 8);
   }
   
-  // Lives indicator
+  // Lives indicator - Made smaller
   ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
-  ctx.font = '10px Orbitron, monospace';
-  ctx.fillText('LIVES', leftPanelX + 140, leftPanelY + 55);
+  ctx.font = '9px Orbitron, monospace';
+  ctx.fillText('LIVES', leftPanelX + 105, leftPanelY + 40);
   
   for (let i = 0; i < 5; i++) {
-    const lifeY = leftPanelY + 70 + i * 18;
+    const lifeY = leftPanelY + 55 + i * 15;  // Reduced spacing
     ctx.strokeStyle = i < state.player.lives ? 'rgba(0, 255, 136, 0.8)' : 'rgba(100, 100, 100, 0.3)';
     ctx.fillStyle = i < state.player.lives ? 'rgba(0, 255, 136, 0.3)' : 'rgba(50, 50, 50, 0.2)';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.5;  // Slightly thinner
     
     ctx.beginPath();
-    ctx.moveTo(leftPanelX + 145, lifeY);
-    ctx.lineTo(leftPanelX + 150, lifeY - 5);
-    ctx.lineTo(leftPanelX + 160, lifeY - 5);
-    ctx.lineTo(leftPanelX + 165, lifeY);
-    ctx.lineTo(leftPanelX + 160, lifeY + 5);
-    ctx.lineTo(leftPanelX + 150, lifeY + 5);
+    ctx.moveTo(leftPanelX + 110, lifeY);
+    ctx.lineTo(leftPanelX + 115, lifeY - 4);  // Smaller ship icons
+    ctx.lineTo(leftPanelX + 123, lifeY - 4);
+    ctx.lineTo(leftPanelX + 128, lifeY);
+    ctx.lineTo(leftPanelX + 123, lifeY + 4);
+    ctx.lineTo(leftPanelX + 115, lifeY + 4);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
   }
 
-  // === BOTTOM-LEFT: RADAR ===
-  const radarX = 80;
-  const radarY = height - 100;
-  const radarRadius = 60;
+  // === BOTTOM-LEFT: RADAR - Made smaller ===
+  const radarX = 70;
+  const radarY = height - 85;
+  const radarRadius = 50;  // Reduced from 60
   
   drawRadar(ctx, radarX, radarY, radarRadius);
   
   // Radar label
   ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
-  ctx.font = '10px Orbitron, monospace';
-  ctx.fillText('RADAR', radarX - 20, radarY + radarRadius + 15);
+  ctx.font = '9px Orbitron, monospace';
+  ctx.fillText('RADAR', radarX - 18, radarY + radarRadius + 13);
   
-  // === TOP-RIGHT: WEAPONS SYSTEM PANEL ===
-  const weaponPanelX = width - 230;
+  // === TOP-RIGHT: WEAPONS SYSTEM PANEL - Made smaller ===
+  const weaponPanelX = width - 190;
   const weaponPanelY = 30;
-  const weaponPanelW = 200;
-  const weaponPanelH = 150;
+  const weaponPanelW = 160;  // Reduced from 200
+  const weaponPanelH = 130;  // Reduced from 150
   
   drawAngularPanel(ctx, weaponPanelX, weaponPanelY, weaponPanelW, weaponPanelH);
   
   // Panel title
   ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
-  ctx.font = '12px Orbitron, monospace';
+  ctx.font = '11px Orbitron, monospace';  // Slightly smaller
   ctx.fillText('WEAPONS', weaponPanelX + 10, weaponPanelY + 18);
-  ctx.fillText('SYSTEM', weaponPanelX + 10, weaponPanelY + 32);
   
   // Gold Star status
   ctx.fillStyle = state.goldStar.alive ? 'rgba(255, 200, 50, 0.9)' : 'rgba(255, 50, 50, 0.9)';
-  ctx.font = '10px Orbitron, monospace';
-  ctx.fillText(state.goldStar.alive ? 'GOLD STAR: ACTIVE' : 'GOLD STAR: DOWN', weaponPanelX + 10, weaponPanelY + 50);
+  ctx.font = '9px Orbitron, monospace';
+  ctx.fillText(state.goldStar.alive ? 'GOLD STAR: ACTIVE' : 'GOLD STAR: DOWN', weaponPanelX + 10, weaponPanelY + 40);
   
   // Weapon readouts
-  let weaponY = weaponPanelY + 70;
-  const weaponSpacing = 25;
+  let weaponY = weaponPanelY + 58;
+  const weaponSpacing = 20;  // Reduced from 25
   
   // Red Punch
   if (state.goldStar.redPunchLevel > 0) {
@@ -403,27 +400,27 @@ export function drawUI() {
     ctx.fillText(`LV ${state.player.reflectorLevel}`, weaponPanelX + 140, weaponY);
   }
   
-  // === TOP-CENTER: SCORE/WAVE DISPLAY ===
-  const scorePanelX = width / 2 - 150;
+  // === TOP-CENTER: SCORE/WAVE DISPLAY - Made smaller ===
+  const scorePanelX = width / 2 - 125;
   const scorePanelY = 20;
-  const scorePanelW = 300;
-  const scorePanelH = 50;
+  const scorePanelW = 250;  // Reduced from 300
+  const scorePanelH = 42;  // Reduced from 50
   
   drawAngularPanel(ctx, scorePanelX, scorePanelY, scorePanelW, scorePanelH, 'rgba(0, 255, 136, 0.2)');
   
   // Score
   ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
-  ctx.font = '14px Orbitron, monospace';
-  ctx.fillText(`SCORE: ${state.score}`, scorePanelX + 20, scorePanelY + 20);
+  ctx.font = '12px Orbitron, monospace';  // Slightly smaller
+  ctx.fillText(`SCORE: ${state.score}`, scorePanelX + 18, scorePanelY + 18);
   
   // Wave
-  ctx.fillText(`WAVE: ${state.wave + 1}`, scorePanelX + 180, scorePanelY + 20);
+  ctx.fillText(`WAVE: ${state.wave + 1}`, scorePanelX + 150, scorePanelY + 18);
   
   // Aura level indicator
   if (state.goldStarAura.level > 0) {
     ctx.fillStyle = 'rgba(255, 200, 50, 0.9)';
-    ctx.font = '10px Orbitron, monospace';
-    ctx.fillText(`AURA LV ${state.goldStarAura.level}`, scorePanelX + 110, scorePanelY + 38);
+    ctx.font = '9px Orbitron, monospace';
+    ctx.fillText(`AURA LV ${state.goldStarAura.level}`, scorePanelX + 95, scorePanelY + 34);
   }
 
   // === WAVE TRANSITION BANNER ===
