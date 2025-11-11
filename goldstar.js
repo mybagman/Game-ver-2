@@ -300,10 +300,27 @@ export function updateGoldStar() {
       gs.blueCannonTurretDeployed = false;
       gs.blueCannonTurretDeployTimer = 0;
       
-      // Filter out reflector enemies to avoid shooting at them
-      const nonReflectorEnemies = (state.enemies || []).filter(e => e.type !== "reflector");
-      if (nonReflectorEnemies.length > 0) {
-        const target = nonReflectorEnemies[0];
+      // Target all valid enemies (excluding reflectors, and including mechs, tanks, dropships, walkers)
+      const validTargets = [
+        ...(state.enemies || []).filter(e => e.type !== "reflector"),
+        ...(state.mechs || []),
+        ...(state.tanks || []),
+        ...(state.dropships || []),
+        ...(state.walkers || [])
+      ];
+      
+      if (validTargets.length > 0) {
+        // Pick closest target
+        let closestTarget = null;
+        let minDist = Infinity;
+        for (const t of validTargets) {
+          const dist = Math.hypot((t.x || 0) - (gs.x || 0), (t.y || 0) - (gs.y || 0));
+          if (dist < minDist) {
+            minDist = dist;
+            closestTarget = t;
+          }
+        }
+        const target = closestTarget;
         const dx = (target.x || 0) - (gs.x || 0), dy = (target.y || 0) - (gs.y || 0), mag = Math.hypot(dx, dy) || 1;
         if (gs.blueCannonLevel === 1) safeCall(state.pushBullet, { x: gs.x, y: gs.y, dx: (dx / mag) * 8, dy: (dy / mag) * 8, size: 8, owner: "gold" });
         else if (gs.blueCannonLevel === 2) {

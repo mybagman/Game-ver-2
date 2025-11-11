@@ -95,6 +95,16 @@ export function checkBulletCollisions() {
       }
     }
 
+    for (let di = state.dropships.length - 1; di >= 0; di--) {
+      const dropship = state.dropships[di];
+      if (Math.hypot(b.x - dropship.x, b.y - dropship.y) < 35) {
+        dropship.health -= 10;
+        state.bullets.splice(bi, 1);
+        createExplosion(dropship.x, dropship.y, "orange");
+        break;
+      }
+    }
+
     for (let ei = state.enemies.length-1; ei >= 0; ei--) {
       const e = state.enemies[ei]; if (!e) continue;
 
