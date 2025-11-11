@@ -148,6 +148,12 @@ export function checkBulletCollisions() {
       } else {
         if (Math.hypot(b.x-e.x, b.y-e.y) < (e.size||20)/2) {
           e.health -= (b.owner === "player" ? 10 : 6);
+          
+          // Track damage for blue triangle enemies to reduce speed
+          if (e.type === "triangle") {
+            e.damageTaken = (e.damageTaken || 0) + (b.owner === "player" ? 10 : 6);
+          }
+          
           state.bullets.splice(bi,1);
           if (e.health <= 0) {
             createExplosion(e.x, e.y, e.type === "triangle" ? "cyan" : e.type === "boss" ? "yellow" : e.type === "mini-boss" ? "orange" : "red");

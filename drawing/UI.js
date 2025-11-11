@@ -46,11 +46,107 @@ function drawCornerBrackets(ctx, x, y, width, height, size) {
   ctx.stroke();
 }
 
-// Helper function to draw angular panel (Gundam-style)
+// Helper function to check if a game object overlaps with a UI region
+function checkOverlap(objX, objY, objSize, regionX, regionY, regionW, regionH) {
+  const objRadius = objSize / 2;
+  // Check if object's bounding box overlaps with region
+  return (
+    objX + objRadius > regionX &&
+    objX - objRadius < regionX + regionW &&
+    objY + objRadius > regionY &&
+    objY - objRadius < regionY + regionH
+  );
+}
+
+// Helper function to calculate transparency for a UI region
+function calculateRegionTransparency(regionX, regionY, regionW, regionH) {
+  let hasOverlap = false;
+  
+  // Check player overlap
+  if (checkOverlap(state.player.x, state.player.y, state.player.size, regionX, regionY, regionW, regionH)) {
+    hasOverlap = true;
+  }
+  
+  // Check gold star overlap
+  if (!hasOverlap && state.goldStar.alive && checkOverlap(state.goldStar.x, state.goldStar.y, state.goldStar.size, regionX, regionY, regionW, regionH)) {
+    hasOverlap = true;
+  }
+  
+  // Check enemy overlaps
+  if (!hasOverlap) {
+    for (const e of state.enemies) {
+      if (e && checkOverlap(e.x, e.y, e.size || 30, regionX, regionY, regionW, regionH)) {
+        hasOverlap = true;
+        break;
+      }
+    }
+  }
+  
+  // Check tank overlaps
+  if (!hasOverlap) {
+    for (const tank of state.tanks) {
+      if (tank && checkOverlap(tank.x, tank.y, 30, regionX, regionY, regionW, regionH)) {
+        hasOverlap = true;
+        break;
+      }
+    }
+  }
+  
+  // Check walker overlaps
+  if (!hasOverlap) {
+    for (const walker of state.walkers) {
+      if (walker && checkOverlap(walker.x, walker.y, 30, regionX, regionY, regionW, regionH)) {
+        hasOverlap = true;
+        break;
+      }
+    }
+  }
+  
+  // Check mech overlaps
+  if (!hasOverlap) {
+    for (const mech of state.mechs) {
+      if (mech && checkOverlap(mech.x, mech.y, mech.size || 40, regionX, regionY, regionW, regionH)) {
+        hasOverlap = true;
+        break;
+      }
+    }
+  }
+  
+  // Check dropship overlaps
+  if (!hasOverlap) {
+    for (const dropship of state.dropships) {
+      if (dropship && checkOverlap(dropship.x, dropship.y, dropship.size || 40, regionX, regionY, regionW, regionH)) {
+        hasOverlap = true;
+        break;
+      }
+    }
+  }
+  
+  // Check diamond boss overlaps
+  if (!hasOverlap) {
+    for (const diamond of state.diamonds) {
+      if (diamond && checkOverlap(diamond.x, diamond.y, diamond.size || 50, regionX, regionY, regionW, regionH)) {
+        hasOverlap = true;
+        break;
+      }
+    }
+  }
+  
+  // Return transparency value (0.3 when overlap, 1.0 when no overlap)
+  return hasOverlap ? 0.3 : 1.0;
+}
+
+// Helper function to draw angular panel (Gundam-style) with dynamic transparency
 function drawAngularPanel(ctx, x, y, width, height, color = 'rgba(0, 255, 136, 0.15)') {
   ctx.save();
-  ctx.fillStyle = 'rgba(5, 15, 10, 0.85)';
-  ctx.strokeStyle = color;
+  
+  // Calculate transparency based on overlaps
+  const transparency = calculateRegionTransparency(x, y, width, height);
+  
+  // Adjust colors for transparency
+  const baseAlpha = 0.85 * transparency;
+  ctx.fillStyle = `rgba(5, 15, 10, ${baseAlpha})`;
+  ctx.strokeStyle = color.replace(/[\d.]+\)$/, `${0.15 * transparency})`);
   ctx.lineWidth = 1;
   
   // Angular panel shape
@@ -106,22 +202,22 @@ function drawTargetingReticle(ctx, x, y, radius) {
 }
 
 // Helper function to draw radar mini-map
-function drawRadar(ctx, x, y, radius) {
+function drawRadar(ctx, x, y, radius, transparency = 1.0) {
   ctx.save();
   
   // Radar background
-  ctx.fillStyle = 'rgba(5, 15, 10, 0.9)';
+  ctx.fillStyle = `rgba(5, 15, 10, ${0.9 * transparency})`;
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, Math.PI * 2);
   ctx.fill();
   
   // Radar border
-  ctx.strokeStyle = 'rgba(0, 255, 136, 0.8)';
+  ctx.strokeStyle = `rgba(0, 255, 136, ${0.8 * transparency})`;
   ctx.lineWidth = 2;
   ctx.stroke();
   
   // Range rings
-  ctx.strokeStyle = 'rgba(0, 255, 136, 0.2)';
+  ctx.strokeStyle = `rgba(0, 255, 136, ${0.2 * transparency})`;
   ctx.lineWidth = 1;
   for (let i = 1; i <= 3; i++) {
     ctx.beginPath();
@@ -130,7 +226,7 @@ function drawRadar(ctx, x, y, radius) {
   }
   
   // Center (player)
-  ctx.fillStyle = 'rgba(0, 255, 255, 0.9)';
+  ctx.fillStyle = `rgba(0, 255, 255, ${0.9 * transparency})`;
   ctx.beginPath();
   ctx.arc(x, y, 3, 0, Math.PI * 2);
   ctx.fill();
@@ -144,7 +240,7 @@ function drawRadar(ctx, x, y, radius) {
     const dist = Math.hypot(dx, dy);
     
     if (dist < radius) {
-      ctx.fillStyle = 'rgba(255, 50, 50, 0.8)';
+      ctx.fillStyle = `rgba(255, 50, 50, ${0.8 * transparency})`;
       ctx.beginPath();
       ctx.arc(x + dx, y + dy, 2, 0, Math.PI * 2);
       ctx.fill();
@@ -153,7 +249,7 @@ function drawRadar(ctx, x, y, radius) {
   
   // Rotating scan line
   const scanAngle = (state.frameCount * 0.05) % (Math.PI * 2);
-  ctx.strokeStyle = 'rgba(0, 255, 136, 0.6)';
+  ctx.strokeStyle = `rgba(0, 255, 136, ${0.6 * transparency})`;
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(x, y);
@@ -200,10 +296,13 @@ export function drawUI() {
   const leftPanelW = 160;  // Reduced from 200
   const leftPanelH = 150;  // Reduced from 180
   
+  // Calculate transparency for left panel
+  const leftPanelTransparency = calculateRegionTransparency(leftPanelX, leftPanelY, leftPanelW, leftPanelH);
+  
   drawAngularPanel(ctx, leftPanelX, leftPanelY, leftPanelW, leftPanelH);
   
   // Panel title (removed "MOBILE SUIT" text)
-  ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+  ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * leftPanelTransparency})`;
   ctx.font = '11px Orbitron, monospace';  // Slightly smaller font
   ctx.fillText('STATUS', leftPanelX + 10, leftPanelY + 20);
   
@@ -214,11 +313,11 @@ export function drawUI() {
   const hbH = 85;  // Reduced from 100
   
   // Health bar background
-  ctx.fillStyle = 'rgba(0, 50, 30, 0.6)';
+  ctx.fillStyle = `rgba(0, 50, 30, ${0.6 * leftPanelTransparency})`;
   ctx.fillRect(hbX, hbY, hbW, hbH);
   
   // Health bar border
-  ctx.strokeStyle = 'rgba(0, 255, 136, 0.6)';
+  ctx.strokeStyle = `rgba(0, 255, 136, ${0.6 * leftPanelTransparency})`;
   ctx.lineWidth = 2;
   ctx.strokeRect(hbX, hbY, hbW, hbH);
   
@@ -226,17 +325,17 @@ export function drawUI() {
   const healthRatio = Math.max(0, state.player.health / state.player.maxHealth);
   const healthHeight = hbH * healthRatio;
   
-  // Gradient based on health level
+  // Gradient based on health level (with transparency)
   const healthGrad = ctx.createLinearGradient(hbX, hbY + hbH - healthHeight, hbX, hbY + hbH);
   if (healthRatio > 0.5) {
-    healthGrad.addColorStop(0, 'rgba(0, 255, 136, 0.9)');
-    healthGrad.addColorStop(1, 'rgba(0, 200, 100, 0.9)');
+    healthGrad.addColorStop(0, `rgba(0, 255, 136, ${0.9 * leftPanelTransparency})`);
+    healthGrad.addColorStop(1, `rgba(0, 200, 100, ${0.9 * leftPanelTransparency})`);
   } else if (healthRatio > 0.3) {
-    healthGrad.addColorStop(0, 'rgba(255, 200, 0, 0.9)');
-    healthGrad.addColorStop(1, 'rgba(255, 150, 0, 0.9)');
+    healthGrad.addColorStop(0, `rgba(255, 200, 0, ${0.9 * leftPanelTransparency})`);
+    healthGrad.addColorStop(1, `rgba(255, 150, 0, ${0.9 * leftPanelTransparency})`);
   } else {
-    healthGrad.addColorStop(0, 'rgba(255, 50, 50, 0.9)');
-    healthGrad.addColorStop(1, 'rgba(200, 0, 0, 0.9)');
+    healthGrad.addColorStop(0, `rgba(255, 50, 50, ${0.9 * leftPanelTransparency})`);
+    healthGrad.addColorStop(1, `rgba(200, 0, 0, ${0.9 * leftPanelTransparency})`);
   }
   
   ctx.fillStyle = healthGrad;
@@ -245,18 +344,18 @@ export function drawUI() {
   // Warning light (red when health < 30%)
   if (healthRatio < 0.3) {
     const flashIntensity = Math.sin(state.frameCount * 0.2) * 0.5 + 0.5;
-    ctx.fillStyle = `rgba(255, 50, 50, ${flashIntensity})`;
+    ctx.fillStyle = `rgba(255, 50, 50, ${flashIntensity * leftPanelTransparency})`;
     ctx.beginPath();
     ctx.arc(hbX + hbW + 15, hbY + 10, 6, 0, Math.PI * 2);
     ctx.fill();
     
-    ctx.fillStyle = 'rgba(255, 50, 50, 0.9)';
+    ctx.fillStyle = `rgba(255, 50, 50, ${0.9 * leftPanelTransparency})`;
     ctx.font = '10px Orbitron, monospace';
     ctx.fillText('WARN', hbX + hbW + 30, hbY + 15);
   }
   
   // Technical readout lines
-  ctx.strokeStyle = 'rgba(0, 255, 136, 0.3)';
+  ctx.strokeStyle = `rgba(0, 255, 136, ${0.3 * leftPanelTransparency})`;
   ctx.lineWidth = 1;
   for (let i = 0; i < 5; i++) {
     ctx.beginPath();
@@ -273,11 +372,11 @@ export function drawUI() {
     const shbH = 85;  // Reduced from 100
     
     // Shield bar background
-    ctx.fillStyle = 'rgba(0, 30, 50, 0.6)';
+    ctx.fillStyle = `rgba(0, 30, 50, ${0.6 * leftPanelTransparency})`;
     ctx.fillRect(shbX, shbY, shbW, shbH);
     
     // Shield bar border
-    ctx.strokeStyle = 'rgba(100, 200, 255, 0.6)';
+    ctx.strokeStyle = `rgba(100, 200, 255, ${0.6 * leftPanelTransparency})`;
     ctx.lineWidth = 2;
     ctx.strokeRect(shbX, shbY, shbW, shbH);
     
@@ -286,14 +385,14 @@ export function drawUI() {
     const shieldHeight = shbH * shieldRatio;
     
     const shieldGrad = ctx.createLinearGradient(shbX, shbY + shbH - shieldHeight, shbX, shbY + shbH);
-    shieldGrad.addColorStop(0, 'rgba(100, 200, 255, 0.9)');
-    shieldGrad.addColorStop(1, 'rgba(100, 150, 255, 0.9)');
+    shieldGrad.addColorStop(0, `rgba(100, 200, 255, ${0.9 * leftPanelTransparency})`);
+    shieldGrad.addColorStop(1, `rgba(100, 150, 255, ${0.9 * leftPanelTransparency})`);
     
     ctx.fillStyle = shieldGrad;
     ctx.fillRect(shbX + 2, shbY + shbH - shieldHeight + 2, shbW - 4, shieldHeight - 4);
     
     // Technical readout lines
-    ctx.strokeStyle = 'rgba(100, 200, 255, 0.3)';
+    ctx.strokeStyle = `rgba(100, 200, 255, ${0.3 * leftPanelTransparency})`;
     ctx.lineWidth = 1;
     for (let i = 0; i < 5; i++) {
       ctx.beginPath();
@@ -303,20 +402,20 @@ export function drawUI() {
     }
     
     // Shield label
-    ctx.fillStyle = 'rgba(100, 200, 255, 0.9)';
+    ctx.fillStyle = `rgba(100, 200, 255, ${0.9 * leftPanelTransparency})`;
     ctx.font = '10px Orbitron, monospace';
     ctx.fillText('SHIELD', shbX + 3, shbY - 8);
   }
   
   // Lives indicator - Made smaller
-  ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+  ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * leftPanelTransparency})`;
   ctx.font = '9px Orbitron, monospace';
   ctx.fillText('LIVES', leftPanelX + 105, leftPanelY + 40);
   
   for (let i = 0; i < 5; i++) {
     const lifeY = leftPanelY + 55 + i * 15;  // Reduced spacing
-    ctx.strokeStyle = i < state.player.lives ? 'rgba(0, 255, 136, 0.8)' : 'rgba(100, 100, 100, 0.3)';
-    ctx.fillStyle = i < state.player.lives ? 'rgba(0, 255, 136, 0.3)' : 'rgba(50, 50, 50, 0.2)';
+    ctx.strokeStyle = i < state.player.lives ? `rgba(0, 255, 136, ${0.8 * leftPanelTransparency})` : `rgba(100, 100, 100, ${0.3 * leftPanelTransparency})`;
+    ctx.fillStyle = i < state.player.lives ? `rgba(0, 255, 136, ${0.3 * leftPanelTransparency})` : `rgba(50, 50, 50, ${0.2 * leftPanelTransparency})`;
     ctx.lineWidth = 1.5;  // Slightly thinner
     
     ctx.beginPath();
@@ -335,11 +434,13 @@ export function drawUI() {
   const radarX = 70;
   const radarY = height - 85;
   const radarRadius = 50;  // Reduced from 60
+  const radarRegionSize = radarRadius * 2 + 30;
+  const radarTransparency = calculateRegionTransparency(radarX - radarRadius - 10, radarY - radarRadius - 10, radarRegionSize, radarRegionSize);
   
-  drawRadar(ctx, radarX, radarY, radarRadius);
+  drawRadar(ctx, radarX, radarY, radarRadius, radarTransparency);
   
   // Radar label
-  ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+  ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * radarTransparency})`;
   ctx.font = '9px Orbitron, monospace';
   ctx.fillText('RADAR', radarX - 18, radarY + radarRadius + 13);
   
@@ -348,16 +449,17 @@ export function drawUI() {
   const weaponPanelY = 30;
   const weaponPanelW = 160;  // Reduced from 200
   const weaponPanelH = 130;  // Reduced from 150
+  const weaponPanelTransparency = calculateRegionTransparency(weaponPanelX, weaponPanelY, weaponPanelW, weaponPanelH);
   
   drawAngularPanel(ctx, weaponPanelX, weaponPanelY, weaponPanelW, weaponPanelH);
   
   // Panel title
-  ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+  ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * weaponPanelTransparency})`;
   ctx.font = '11px Orbitron, monospace';  // Slightly smaller
   ctx.fillText('WEAPONS', weaponPanelX + 10, weaponPanelY + 18);
   
   // Gold Star status
-  ctx.fillStyle = state.goldStar.alive ? 'rgba(255, 200, 50, 0.9)' : 'rgba(255, 50, 50, 0.9)';
+  ctx.fillStyle = state.goldStar.alive ? `rgba(255, 200, 50, ${0.9 * weaponPanelTransparency})` : `rgba(255, 50, 50, ${0.9 * weaponPanelTransparency})`;
   ctx.font = '9px Orbitron, monospace';
   ctx.fillText(state.goldStar.alive ? 'GOLD STAR: ACTIVE' : 'GOLD STAR: DOWN', weaponPanelX + 10, weaponPanelY + 40);
   
@@ -367,36 +469,36 @@ export function drawUI() {
   
   // Red Punch
   if (state.goldStar.redPunchLevel > 0) {
-    ctx.fillStyle = 'rgba(255, 100, 100, 0.9)';
+    ctx.fillStyle = `rgba(255, 100, 100, ${0.9 * weaponPanelTransparency})`;
     ctx.fillText(`RED PUNCH`, weaponPanelX + 10, weaponY);
-    ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+    ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * weaponPanelTransparency})`;
     ctx.fillText(`LV ${state.goldStar.redPunchLevel}`, weaponPanelX + 140, weaponY);
     weaponY += weaponSpacing;
   }
   
   // Blue Cannon
   if (state.goldStar.blueCannonLevel > 0) {
-    ctx.fillStyle = 'rgba(100, 200, 255, 0.9)';
+    ctx.fillStyle = `rgba(100, 200, 255, ${0.9 * weaponPanelTransparency})`;
     ctx.fillText(`BLUE CANNON`, weaponPanelX + 10, weaponY);
-    ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+    ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * weaponPanelTransparency})`;
     ctx.fillText(`LV ${state.goldStar.blueCannonLevel}`, weaponPanelX + 140, weaponY);
     weaponY += weaponSpacing;
   }
   
   // Homing Missiles
   if (state.goldStar.homingMissileLevel > 0) {
-    ctx.fillStyle = 'rgba(255, 150, 50, 0.9)';
+    ctx.fillStyle = `rgba(255, 150, 50, ${0.9 * weaponPanelTransparency})`;
     ctx.fillText(`HOMING MSL`, weaponPanelX + 10, weaponY);
-    ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+    ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * weaponPanelTransparency})`;
     ctx.fillText(`LV ${state.goldStar.homingMissileLevel}`, weaponPanelX + 140, weaponY);
     weaponY += weaponSpacing;
   }
   
   // Reflector system
   if (state.player.reflectorLevel > 0) {
-    ctx.fillStyle = 'rgba(100, 200, 255, 0.9)';
+    ctx.fillStyle = `rgba(100, 200, 255, ${0.9 * weaponPanelTransparency})`;
     ctx.fillText(`REFLECTOR`, weaponPanelX + 10, weaponY);
-    ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+    ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * weaponPanelTransparency})`;
     ctx.fillText(`LV ${state.player.reflectorLevel}`, weaponPanelX + 140, weaponY);
   }
   
@@ -405,11 +507,12 @@ export function drawUI() {
   const scorePanelY = 20;
   const scorePanelW = 250;  // Reduced from 300
   const scorePanelH = 42;  // Reduced from 50
+  const scorePanelTransparency = calculateRegionTransparency(scorePanelX, scorePanelY, scorePanelW, scorePanelH);
   
   drawAngularPanel(ctx, scorePanelX, scorePanelY, scorePanelW, scorePanelH, 'rgba(0, 255, 136, 0.2)');
   
   // Score
-  ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+  ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * scorePanelTransparency})`;
   ctx.font = '12px Orbitron, monospace';  // Slightly smaller
   ctx.fillText(`SCORE: ${state.score}`, scorePanelX + 18, scorePanelY + 18);
   
@@ -418,7 +521,7 @@ export function drawUI() {
   
   // Aura level indicator
   if (state.goldStarAura.level > 0) {
-    ctx.fillStyle = 'rgba(255, 200, 50, 0.9)';
+    ctx.fillStyle = `rgba(255, 200, 50, ${0.9 * scorePanelTransparency})`;
     ctx.font = '9px Orbitron, monospace';
     ctx.fillText(`AURA LV ${state.goldStarAura.level}`, scorePanelX + 95, scorePanelY + 34);
   }

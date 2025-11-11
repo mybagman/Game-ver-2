@@ -5,37 +5,114 @@ export function drawEnemies() {
     if (!e) return;
 
     if (e.type === "red-square") { 
+      // 8-bit Kamikaze Fighter Craft (Futuristic Japanese Zero)
+      state.ctx.save();
+      state.ctx.translate(e.x, e.y);
+      
+      // Calculate angle toward player for orientation
+      const dx = state.player.x - e.x;
+      const dy = state.player.y - e.y;
+      const angle = Math.atan2(dy, dx);
+      state.ctx.rotate(angle);
+      
       state.ctx.shadowBlur = 15;
       state.ctx.shadowColor = "red";
-      state.ctx.fillStyle = "red"; 
-      state.ctx.fillRect(e.x-e.size/2, e.y-e.size/2, e.size, e.size);
-      state.ctx.shadowBlur = 0;
-
+      
+      const size = e.size;
       const pulse = Math.sin(state.frameCount * 0.1) * 0.3 + 0.7;
-      state.ctx.strokeStyle = `rgba(255,100,100,${pulse})`;
-      state.ctx.lineWidth = 2;
-      state.ctx.strokeRect(e.x-e.size/2, e.y-e.size/2, e.size, e.size);
-
-      try {
-        const eyeTriggerDist = 140;
-        const dxP = state.player.x - e.x, dyP = state.player.y - e.y, dP = Math.hypot(dxP, dyP);
-        const dxG = state.goldStar.x - e.x, dyG = state.goldStar.y - e.y, dG = Math.hypot(dxG, dyG);
-        let target = null, td = Infinity;
-        if (dP < eyeTriggerDist) { target = {x: state.player.x, y: state.player.y}; td = dP; }
-        if (dG < eyeTriggerDist && dG < td) { target = {x: state.goldStar.x, y: state.goldStar.y}; td = dG; }
-        if (target) {
-          const insideRadius = Math.min(6, e.size/4);
-          const dirX = target.x - e.x, dirY = target.y - e.y;
-          const mag = Math.hypot(dirX, dirY) || 1;
-          const eyeOffset = Math.min(insideRadius, Math.max(2, insideRadius * 0.8));
-          const eyeX = e.x + (dirX / mag) * eyeOffset;
-          const eyeY = e.y + (dirY / mag) * eyeOffset;
-          state.ctx.beginPath();
-          state.ctx.fillStyle = "rgba(160,200,255,0.95)";
-          state.ctx.arc(eyeX, eyeY, 5, 0, Math.PI*2);
-          state.ctx.fill();
-        }
-      } catch (err) {}
+      
+      // Main fuselage (angular, aggressive design)
+      state.ctx.fillStyle = "#8B0000"; // Dark red
+      state.ctx.beginPath();
+      state.ctx.moveTo(size/2, 0); // Nose (pointed right)
+      state.ctx.lineTo(size/6, -size/6);
+      state.ctx.lineTo(-size/3, -size/6);
+      state.ctx.lineTo(-size/2.5, -size/8);
+      state.ctx.lineTo(-size/2.5, size/8);
+      state.ctx.lineTo(-size/3, size/6);
+      state.ctx.lineTo(size/6, size/6);
+      state.ctx.closePath();
+      state.ctx.fill();
+      
+      // Wings (swept back, Zero-style)
+      state.ctx.fillStyle = "#A00000"; // Slightly lighter red
+      
+      // Top wing
+      state.ctx.beginPath();
+      state.ctx.moveTo(size/8, -size/6);
+      state.ctx.lineTo(size/5, -size/2.5);
+      state.ctx.lineTo(-size/8, -size/3);
+      state.ctx.lineTo(-size/6, -size/6);
+      state.ctx.closePath();
+      state.ctx.fill();
+      
+      // Bottom wing
+      state.ctx.beginPath();
+      state.ctx.moveTo(size/8, size/6);
+      state.ctx.lineTo(size/5, size/2.5);
+      state.ctx.lineTo(-size/8, size/3);
+      state.ctx.lineTo(-size/6, size/6);
+      state.ctx.closePath();
+      state.ctx.fill();
+      
+      // Cockpit (glowing red)
+      state.ctx.fillStyle = `rgba(255, 50, 50, ${pulse})`;
+      state.ctx.fillRect(size/8, -size/12, size/6, size/6);
+      
+      // Cockpit canopy detail
+      state.ctx.strokeStyle = `rgba(255, 100, 100, ${pulse})`;
+      state.ctx.lineWidth = 1;
+      state.ctx.strokeRect(size/8, -size/12, size/6, size/6);
+      
+      // Engine exhausts (back of craft)
+      const engineGlow = `rgba(255, 100, 0, ${pulse * 0.8})`;
+      state.ctx.fillStyle = engineGlow;
+      state.ctx.fillRect(-size/2.5, -size/16, size/12, size/8);
+      
+      // Engine flame trail
+      if (Math.random() > 0.5) {
+        state.ctx.fillStyle = `rgba(255, 150, 0, ${pulse * 0.6})`;
+        state.ctx.fillRect(-size/2.5 - size/8, -size/24, size/8, size/12);
+      }
+      
+      // Panel lines (8-bit detailing)
+      state.ctx.strokeStyle = "#600000";
+      state.ctx.lineWidth = 1;
+      state.ctx.beginPath();
+      state.ctx.moveTo(size/6, -size/8);
+      state.ctx.lineTo(-size/4, -size/8);
+      state.ctx.moveTo(size/6, size/8);
+      state.ctx.lineTo(-size/4, size/8);
+      state.ctx.stroke();
+      
+      // Rising sun emblem on fuselage (Japanese Zero homage)
+      const emblemRadius = size/8;
+      state.ctx.fillStyle = `rgba(255, 255, 255, 0.3)`;
+      state.ctx.beginPath();
+      state.ctx.arc(-size/12, 0, emblemRadius, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      state.ctx.fillStyle = `rgba(255, 0, 0, 0.5)`;
+      state.ctx.beginPath();
+      state.ctx.arc(-size/12, 0, emblemRadius * 0.6, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Outline glow
+      state.ctx.shadowBlur = 0;
+      state.ctx.strokeStyle = `rgba(255, 100, 100, ${pulse})`;
+      state.ctx.lineWidth = 1.5;
+      state.ctx.beginPath();
+      state.ctx.moveTo(size/2, 0);
+      state.ctx.lineTo(size/6, -size/6);
+      state.ctx.lineTo(-size/3, -size/6);
+      state.ctx.lineTo(-size/2.5, -size/8);
+      state.ctx.lineTo(-size/2.5, size/8);
+      state.ctx.lineTo(-size/3, size/6);
+      state.ctx.lineTo(size/6, size/6);
+      state.ctx.closePath();
+      state.ctx.stroke();
+      
+      state.ctx.restore();
     }
     else if (e.type === "triangle") { 
       // 8-bit TIE Fighter design
@@ -439,16 +516,117 @@ export function drawMechs() {
       state.ctx.restore();
     }
 
-    state.ctx.fillStyle = "rgba(150,50,50,0.9)";
-    state.ctx.beginPath();
-    state.ctx.arc(0, 0, mech.size/2, 0, Math.PI * 2);
-    state.ctx.fill();
-
+    // 8-bit Spider Bot with Howitzer
+    const legPhase = (mech.legPhase || 0);
+    
+    // Draw 4 mechanical legs (animated)
     for (let i = 0; i < 4; i++) {
-      const angle = (i / 4) * Math.PI * 2 + state.frameCount * 0.02;
-      state.ctx.fillStyle = "rgba(200,100,100,0.9)";
-      state.ctx.fillRect(Math.cos(angle) * 30 - 3, Math.sin(angle) * 30 - 3, 6, 6);
+      const baseAngle = (i / 4) * Math.PI * 2;
+      const legOffset = Math.sin(legPhase + i * Math.PI / 2) * 8;
+      
+      // Leg segments
+      const legBaseX = Math.cos(baseAngle) * (mech.size/3);
+      const legBaseY = Math.sin(baseAngle) * (mech.size/3);
+      const legMidX = Math.cos(baseAngle) * (mech.size/2 + 8) + legOffset * Math.sin(baseAngle);
+      const legMidY = Math.sin(baseAngle) * (mech.size/2 + 8) - legOffset * Math.cos(baseAngle);
+      const legEndX = Math.cos(baseAngle) * (mech.size/2 + 16) + legOffset * 1.5 * Math.sin(baseAngle);
+      const legEndY = Math.sin(baseAngle) * (mech.size/2 + 16) - legOffset * 1.5 * Math.cos(baseAngle);
+      
+      // Draw leg segments
+      state.ctx.strokeStyle = "rgba(100, 100, 100, 0.9)";
+      state.ctx.lineWidth = 3;
+      state.ctx.lineCap = "round";
+      
+      // Upper leg segment
+      state.ctx.beginPath();
+      state.ctx.moveTo(legBaseX, legBaseY);
+      state.ctx.lineTo(legMidX, legMidY);
+      state.ctx.stroke();
+      
+      // Lower leg segment
+      state.ctx.strokeStyle = "rgba(80, 80, 80, 0.9)";
+      state.ctx.lineWidth = 2;
+      state.ctx.beginPath();
+      state.ctx.moveTo(legMidX, legMidY);
+      state.ctx.lineTo(legEndX, legEndY);
+      state.ctx.stroke();
+      
+      // Leg joints
+      state.ctx.fillStyle = "rgba(120, 120, 120, 0.9)";
+      state.ctx.beginPath();
+      state.ctx.arc(legBaseX, legBaseY, 3, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      state.ctx.beginPath();
+      state.ctx.arc(legMidX, legMidY, 2.5, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Foot
+      state.ctx.fillStyle = "rgba(60, 60, 60, 0.9)";
+      state.ctx.fillRect(legEndX - 2, legEndY - 1, 4, 2);
     }
+    
+    // Central torso/body (octagonal)
+    state.ctx.fillStyle = "rgba(150, 50, 50, 0.9)";
+    state.ctx.strokeStyle = "rgba(200, 100, 100, 0.9)";
+    state.ctx.lineWidth = 2;
+    
+    state.ctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const x = Math.cos(angle) * mech.size/2.5;
+      const y = Math.sin(angle) * mech.size/2.5;
+      if (i === 0) state.ctx.moveTo(x, y);
+      else state.ctx.lineTo(x, y);
+    }
+    state.ctx.closePath();
+    state.ctx.fill();
+    state.ctx.stroke();
+    
+    // Torso details (panel lines)
+    state.ctx.strokeStyle = "rgba(100, 30, 30, 0.7)";
+    state.ctx.lineWidth = 1;
+    state.ctx.beginPath();
+    state.ctx.moveTo(-mech.size/4, -mech.size/4);
+    state.ctx.lineTo(mech.size/4, mech.size/4);
+    state.ctx.moveTo(mech.size/4, -mech.size/4);
+    state.ctx.lineTo(-mech.size/4, mech.size/4);
+    state.ctx.stroke();
+    
+    // Howitzer cannon mounted on torso
+    const cannonAngle = Math.atan2(state.player.y - mech.y, state.player.x - mech.x);
+    state.ctx.rotate(cannonAngle);
+    
+    // Cannon base turret
+    state.ctx.fillStyle = "rgba(100, 100, 100, 0.95)";
+    state.ctx.fillRect(-6, -6, 12, 12);
+    
+    // Cannon barrel (howitzer style - thick and short)
+    state.ctx.fillStyle = "rgba(80, 80, 80, 0.95)";
+    state.ctx.fillRect(0, -4, 20, 8);
+    
+    // Cannon muzzle
+    state.ctx.fillStyle = "rgba(60, 60, 60, 0.95)";
+    state.ctx.fillRect(18, -5, 4, 10);
+    
+    // Muzzle glow when about to shoot
+    if (mech.shootTimer && mech.shootTimer > 50) {
+      const chargeIntensity = (mech.shootTimer - 50) / 10;
+      state.ctx.fillStyle = `rgba(255, 100, 0, ${chargeIntensity * 0.8})`;
+      state.ctx.beginPath();
+      state.ctx.arc(22, 0, 3, 0, Math.PI * 2);
+      state.ctx.fill();
+    }
+    
+    // Cannon detail lines
+    state.ctx.strokeStyle = "rgba(60, 60, 60, 0.9)";
+    state.ctx.lineWidth = 1;
+    state.ctx.beginPath();
+    state.ctx.moveTo(4, -3);
+    state.ctx.lineTo(16, -3);
+    state.ctx.moveTo(4, 3);
+    state.ctx.lineTo(16, 3);
+    state.ctx.stroke();
 
     state.ctx.restore();
   });
