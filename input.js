@@ -9,6 +9,12 @@ const DASH_SPEED_MULTIPLIER = 2.5; // 2.5x normal speed
 export function setupInputHandlers() {
   window.addEventListener("keydown", (e) => {
     const key = e.key.toLowerCase();
+    
+    // Ignore key repeat events to prevent held keys from triggering dash
+    if (e.repeat) {
+      return;
+    }
+    
     if (key === "r") {
       if (state.gameOver) {
         resetGame();
