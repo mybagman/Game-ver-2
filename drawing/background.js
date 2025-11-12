@@ -393,15 +393,421 @@ function drawDeathStar(scale, x, y) {
   }
 }
 
+// =====================================================
+// ARC TWO: DEATH STAR BACKGROUNDS FOR WAVES 7-11 (indices 6-10)
+// =====================================================
+
+// Waves 7-8 (indices 6-7): Death Star Orbit
+function drawDeathStarOrbit() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Deep space with Death Star dominating the view
+  const spaceGradient = ctx.createLinearGradient(0, 0, 0, height);
+  spaceGradient.addColorStop(0, "#000814");
+  spaceGradient.addColorStop(0.5, "#001a2e");
+  spaceGradient.addColorStop(1, "#000814");
+  ctx.fillStyle = spaceGradient;
+  ctx.fillRect(0, 0, width, height);
+  
+  // Starfield for space atmosphere
+  drawStarfield(65, 0.7);
+  
+  // Massive Death Star taking up significant screen space
+  drawDeathStar(0.85, width * 0.6, height * 0.45);
+  
+  // Add some orbital debris and fighters for battle atmosphere
+  drawOrbitalDebris();
+}
+
+// Wave 9 (index 8): Entrance to the Core
+function drawDeathStarEntrance() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Darker space with focus on the entrance
+  const spaceGradient = ctx.createLinearGradient(0, 0, 0, height);
+  spaceGradient.addColorStop(0, "#000510");
+  spaceGradient.addColorStop(0.5, "#001520");
+  spaceGradient.addColorStop(1, "#000510");
+  ctx.fillStyle = spaceGradient;
+  ctx.fillRect(0, 0, width, height);
+  
+  // Sparse starfield (entering the station)
+  drawStarfield(40, 0.5);
+  
+  // Draw the entrance gateway/tunnel mouth
+  drawEntranceGateway();
+}
+
+// Wave 10 (index 9): Journey to the Core
+function drawCoreJourney() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Dark interior with tech lighting
+  const gradient = ctx.createLinearGradient(0, 0, 0, height);
+  gradient.addColorStop(0, "#0a0a15");
+  gradient.addColorStop(0.5, "#15151f");
+  gradient.addColorStop(1, "#0a0a15");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+  
+  // Interior corridor/tunnel walls
+  drawInteriorCorridor();
+  
+  // Tech panel lighting
+  drawTechPanels();
+}
+
+// Wave 11 (index 10): The Core - Diamond Boss Chamber
+function drawCoreChamber() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Epic core chamber with energy glow
+  const gradient = ctx.createRadialGradient(width * 0.5, height * 0.5, 0, width * 0.5, height * 0.5, width * 0.7);
+  gradient.addColorStop(0, "#1a0f2e");
+  gradient.addColorStop(0.3, "#0f0820");
+  gradient.addColorStop(0.7, "#050510");
+  gradient.addColorStop(1, "#000000");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+  
+  // Core reactor glow
+  drawReactorCore();
+  
+  // Energy conduits and panels
+  drawEnergyConduits();
+  
+  // Dramatic lighting effects
+  drawCoreLighting();
+}
+
+// Helper: Draw orbital debris for battle atmosphere
+function drawOrbitalDebris() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Small debris and wreckage pieces
+  const debrisCount = 12;
+  for (let i = 0; i < debrisCount; i++) {
+    const x = ((i * 211.7) % width);
+    const y = ((i * 97.3) % height);
+    const size = ((i * 7) % 8) + 3;
+    const alpha = ((i * 13) % 30) + 20;
+    
+    ctx.fillStyle = `rgba(120, 120, 140, ${alpha / 100})`;
+    ctx.fillRect(x, y, size, size);
+    
+    // Some glowing pieces (damaged fighters)
+    if (i % 3 === 0) {
+      ctx.fillStyle = `rgba(255, 100, 50, ${alpha / 150})`;
+      ctx.fillRect(x + size * 0.3, y + size * 0.3, size * 0.4, size * 0.4);
+    }
+  }
+}
+
+// Helper: Draw entrance gateway/tunnel mouth
+function drawEntranceGateway() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Large circular entrance in center
+  const entranceX = width * 0.5;
+  const entranceY = height * 0.5;
+  const entranceRadius = Math.min(width, height) * 0.35;
+  
+  // Entrance glow (energy shield effect)
+  const glowGradient = ctx.createRadialGradient(entranceX, entranceY, entranceRadius * 0.5, entranceX, entranceY, entranceRadius * 1.2);
+  glowGradient.addColorStop(0, "rgba(50, 100, 200, 0.3)");
+  glowGradient.addColorStop(0.7, "rgba(30, 60, 150, 0.15)");
+  glowGradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = glowGradient;
+  ctx.fillRect(0, 0, width, height);
+  
+  // Entrance ring structure (16-bit metallic)
+  ctx.strokeStyle = "#4a5563";
+  ctx.lineWidth = 12;
+  ctx.beginPath();
+  ctx.arc(entranceX, entranceY, entranceRadius, 0, Math.PI * 2);
+  ctx.stroke();
+  
+  // Inner ring detail
+  ctx.strokeStyle = "#6b7280";
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.arc(entranceX, entranceY, entranceRadius * 0.9, 0, Math.PI * 2);
+  ctx.stroke();
+  
+  // Structural supports (8 radial lines)
+  ctx.strokeStyle = "#374151";
+  ctx.lineWidth = 4;
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(entranceX + Math.cos(angle) * entranceRadius * 0.8, entranceY + Math.sin(angle) * entranceRadius * 0.8);
+    ctx.lineTo(entranceX + Math.cos(angle) * entranceRadius * 1.1, entranceY + Math.sin(angle) * entranceRadius * 1.1);
+    ctx.stroke();
+  }
+  
+  // Panel lights around entrance
+  ctx.fillStyle = "rgba(100, 150, 255, 0.6)";
+  for (let i = 0; i < 16; i++) {
+    const angle = (i / 16) * Math.PI * 2;
+    const px = entranceX + Math.cos(angle) * entranceRadius * 1.05;
+    const py = entranceY + Math.sin(angle) * entranceRadius * 1.05;
+    ctx.fillRect(px - 3, py - 3, 6, 6);
+  }
+}
+
+// Helper: Draw interior corridor walls
+function drawInteriorCorridor() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Perspective corridor walls (left and right)
+  const vanishingPointX = width * 0.5;
+  const vanishingPointY = height * 0.4;
+  
+  // Left wall
+  ctx.fillStyle = "#1a1a25";
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(vanishingPointX - 150, vanishingPointY);
+  ctx.lineTo(vanishingPointX - 150, height);
+  ctx.lineTo(0, height);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Right wall
+  ctx.fillStyle = "#1a1a25";
+  ctx.beginPath();
+  ctx.moveTo(width, 0);
+  ctx.lineTo(vanishingPointX + 150, vanishingPointY);
+  ctx.lineTo(vanishingPointX + 150, height);
+  ctx.lineTo(width, height);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Wall panel lines (left)
+  ctx.strokeStyle = "#2a2a35";
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 8; i++) {
+    const y = (i / 8) * height;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(vanishingPointX - 150, vanishingPointY + (y - vanishingPointY) * 0.5);
+    ctx.stroke();
+  }
+  
+  // Wall panel lines (right)
+  for (let i = 0; i < 8; i++) {
+    const y = (i / 8) * height;
+    ctx.beginPath();
+    ctx.moveTo(width, y);
+    ctx.lineTo(vanishingPointX + 150, vanishingPointY + (y - vanishingPointY) * 0.5);
+    ctx.stroke();
+  }
+}
+
+// Helper: Draw tech panels with lights
+function drawTechPanels() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Panel lights on left wall
+  for (let i = 0; i < 10; i++) {
+    const x = 30 + (i * 5);
+    const y = 50 + i * 60;
+    const size = 8;
+    
+    // Alternating colors
+    const color = (i % 2 === 0) ? "rgba(50, 150, 255, 0.7)" : "rgba(255, 50, 50, 0.6)";
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, size, size);
+    
+    // Glow effect
+    ctx.fillStyle = color.replace(/0\.\d/, "0.2");
+    ctx.fillRect(x - 2, y - 2, size + 4, size + 4);
+  }
+  
+  // Panel lights on right wall
+  for (let i = 0; i < 10; i++) {
+    const x = width - 50 - (i * 5);
+    const y = 50 + i * 60;
+    const size = 8;
+    
+    const color = (i % 2 === 0) ? "rgba(50, 255, 150, 0.7)" : "rgba(255, 150, 50, 0.6)";
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, size, size);
+    
+    ctx.fillStyle = color.replace(/0\.\d/, "0.2");
+    ctx.fillRect(x - 2, y - 2, size + 4, size + 4);
+  }
+}
+
+// Helper: Draw reactor core for boss chamber
+function drawReactorCore() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  const coreX = width * 0.5;
+  const coreY = height * 0.5;
+  const coreSize = Math.min(width, height) * 0.15;
+  
+  // Pulsing energy core (center)
+  const pulse = Math.sin(state.frameCount * 0.05) * 0.2 + 0.8;
+  
+  // Outer glow
+  const glowGradient = ctx.createRadialGradient(coreX, coreY, 0, coreX, coreY, coreSize * 3);
+  glowGradient.addColorStop(0, `rgba(150, 50, 255, ${0.4 * pulse})`);
+  glowGradient.addColorStop(0.5, `rgba(100, 30, 200, ${0.2 * pulse})`);
+  glowGradient.addColorStop(1, "rgba(50, 0, 100, 0)");
+  ctx.fillStyle = glowGradient;
+  ctx.fillRect(0, 0, width, height);
+  
+  // Core sphere
+  const coreGradient = ctx.createRadialGradient(coreX - coreSize * 0.2, coreY - coreSize * 0.2, 0, coreX, coreY, coreSize);
+  coreGradient.addColorStop(0, `rgba(255, 200, 255, ${pulse})`);
+  coreGradient.addColorStop(0.5, `rgba(200, 100, 255, ${pulse * 0.9})`);
+  coreGradient.addColorStop(1, `rgba(150, 50, 200, ${pulse * 0.7})`);
+  ctx.fillStyle = coreGradient;
+  ctx.beginPath();
+  ctx.arc(coreX, coreY, coreSize * pulse, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Energy ring
+  ctx.strokeStyle = `rgba(200, 100, 255, ${0.8 * pulse})`;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(coreX, coreY, coreSize * 1.5 * pulse, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+// Helper: Draw energy conduits
+function drawEnergyConduits() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  const coreX = width * 0.5;
+  const coreY = height * 0.5;
+  
+  // 4 main conduits extending from core
+  const conduits = [
+    { angle: 0, color: "rgba(100, 200, 255, 0.4)" },
+    { angle: Math.PI / 2, color: "rgba(255, 100, 200, 0.4)" },
+    { angle: Math.PI, color: "rgba(100, 255, 200, 0.4)" },
+    { angle: (Math.PI * 3) / 2, color: "rgba(255, 200, 100, 0.4)" }
+  ];
+  
+  conduits.forEach(conduit => {
+    const length = Math.min(width, height) * 0.4;
+    const endX = coreX + Math.cos(conduit.angle) * length;
+    const endY = coreY + Math.sin(conduit.angle) * length;
+    
+    // Main conduit line
+    ctx.strokeStyle = conduit.color;
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(coreX, coreY);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+    
+    // Glow effect
+    ctx.strokeStyle = conduit.color.replace(/0\.\d/, "0.2");
+    ctx.lineWidth = 16;
+    ctx.stroke();
+    
+    // Terminal nodes
+    ctx.fillStyle = conduit.color;
+    ctx.fillRect(endX - 6, endY - 6, 12, 12);
+  });
+}
+
+// Helper: Draw dramatic core lighting
+function drawCoreLighting() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Scattered light panels around the chamber
+  const panelCount = 20;
+  for (let i = 0; i < panelCount; i++) {
+    const x = ((i * 137.5) % width);
+    const y = ((i * 73.3) % height);
+    const size = ((i * 5) % 8) + 4;
+    const alpha = ((i * 17) % 40) + 30;
+    
+    // Different colored lights
+    let color;
+    if (i % 3 === 0) {
+      color = `rgba(100, 150, 255, ${alpha / 100})`;
+    } else if (i % 3 === 1) {
+      color = `rgba(255, 100, 150, ${alpha / 100})`;
+    } else {
+      color = `rgba(150, 255, 100, ${alpha / 100})`;
+    }
+    
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, size, size);
+    
+    // Light rays
+    if (i % 5 === 0) {
+      ctx.fillStyle = color.replace(/0\.\d+\)/, "0.1)");
+      ctx.fillRect(x - size, y, size * 3, 2);
+    }
+  }
+}
+
 export function drawBackground(waveNum) {
-  // NEW: Space backgrounds for waves 1-6 (Approaching Death Star Arc)
+  // Arc One: Space backgrounds for waves 1-6 (Approaching Death Star)
   if (waveNum >= 0 && waveNum <= 5) {
     drawSpaceBackground(waveNum);
     state.incrementBackgroundOffset(0.5);
     return;
   }
   
-  // ORIGINAL: Desert sky background for waves 7+ (warm desert atmosphere)
+  // Arc Two: Death Star backgrounds for waves 7-11 (Battle for the Death Star)
+  if (waveNum === 6 || waveNum === 7) {
+    // Waves 7-8: Death Star Orbit
+    drawDeathStarOrbit();
+    state.incrementBackgroundOffset(0.5);
+    return;
+  }
+  
+  if (waveNum === 8) {
+    // Wave 9: Entrance to the Core
+    drawDeathStarEntrance();
+    state.incrementBackgroundOffset(0.5);
+    return;
+  }
+  
+  if (waveNum === 9) {
+    // Wave 10: Journey to the Core
+    drawCoreJourney();
+    state.incrementBackgroundOffset(0.5);
+    return;
+  }
+  
+  if (waveNum === 10) {
+    // Wave 11: The Core - Diamond Boss Battle
+    drawCoreChamber();
+    state.incrementBackgroundOffset(0.5);
+    return;
+  }
+  
+  // ORIGINAL: Desert sky background for waves 12+ (warm desert atmosphere)
   const skyGradient = state.ctx.createLinearGradient(0, 0, 0, state.canvas.height * 0.7);
   skyGradient.addColorStop(0, "#87ceeb"); // Sky blue at top
   skyGradient.addColorStop(0.6, "#e8d4a0"); // Hazy horizon
