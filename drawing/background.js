@@ -86,15 +86,16 @@ export function drawClouds() {
   });
 }
 
-export function drawCityBackground() {
-  state.ctx.fillStyle = "rgba(20,20,30,0.8)";
-  // Reduced from 20 to 10 buildings for better performance
-  for (let i = 0; i < 10; i++) {
-    const x = i * (state.canvas.width / 10);
-    const height = 100 + Math.sin(i) * 50;
-    state.ctx.fillRect(x, state.canvas.height - height, state.canvas.width / 10 - 5, height);
-  }
-}
+// City background removed - no longer used in game
+// export function drawCityBackground() {
+//   state.ctx.fillStyle = "rgba(20,20,30,0.8)";
+//   // Reduced from 20 to 10 buildings for better performance
+//   for (let i = 0; i < 10; i++) {
+//     const x = i * (state.canvas.width / 10);
+//     const height = 100 + Math.sin(i) * 50;
+//     state.ctx.fillRect(x, state.canvas.height - height, state.canvas.width / 10 - 5, height);
+//   }
+// }
 
 // NEW: Desert landscape that persists across all waves
 export function drawDesertGround() {
@@ -136,7 +137,14 @@ export function drawDesertGround() {
 
 export function drawGroundObjects() {
   // Draw ground collision objects (buildings/terrain)
+  // Added defensive check for empty arrays
+  if (!state.groundObjects || state.groundObjects.length === 0) {
+    return; // Safely handle empty arrays
+  }
+  
   state.groundObjects.forEach(ground => {
+    if (!ground) return; // Skip null/undefined objects
+    
     state.ctx.save();
     
     // Building with 8-bit aesthetic
