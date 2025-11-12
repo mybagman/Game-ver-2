@@ -49,7 +49,8 @@ export let lastDeathWave = 0;
 
 export let cinematic = {
   playing: false,
-  playerName: "Pilot"
+  playerName: "Ghost",
+  openingPlayed: false // Track if opening cinematic has been shown
 };
 
 export let player = {

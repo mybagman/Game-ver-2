@@ -235,18 +235,41 @@ window.addEventListener('load', () => {
   // initialize game data - keep compatibility if game.js provides loadHighScores()
   typeof loadHighScores === 'function' && loadHighScores();
   typeof ensureCanvas === 'function' && ensureCanvas();
-  respawnPlayer();
-  respawnGoldStar();
-  currentWave = 0;
-  spawnWave(0);
-  typeof setupInputHandlers === 'function' && setupInputHandlers();
-
-  // inject overlay into DOM so the single page can show it when needed
-  injectOverlay();
-  wireOverlayButtons();
-
-  // start render loop
-  requestAnimationFrame(gameLoop);
+  
+  // Import state and cinematic modules
+  import('./state.js').then(stateModule => {
+    import('./openingCinematic.js').then(cinematicModule => {
+      // Check if opening cinematic has been played
+      if (!stateModule.cinematic.openingPlayed) {
+        // Start with opening cinematic
+        stateModule.cinematic.playing = true;
+        cinematicModule.startOpeningCinematic();
+        
+        // Set player name from cinematic
+        stateModule.cinematic.playerName = "Ghost";
+        
+        // Initialize player and gold star but don't spawn wave yet
+        respawnPlayer();
+        respawnGoldStar();
+        currentWave = 0;
+      } else {
+        // If already played (e.g., on restart), start at Wave 0
+        respawnPlayer();
+        respawnGoldStar();
+        currentWave = 0;
+        spawnWave(0);
+      }
+      
+      typeof setupInputHandlers === 'function' && setupInputHandlers();
+      
+      // inject overlay into DOM so the single page can show it when needed
+      injectOverlay();
+      wireOverlayButtons();
+      
+      // start render loop
+      requestAnimationFrame(gameLoop);
+    });
+  });
 });
 
 /* ---------------------------
