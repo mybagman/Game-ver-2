@@ -64,9 +64,29 @@ export function updateDiamond(d) {
       d.releaseTimer = 0;
       d.releaseCooldown = d.releaseCooldownMax;
     }
+    
+    // Laser shooting mechanics for Wave 11 (Death Star Core Boss)
+    d.laserShootTimer = (d.laserShootTimer || 0) + 1;
+    if (d.laserShootTimer > 180) {
+      d.laserShootTimer = 0;
+      // Shoot 4 lasers in cardinal directions toward player
+      const angleToPlayer = Math.atan2(state.player.y - d.y, state.player.x - d.x);
+      for (let i = 0; i < 4; i++) {
+        const angle = angleToPlayer + (i / 4) * Math.PI * 2;
+        state.pushLightning({
+          x: d.x,
+          y: d.y,
+          dx: Math.cos(angle) * 6,
+          dy: Math.sin(angle) * 6,
+          size: 10,
+          damage: 25
+        });
+      }
+    }
   } else {
     d.releaseTimer = 0;
     d.releaseCooldown = d.releaseCooldown || 0;
+    d.laserShootTimer = 0;
   }
   if (d.releaseCooldown > 0) d.releaseCooldown--;
 
