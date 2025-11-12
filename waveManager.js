@@ -111,17 +111,32 @@ export function renderCinematic(ctx, width, height) {
   
   // Check if cinematic is complete
   if (cinematicState.frame >= cinematicState.totalFrames) {
+    // Clean up cinematic-specific data
+    if (cinematicState.explosions) {
+      cinematicState.explosions = [];
+    }
+    if (cinematicState.enemies) {
+      cinematicState.enemies = [];
+    }
+    
     cinematicState.active = false;
     cinematicState.type = null;
     cinematicState.frame = 0;
     state.cinematic.playing = false;
+    
+    // Advance to next wave immediately after cinematic completes
+    state.incrementWave();
+    if (state.wave < waves.length) {
+      spawnWave(state.wave);
+    }
+    
     return false;
   }
   
   return true; // Still playing
 }
 
-// Death Star explosion sequence
+// Death Star explosion sequence - horizontal escape with explosions behind
 function renderDeathStarExplosion(ctx, width, height) {
   const progress = cinematicState.frame / cinematicState.totalFrames;
   
@@ -129,92 +144,122 @@ function renderDeathStarExplosion(ctx, width, height) {
   ctx.fillStyle = "#000000";
   ctx.fillRect(0, 0, width, height);
   
-  // Death Star in center (first half of animation)
-  if (progress < 0.5) {
-    const deathStarProgress = progress * 2;
-    const deathStarSize = 200 - (deathStarProgress * 50);
-    const deathStarX = width / 2;
-    const deathStarY = height / 2;
-    
-    // Flash effect as it starts exploding
-    if (progress > 0.3) {
-      const flashIntensity = Math.sin((progress - 0.3) * 40) * 0.5 + 0.5;
-      ctx.fillStyle = `rgba(255, 255, 255, ${flashIntensity * 0.3})`;
-      ctx.beginPath();
-      ctx.arc(deathStarX, deathStarY, deathStarSize * 1.5, 0, Math.PI * 2);
-      ctx.fill();
+  // Draw starfield for depth
+  for (let i = 0; i < 100; i++) {
+    const x = (i * 137.5) % width;
+    const y = (i * 217.3) % height;
+    const size = 1 + (i % 3);
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + (i % 5) * 0.1})`;
+    ctx.fillRect(x, y, size, size);
+  }
+  
+  // Player and gold star moving horizontally from left to right
+  const startX = -50;
+  const endX = width + 50;
+  const travelDistance = endX - startX;
+  const currentX = startX + (progress * travelDistance);
+  
+  const playerY = height / 2 - 30;
+  const goldStarY = height / 2 + 30;
+  
+  // Draw explosion effects behind them at intervals
+  const explosionInterval = 15; // frames between explosions
+  if (cinematicState.frame % explosionInterval === 0 && progress < 0.9) {
+    // Store explosion data in cinematicState if not exists
+    if (!cinematicState.explosions) {
+      cinematicState.explosions = [];
     }
     
-    // Death Star body (cracking)
-    const gradient = ctx.createRadialGradient(deathStarX, deathStarY, 0, deathStarX, deathStarY, deathStarSize);
-    gradient.addColorStop(0, '#9ca3af');
-    gradient.addColorStop(0.7, '#6b7280');
-    gradient.addColorStop(1, '#374151');
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(deathStarX, deathStarY, deathStarSize, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Cracks appearing
-    if (progress > 0.2) {
-      ctx.strokeStyle = `rgba(255, 150, 50, ${(progress - 0.2) * 3})`;
-      ctx.lineWidth = 3;
-      for (let i = 0; i < 8; i++) {
-        const angle = (i / 8) * Math.PI * 2;
+    // Add new explosion at current position
+    cinematicState.explosions.push({
+      x: currentX - 40,
+      y: height / 2 + (Math.random() - 0.5) * 100,
+      frame: 0,
+      maxFrames: 40
+    });
+  }
+  
+  // Update and draw all explosions
+  if (cinematicState.explosions) {
+    for (let i = cinematicState.explosions.length - 1; i >= 0; i--) {
+      const explosion = cinematicState.explosions[i];
+      explosion.frame++;
+      
+      const expProgress = explosion.frame / explosion.maxFrames;
+      const radius = 20 + (expProgress * 60);
+      const alpha = 1 - expProgress;
+      
+      // Outer explosion ring
+      ctx.fillStyle = `rgba(255, 150, 50, ${alpha * 0.6})`;
+      ctx.beginPath();
+      ctx.arc(explosion.x, explosion.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Inner bright core
+      ctx.fillStyle = `rgba(255, 255, 200, ${alpha})`;
+      ctx.beginPath();
+      ctx.arc(explosion.x, explosion.y, radius * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Explosion particles
+      const particleCount = 8;
+      for (let p = 0; p < particleCount; p++) {
+        const angle = (p / particleCount) * Math.PI * 2;
+        const dist = expProgress * 80;
+        const px = explosion.x + Math.cos(angle) * dist;
+        const py = explosion.y + Math.sin(angle) * dist;
+        const pSize = 3 * (1 - expProgress);
+        
+        ctx.fillStyle = `rgba(255, 100, 0, ${alpha})`;
         ctx.beginPath();
-        ctx.moveTo(deathStarX, deathStarY);
-        ctx.lineTo(deathStarX + Math.cos(angle) * deathStarSize * 1.2, deathStarY + Math.sin(angle) * deathStarSize * 1.2);
-        ctx.stroke();
+        ctx.arc(px, py, pSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // Remove completed explosions
+      if (explosion.frame >= explosion.maxFrames) {
+        cinematicState.explosions.splice(i, 1);
       }
     }
   }
   
-  // Explosion particles (second half)
-  if (progress > 0.4) {
-    const explosionProgress = (progress - 0.4) / 0.6;
-    const particleCount = 50;
-    
-    for (let i = 0; i < particleCount; i++) {
-      const angle = (i / particleCount) * Math.PI * 2 + (i * 0.3);
-      const speed = 2 + (i % 5) * 0.5;
-      const distance = explosionProgress * speed * 300;
-      const x = width / 2 + Math.cos(angle) * distance;
-      const y = height / 2 + Math.sin(angle) * distance;
-      const size = 8 - (explosionProgress * 6);
-      
-      const alpha = 1 - explosionProgress;
-      ctx.fillStyle = `rgba(255, ${150 - explosionProgress * 100}, 50, ${alpha})`;
+  // Draw player ship (simple representation)
+  ctx.fillStyle = "rgba(100, 200, 255, 0.9)";
+  ctx.save();
+  ctx.translate(currentX - 40, playerY);
+  ctx.rotate(-Math.PI / 2); // Point to the right
+  ctx.beginPath();
+  ctx.moveTo(0, -10);
+  ctx.lineTo(-8, 8);
+  ctx.lineTo(8, 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+  
+  // Engine trail for player
+  if (cinematicState.frame % 2 === 0) {
+    for (let t = 0; t < 3; t++) {
+      const trailX = currentX - 40 - (t * 15);
+      const trailY = playerY + (Math.random() - 0.5) * 8;
+      const trailSize = 4 - t;
+      const trailAlpha = 0.6 - (t * 0.2);
+      ctx.fillStyle = `rgba(100, 200, 255, ${trailAlpha})`;
       ctx.beginPath();
-      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.arc(trailX, trailY, trailSize, 0, Math.PI * 2);
       ctx.fill();
     }
   }
   
-  // Player and gold star escaping (visible throughout)
-  const playerX = width / 2 - 100 + (progress * 50);
-  const playerY = height / 2 + 80 - (progress * 150);
-  
-  const goldStarX = width / 2 + 100 - (progress * 50);
-  const goldStarY = height / 2 + 100 - (progress * 150);
-  
-  // Draw player (simple representation)
-  ctx.fillStyle = "rgba(100, 200, 255, 0.9)";
-  ctx.beginPath();
-  ctx.moveTo(playerX, playerY - 8);
-  ctx.lineTo(playerX - 6, playerY + 6);
-  ctx.lineTo(playerX + 6, playerY + 6);
-  ctx.closePath();
-  ctx.fill();
-  
   // Draw gold star
   ctx.fillStyle = "rgba(255, 200, 50, 0.9)";
   ctx.save();
-  ctx.translate(goldStarX, goldStarY);
+  ctx.translate(currentX + 40, goldStarY);
   ctx.rotate(cinematicState.frame * 0.1);
+  ctx.beginPath();
   for (let i = 0; i < 5; i++) {
     const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
-    const outerRadius = 12;
-    const innerRadius = 6;
+    const outerRadius = 14;
+    const innerRadius = 7;
     ctx.lineTo(Math.cos(angle) * outerRadius, Math.sin(angle) * outerRadius);
     ctx.lineTo(Math.cos(angle + Math.PI / 5) * innerRadius, Math.sin(angle + Math.PI / 5) * innerRadius);
   }
@@ -222,19 +267,33 @@ function renderDeathStarExplosion(ctx, width, height) {
   ctx.fill();
   ctx.restore();
   
+  // Engine trail for gold star
+  if (cinematicState.frame % 2 === 0) {
+    for (let t = 0; t < 3; t++) {
+      const trailX = currentX + 40 - (t * 15);
+      const trailY = goldStarY + (Math.random() - 0.5) * 8;
+      const trailSize = 4 - t;
+      const trailAlpha = 0.6 - (t * 0.2);
+      ctx.fillStyle = `rgba(255, 200, 50, ${trailAlpha})`;
+      ctx.beginPath();
+      ctx.arc(trailX, trailY, trailSize, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  
   // Text overlay
   if (progress > 0.7) {
     const textAlpha = (progress - 0.7) / 0.3;
     ctx.fillStyle = `rgba(255, 255, 255, ${textAlpha})`;
     ctx.font = "bold 32px Orbitron, monospace";
     ctx.textAlign = "center";
-    ctx.fillText("DEATH STAR DESTROYED", width / 2, height / 2 - 100);
+    ctx.fillText("DEATH STAR DESTROYED", width / 2, 60);
     ctx.font = "20px Orbitron, monospace";
-    ctx.fillText("Escaping to safety...", width / 2, height / 2 - 60);
+    ctx.fillText("Escaping to safety...", width / 2, 100);
   }
 }
 
-// Planetfall landing sequence
+// Planetfall landing sequence - diagonal descent from top-left to bottom-right
 function renderPlanetfall(ctx, width, height) {
   const progress = cinematicState.frame / cinematicState.totalFrames;
   
@@ -247,18 +306,168 @@ function renderPlanetfall(ctx, width, height) {
   ctx.fillRect(0, 0, width, height);
   
   // Ground approaching (rises up as we descend)
-  const groundY = height * (1 - progress * 0.4);
+  const groundY = height * (0.7 + progress * 0.3);
   ctx.fillStyle = "#c9984a";
   ctx.fillRect(0, groundY, width, height - groundY);
   
+  // Player and gold star moving diagonally from top-left to bottom-right
+  const startX = width * 0.1;
+  const startY = height * 0.1;
+  const endX = width * 0.9;
+  const endY = height * 0.9;
+  
+  const currentX = startX + (endX - startX) * progress;
+  const currentY = startY + (endY - startY) * progress;
+  
+  const playerX = currentX - 50;
+  const playerY = currentY - 30;
+  const goldStarX = currentX + 50;
+  const goldStarY = currentY + 30;
+  
+  // Spawn enemies along the path
+  if (cinematicState.frame % 20 === 0 && progress < 0.8) {
+    if (!cinematicState.enemies) {
+      cinematicState.enemies = [];
+    }
+    
+    // Add enemy ahead on the path
+    const enemyProgress = progress + 0.15;
+    if (enemyProgress < 1) {
+      cinematicState.enemies.push({
+        x: startX + (endX - startX) * enemyProgress,
+        y: startY + (endY - startY) * enemyProgress + (Math.random() - 0.5) * 100,
+        frame: 0,
+        destroyed: false
+      });
+    }
+  }
+  
+  // Update and draw enemies
+  if (cinematicState.enemies) {
+    for (let i = cinematicState.enemies.length - 1; i >= 0; i--) {
+      const enemy = cinematicState.enemies[i];
+      
+      // Check if player/goldstar have reached enemy (shooting range)
+      const distToPlayer = Math.hypot(playerX - enemy.x, playerY - enemy.y);
+      const distToGoldStar = Math.hypot(goldStarX - enemy.x, goldStarY - enemy.y);
+      
+      if (!enemy.destroyed && (distToPlayer < 100 || distToGoldStar < 100)) {
+        enemy.destroyed = true;
+        enemy.destroyFrame = 0;
+      }
+      
+      if (!enemy.destroyed) {
+        // Draw enemy
+        ctx.fillStyle = "rgba(255, 50, 50, 0.8)";
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Enemy triangle shape
+        ctx.fillStyle = "rgba(200, 0, 0, 0.9)";
+        ctx.save();
+        ctx.translate(enemy.x, enemy.y);
+        ctx.rotate(Math.PI / 4);
+        ctx.beginPath();
+        ctx.moveTo(0, -10);
+        ctx.lineTo(-8, 8);
+        ctx.lineTo(8, 8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      } else {
+        // Draw destruction effect
+        enemy.destroyFrame++;
+        const destroyProgress = enemy.destroyFrame / 20;
+        const radius = 10 + destroyProgress * 30;
+        const alpha = 1 - destroyProgress;
+        
+        // Explosion
+        ctx.fillStyle = `rgba(255, 150, 50, ${alpha * 0.7})`;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = `rgba(255, 255, 200, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, radius * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Remove completed explosions
+        if (enemy.destroyFrame >= 20) {
+          cinematicState.enemies.splice(i, 1);
+        }
+      }
+    }
+  }
+  
+  // Draw gun fire effects
+  if (cinematicState.frame % 8 < 4 && progress < 0.85) {
+    // Player shooting
+    const shootAngle = Math.atan2(endY - startY, endX - startX);
+    for (let b = 0; b < 3; b++) {
+      const bulletDist = b * 20 + 20;
+      const bulletX = playerX + Math.cos(shootAngle) * bulletDist;
+      const bulletY = playerY + Math.sin(shootAngle) * bulletDist;
+      
+      ctx.fillStyle = "rgba(100, 200, 255, 0.9)";
+      ctx.beginPath();
+      ctx.arc(bulletX, bulletY, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    // Gold star shooting
+    for (let b = 0; b < 3; b++) {
+      const bulletDist = b * 20 + 20;
+      const bulletX = goldStarX + Math.cos(shootAngle) * bulletDist;
+      const bulletY = goldStarY + Math.sin(shootAngle) * bulletDist;
+      
+      ctx.fillStyle = "rgba(255, 200, 50, 0.9)";
+      ctx.beginPath();
+      ctx.arc(bulletX, bulletY, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  
+  // Draw player ship
+  ctx.fillStyle = "rgba(100, 200, 255, 0.9)";
+  ctx.save();
+  ctx.translate(playerX, playerY);
+  const angle = Math.atan2(endY - startY, endX - startX);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.moveTo(10, 0);
+  ctx.lineTo(-8, -8);
+  ctx.lineTo(-8, 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+  
+  // Draw gold star
+  ctx.fillStyle = "rgba(255, 200, 50, 0.9)";
+  ctx.save();
+  ctx.translate(goldStarX, goldStarY);
+  ctx.rotate(cinematicState.frame * 0.1);
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const starAngle = (i / 5) * Math.PI * 2 - Math.PI / 2;
+    const outerRadius = 14;
+    const innerRadius = 7;
+    ctx.lineTo(Math.cos(starAngle) * outerRadius, Math.sin(starAngle) * outerRadius);
+    ctx.lineTo(Math.cos(starAngle + Math.PI / 5) * innerRadius, Math.sin(starAngle + Math.PI / 5) * innerRadius);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+  
   // Dust clouds from landing
-  if (progress > 0.6) {
-    const dustProgress = (progress - 0.6) / 0.4;
+  if (progress > 0.7) {
+    const dustProgress = (progress - 0.7) / 0.3;
     for (let i = 0; i < 10; i++) {
-      const x = width / 2 + (i - 5) * 60;
-      const y = groundY + 20;
-      const size = 40 + dustProgress * 30;
-      const alpha = 0.4 - (dustProgress * 0.3);
+      const x = endX + (i - 5) * 40;
+      const y = endY + 30;
+      const size = 30 + dustProgress * 40;
+      const alpha = 0.3 - (dustProgress * 0.2);
       
       ctx.fillStyle = `rgba(220, 180, 130, ${alpha})`;
       ctx.beginPath();
@@ -267,40 +476,10 @@ function renderPlanetfall(ctx, width, height) {
     }
   }
   
-  // Player and gold star descending
-  const descentY = height * 0.3 + (progress * height * 0.4);
-  
-  // Draw player
-  ctx.fillStyle = "rgba(100, 200, 255, 0.9)";
-  ctx.beginPath();
-  ctx.moveTo(width / 2 - 60, descentY - 8);
-  ctx.lineTo(width / 2 - 66, descentY + 6);
-  ctx.lineTo(width / 2 - 54, descentY + 6);
-  ctx.closePath();
-  ctx.fill();
-  
-  // Draw gold star
-  ctx.fillStyle = "rgba(255, 200, 50, 0.9)";
-  ctx.save();
-  ctx.translate(width / 2 + 60, descentY);
-  ctx.rotate(cinematicState.frame * 0.1);
-  ctx.beginPath();
-  for (let i = 0; i < 5; i++) {
-    const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
-    const outerRadius = 12;
-    const innerRadius = 6;
-    ctx.lineTo(Math.cos(angle) * outerRadius, Math.sin(angle) * outerRadius);
-    ctx.lineTo(Math.cos(angle + Math.PI / 5) * innerRadius, Math.sin(angle + Math.PI / 5) * innerRadius);
-  }
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-  
   // Impact effect when landing
-  if (progress > 0.8) {
-    const impactProgress = (progress - 0.8) / 0.2;
-    const shakeAmount = (1 - impactProgress) * 10;
-    ctx.fillStyle = `rgba(255, 255, 255, ${(1 - impactProgress) * 0.5})`;
+  if (progress > 0.85) {
+    const impactProgress = (progress - 0.85) / 0.15;
+    ctx.fillStyle = `rgba(255, 255, 255, ${(1 - impactProgress) * 0.3})`;
     ctx.fillRect(0, 0, width, height);
   }
   
@@ -317,10 +496,15 @@ function renderPlanetfall(ctx, width, height) {
 }
 
 export function tryAdvanceWave() {
+  // Don't advance if a cinematic is playing
+  if (cinematicState.active || state.cinematic.playing) {
+    return;
+  }
+  
   const allEnemiesClear = state.enemies.length === 0 && state.diamonds.length === 0 && state.tunnels.length === 0 && 
                           state.tanks.length === 0 && state.walkers.length === 0 && state.mechs.length === 0;
 
-  if (allEnemiesClear && !state.waveTransition && !cinematicState.active) {
+  if (allEnemiesClear && !state.waveTransition) {
     state.clearBullets();
     state.clearLightning();
     // Clear ground objects from previous wave
@@ -361,14 +545,6 @@ export function tryAdvanceWave() {
       }
       state.setWaveTransition(false);
       state.setWaveTransitionTimer(0);
-    }
-  }
-  
-  // Handle cinematic completion - advance wave after cinematic
-  if (cinematicState.active && !state.cinematic.playing) {
-    state.incrementWave();
-    if (state.wave < waves.length) {
-      spawnWave(state.wave);
     }
   }
 }
