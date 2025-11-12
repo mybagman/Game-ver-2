@@ -397,7 +397,7 @@ function drawDeathStar(scale, x, y) {
 // ARC TWO: DEATH STAR BACKGROUNDS FOR WAVES 7-11 (indices 6-10)
 // =====================================================
 
-// Waves 7-8 (indices 6-7): Death Star Orbit
+// Wave 7 (index 6): Death Star Orbit
 function drawDeathStarOrbit() {
   const ctx = state.ctx;
   const width = state.canvas.width;
@@ -419,6 +419,45 @@ function drawDeathStarOrbit() {
   
   // Add some orbital debris and fighters for battle atmosphere
   drawOrbitalDebris();
+}
+
+// Wave 8 (index 7): Death Star Approach - Animated progression
+function drawDeathStarApproach() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Calculate progress through the wave based on enemy count
+  // Start at 0.85 scale, end at filling entire background (scale 3.5+)
+  const enemyCount = state.enemies.length + state.diamonds.length + state.tanks.length + 
+                     state.walkers.length + state.mechs.length;
+  const initialEnemyCount = 20; // Approximate starting count for wave 8
+  const progress = 1 - Math.min(enemyCount / initialEnemyCount, 1);
+  
+  // Scale from 0.85 to 3.5 (fills entire screen)
+  const deathStarScale = 0.85 + (progress * 2.65);
+  
+  // Dark space - gets darker as Death Star gets closer
+  const darknessLevel = 0.15 + (progress * 0.1);
+  const spaceGradient = ctx.createLinearGradient(0, 0, 0, height);
+  spaceGradient.addColorStop(0, `rgba(0, 8, 20, ${darknessLevel})`);
+  spaceGradient.addColorStop(0.5, `rgba(0, 26, 46, ${darknessLevel + 0.05})`);
+  spaceGradient.addColorStop(1, `rgba(0, 8, 20, ${darknessLevel})`);
+  ctx.fillStyle = spaceGradient;
+  ctx.fillRect(0, 0, width, height);
+  
+  // Starfield fades as Death Star approaches
+  drawStarfield(65, 0.7 - (progress * 0.5));
+  
+  // Death Star progressively gets closer and larger
+  drawDeathStar(deathStarScale, width * 0.5, height * 0.5);
+  
+  // More intense orbital debris as we get closer
+  drawOrbitalDebris();
+  if (progress > 0.5) {
+    // Additional debris layer for intensity
+    drawOrbitalDebris();
+  }
 }
 
 // Wave 9 (index 8): Entrance to the Core
@@ -770,6 +809,245 @@ function drawCoreLighting() {
   }
 }
 
+// =====================================================
+// ARC THREE: ESCAPE TO EARTH BACKGROUNDS FOR WAVES 12-14 (indices 11-13)
+// =====================================================
+
+// Wave 12 (index 11): Death Star Debris Field
+function drawDebrisField() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Deep space with debris field
+  const spaceGradient = ctx.createLinearGradient(0, 0, 0, height);
+  spaceGradient.addColorStop(0, "#0a0a15");
+  spaceGradient.addColorStop(0.5, "#050510");
+  spaceGradient.addColorStop(1, "#000000");
+  ctx.fillStyle = spaceGradient;
+  ctx.fillRect(0, 0, width, height);
+  
+  // Starfield backdrop
+  drawStarfield(80, 0.8);
+  
+  // Floating Death Star debris (16-bit pixel art style)
+  const debrisCount = 25;
+  for (let i = 0; i < debrisCount; i++) {
+    const x = ((i * 211.7 + state.frameCount * 0.5) % (width + 200)) - 100;
+    const y = ((i * 97.3) % height);
+    const size = ((i * 11) % 30) + 15;
+    const rotation = ((i * 0.3 + state.frameCount * 0.01) % (Math.PI * 2));
+    
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    
+    // Metallic debris chunks (gray with damage)
+    const alpha = ((i * 17) % 40) + 40;
+    ctx.fillStyle = `rgba(120, 120, 140, ${alpha / 100})`;
+    
+    // Irregular polygon shape (16-bit pixel style)
+    ctx.beginPath();
+    for (let j = 0; j < 5; j++) {
+      const angle = (j / 5) * Math.PI * 2;
+      const wobble = ((i + j) * 0.4) % 0.5 + 0.6;
+      const px = Math.cos(angle) * size * wobble;
+      const py = Math.sin(angle) * size * wobble;
+      if (j === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    
+    // Damage marks (darker spots)
+    ctx.fillStyle = `rgba(60, 60, 80, ${alpha / 150})`;
+    ctx.fillRect(-size * 0.2, -size * 0.2, size * 0.3, size * 0.3);
+    
+    // Some pieces still glowing from explosions
+    if (i % 4 === 0) {
+      ctx.fillStyle = `rgba(255, 100, 50, ${alpha / 200})`;
+      ctx.beginPath();
+      ctx.arc(0, 0, size * 0.15, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    ctx.restore();
+  }
+  
+  // Floating particles (smaller debris)
+  ctx.fillStyle = "rgba(150, 150, 170, 0.4)";
+  for (let i = 0; i < 100; i++) {
+    const x = ((i * 137.5 + state.frameCount * 0.3) % (width + 50)) - 25;
+    const y = ((i * 73.3) % height);
+    const size = ((i * 3) % 3) + 1;
+    ctx.fillRect(x, y, size, size);
+  }
+}
+
+// Wave 13 (index 12): Descent to Desert Planet
+function drawDescentToDesert() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Atmospheric gradient - transition from space to atmosphere
+  const skyGradient = ctx.createLinearGradient(0, 0, 0, height);
+  skyGradient.addColorStop(0, "#1a0f2e"); // Dark purple-black (space)
+  skyGradient.addColorStop(0.3, "#3a2050"); // Purple atmosphere
+  skyGradient.addColorStop(0.6, "#d4a574"); // Sandy atmosphere
+  skyGradient.addColorStop(1, "#c9984a"); // Desert horizon
+  ctx.fillStyle = skyGradient;
+  ctx.fillRect(0, 0, width, height);
+  
+  // Sparse stars fading (upper atmosphere)
+  drawStarfield(40, 0.3);
+  
+  // Desert planet visible below (getting larger as we descend)
+  const planetY = height * 0.6;
+  const planetSize = width * 0.8;
+  
+  // Planet surface gradient
+  const planetGradient = ctx.createRadialGradient(width / 2, planetY, 0, width / 2, planetY, planetSize);
+  planetGradient.addColorStop(0, "#e8d4a0");
+  planetGradient.addColorStop(0.5, "#d4a574");
+  planetGradient.addColorStop(0.8, "#c9984a");
+  planetGradient.addColorStop(1, "#a87d3a");
+  
+  ctx.fillStyle = planetGradient;
+  ctx.beginPath();
+  ctx.arc(width / 2, planetY, planetSize, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Dune patterns on planet (16-bit pixel style)
+  ctx.fillStyle = "rgba(180, 140, 90, 0.3)";
+  for (let i = 0; i < 50; i++) {
+    const x = ((i * 157.3) % width);
+    const y = planetY - planetSize + ((i * 89.7) % (planetSize * 2));
+    const duneWidth = ((i * 43) % 60) + 20;
+    const duneHeight = 4;
+    ctx.fillRect(x, y, duneWidth, duneHeight);
+  }
+  
+  // Atmospheric haze/clouds
+  for (let i = 0; i < 8; i++) {
+    const x = ((i * 211.7 + state.frameCount * 0.8) % (width + 100)) - 50;
+    const y = height * 0.3 + ((i * 47) % (height * 0.3));
+    const size = ((i * 29) % 80) + 40;
+    
+    const cloudGradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+    cloudGradient.addColorStop(0, "rgba(255, 240, 220, 0.2)");
+    cloudGradient.addColorStop(1, "rgba(255, 240, 220, 0)");
+    
+    ctx.fillStyle = cloudGradient;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  // Re-entry effect particles (heat/plasma trails)
+  ctx.fillStyle = "rgba(255, 150, 50, 0.4)";
+  for (let i = 0; i < 20; i++) {
+    const x = ((i * 107.3 + state.frameCount * 2) % (width + 20)) - 10;
+    const y = ((i * 61.7) % (height * 0.5));
+    const size = ((i * 5) % 4) + 2;
+    
+    // Trailing particle effect
+    ctx.fillRect(x, y, size, size);
+    ctx.fillRect(x - 5, y + 2, size * 0.6, size * 0.6);
+    ctx.fillRect(x - 9, y + 4, size * 0.4, size * 0.4);
+  }
+}
+
+// Wave 14 (index 13): Desert Planet Surface (Dune-like)
+function drawDesertPlanetSurface() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Desert sky gradient (warm, hazy atmosphere)
+  const skyGradient = ctx.createLinearGradient(0, 0, 0, height * 0.6);
+  skyGradient.addColorStop(0, "#d4a574"); // Dusty sky
+  skyGradient.addColorStop(0.4, "#e8d4a0"); // Light sandy haze
+  skyGradient.addColorStop(1, "#f5e6d3"); // Bright sandy horizon
+  ctx.fillStyle = skyGradient;
+  ctx.fillRect(0, 0, width, height * 0.6);
+  
+  // Distant sand dunes (background layer - 16-bit pixel art)
+  ctx.fillStyle = "rgba(180, 140, 90, 0.4)";
+  for (let i = 0; i < 8; i++) {
+    const x = (i * width / 8);
+    const duneHeight = 60 + Math.sin(i * 0.7) * 30;
+    const duneY = height * 0.45;
+    
+    // Dune shape (simple triangular)
+    ctx.beginPath();
+    ctx.moveTo(x, duneY);
+    ctx.lineTo(x + width / 16, duneY - duneHeight);
+    ctx.lineTo(x + width / 8, duneY);
+    ctx.closePath();
+    ctx.fill();
+  }
+  
+  // Mid-ground dunes (16-bit style)
+  ctx.fillStyle = "rgba(200, 160, 110, 0.6)";
+  for (let i = 0; i < 12; i++) {
+    const x = (i * width / 12);
+    const duneHeight = 40 + Math.sin(i * 1.2) * 20;
+    const duneY = height * 0.55;
+    
+    ctx.beginPath();
+    ctx.moveTo(x, duneY);
+    ctx.lineTo(x + width / 24, duneY - duneHeight);
+    ctx.lineTo(x + width / 12, duneY);
+    ctx.closePath();
+    ctx.fill();
+  }
+  
+  // Desert floor (main ground)
+  const groundY = height * 0.6;
+  const groundGradient = ctx.createLinearGradient(0, groundY, 0, height);
+  groundGradient.addColorStop(0, "#d4a574");
+  groundGradient.addColorStop(0.5, "#c9984a");
+  groundGradient.addColorStop(1, "#b8873a");
+  
+  ctx.fillStyle = groundGradient;
+  ctx.fillRect(0, groundY, width, height - groundY);
+  
+  // Sand ripples and texture (16-bit pixel detail)
+  ctx.fillStyle = "rgba(200, 160, 110, 0.3)";
+  for (let i = 0; i < 15; i++) {
+    const x = ((i * 173.5) % width);
+    const y = groundY + ((i * 67) % (height - groundY));
+    const rippleWidth = ((i * 31) % 80) + 40;
+    ctx.fillRect(x, y, rippleWidth, 2);
+  }
+  
+  // Sand particles/dust (pixel detail)
+  ctx.fillStyle = "rgba(220, 180, 130, 0.2)";
+  for (let i = 0; i < 80; i++) {
+    const x = ((i * 137.5) % width);
+    const y = groundY + ((i * 89) % (height - groundY));
+    ctx.fillRect(x, y, 2, 2);
+  }
+  
+  // Floating dust particles in air (animated)
+  ctx.fillStyle = "rgba(240, 200, 150, 0.4)";
+  for (let i = 0; i < 30; i++) {
+    const x = ((i * 127.5 + state.frameCount * 0.5) % (width + 50)) - 25;
+    const y = ((i * 73.3) % (height * 0.5)) + height * 0.2;
+    const size = ((i * 3) % 3) + 1;
+    ctx.fillRect(x, y, size, size);
+  }
+  
+  // Heat shimmer effect (horizontal lines with alpha variation)
+  for (let i = 0; i < 5; i++) {
+    const y = groundY + (i * 20);
+    const shimmer = Math.sin(state.frameCount * 0.1 + i) * 0.1 + 0.1;
+    ctx.fillStyle = `rgba(255, 220, 180, ${shimmer})`;
+    ctx.fillRect(0, y, width, 1);
+  }
+}
+
 export function drawBackground(waveNum) {
   // Arc One: Space backgrounds for waves 1-6 (Approaching Death Star)
   if (waveNum >= 0 && waveNum <= 5) {
@@ -779,9 +1057,16 @@ export function drawBackground(waveNum) {
   }
   
   // Arc Two: Death Star backgrounds for waves 7-11 (Battle for the Death Star)
-  if (waveNum === 6 || waveNum === 7) {
-    // Waves 7-8: Death Star Orbit
+  if (waveNum === 6) {
+    // Wave 7: Death Star Orbit
     drawDeathStarOrbit();
+    state.incrementBackgroundOffset(0.5);
+    return;
+  }
+  
+  if (waveNum === 7) {
+    // Wave 8: Death Star Approach - Animated closer approach
+    drawDeathStarApproach();
     state.incrementBackgroundOffset(0.5);
     return;
   }
@@ -807,7 +1092,29 @@ export function drawBackground(waveNum) {
     return;
   }
   
-  // ORIGINAL: Desert sky background for waves 12+ (warm desert atmosphere)
+  // Arc Three: Escape to Earth backgrounds for waves 12-14+
+  if (waveNum === 11) {
+    // Wave 12: Death Star Debris Field
+    drawDebrisField();
+    state.incrementBackgroundOffset(0.5);
+    return;
+  }
+  
+  if (waveNum === 12) {
+    // Wave 13: Descent to Desert Planet
+    drawDescentToDesert();
+    state.incrementBackgroundOffset(0.5);
+    return;
+  }
+  
+  if (waveNum === 13) {
+    // Wave 14: Desert Planet Surface (Dune-like)
+    drawDesertPlanetSurface();
+    state.incrementBackgroundOffset(0.5);
+    return;
+  }
+  
+  // ORIGINAL: Desert sky background for waves 15+ (warm desert atmosphere)
   const skyGradient = state.ctx.createLinearGradient(0, 0, 0, state.canvas.height * 0.7);
   skyGradient.addColorStop(0, "#87ceeb"); // Sky blue at top
   skyGradient.addColorStop(0.6, "#e8d4a0"); // Hazy horizon

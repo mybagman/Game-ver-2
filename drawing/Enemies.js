@@ -1258,57 +1258,70 @@ export function drawDiamonds() {
     
     state.ctx.restore();
     
-    // === BOSS HEALTH BAR (Enhanced) ===
-    const barWidth = 200;
-    const barHeight = 15;
-    const barX = d.x - barWidth/2;
-    const barY = d.y - enhancedSize - 40;
-    
-    // Health bar background (dark with border)
-    state.ctx.fillStyle = "rgba(20, 20, 20, 0.9)";
-    state.ctx.fillRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
-    
-    // Health bar border (glowing)
-    state.ctx.strokeStyle = d.vulnerable ? "rgba(255, 100, 100, 0.8)" : "rgba(255, 255, 255, 0.8)";
-    state.ctx.lineWidth = 2;
-    state.ctx.strokeRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
-    
-    // Health bar fill (gradient)
-    const healthPercent = d.health / (d.maxHealth || 200);
-    const healthBarGradient = state.ctx.createLinearGradient(barX, barY, barX + barWidth * healthPercent, barY);
-    if (healthPercent > 0.5) {
-      healthBarGradient.addColorStop(0, "rgba(100, 255, 100, 0.9)");
-      healthBarGradient.addColorStop(1, "rgba(50, 200, 50, 0.9)");
-    } else if (healthPercent > 0.25) {
-      healthBarGradient.addColorStop(0, "rgba(255, 200, 50, 0.9)");
-      healthBarGradient.addColorStop(1, "rgba(200, 150, 0, 0.9)");
-    } else {
-      healthBarGradient.addColorStop(0, "rgba(255, 100, 100, 0.9)");
-      healthBarGradient.addColorStop(1, "rgba(200, 50, 50, 0.9)");
-    }
-    
-    state.ctx.fillStyle = healthBarGradient;
-    state.ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
-    
-    // Health bar segments (visual markers every 25%)
-    state.ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
-    state.ctx.lineWidth = 1;
-    for (let i = 1; i < 4; i++) {
-      const segmentX = barX + (barWidth * i / 4);
+    // === BOSS HEALTH BAR (Enhanced) - Show for Wave 11 (Death Star Core) ===
+    if (state.wave === 10) {
+      const barWidth = 250;
+      const barHeight = 18;
+      const barX = d.x - barWidth/2;
+      const barY = d.y - enhancedSize - 50;
+      
+      // Health bar background (dark with border)
+      state.ctx.fillStyle = "rgba(20, 20, 20, 0.9)";
+      state.ctx.fillRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
+      
+      // Health bar border (glowing, pulsing)
+      const borderPulse = Math.sin(state.frameCount * 0.1) * 0.2 + 0.8;
+      state.ctx.strokeStyle = d.vulnerable ? `rgba(255, 100, 100, ${borderPulse})` : `rgba(200, 100, 255, ${borderPulse})`;
+      state.ctx.lineWidth = 3;
+      state.ctx.strokeRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
+      
+      // Health bar fill (gradient)
+      const healthPercent = d.health / (d.maxHealth || 200);
+      const healthBarGradient = state.ctx.createLinearGradient(barX, barY, barX + barWidth * healthPercent, barY);
+      if (healthPercent > 0.5) {
+        healthBarGradient.addColorStop(0, "rgba(150, 100, 255, 0.9)");
+        healthBarGradient.addColorStop(1, "rgba(100, 50, 200, 0.9)");
+      } else if (healthPercent > 0.25) {
+        healthBarGradient.addColorStop(0, "rgba(255, 150, 200, 0.9)");
+        healthBarGradient.addColorStop(1, "rgba(200, 100, 150, 0.9)");
+      } else {
+        healthBarGradient.addColorStop(0, "rgba(255, 100, 100, 0.9)");
+        healthBarGradient.addColorStop(1, "rgba(200, 50, 50, 0.9)");
+      }
+      
+      state.ctx.fillStyle = healthBarGradient;
+      state.ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+      
+      // Health bar segments (visual markers every 25%)
+      state.ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+      state.ctx.lineWidth = 1;
+      for (let i = 1; i < 4; i++) {
+        const segmentX = barX + (barWidth * i / 4);
+        state.ctx.beginPath();
+        state.ctx.moveTo(segmentX, barY);
+        state.ctx.lineTo(segmentX, barY + barHeight);
+        state.ctx.stroke();
+      }
+      
+      // Energy indicators at health bar edges (pulsing)
+      const indicatorPulse = Math.sin(state.frameCount * 0.15) * 0.5 + 0.5;
+      state.ctx.fillStyle = `rgba(200, 100, 255, ${indicatorPulse})`;
       state.ctx.beginPath();
-      state.ctx.moveTo(segmentX, barY);
-      state.ctx.lineTo(segmentX, barY + barHeight);
-      state.ctx.stroke();
+      state.ctx.arc(barX - 8, barY + barHeight/2, 4, 0, Math.PI * 2);
+      state.ctx.fill();
+      state.ctx.beginPath();
+      state.ctx.arc(barX + barWidth + 8, barY + barHeight/2, 4, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Boss title text
+      state.ctx.font = "bold 16px Orbitron, monospace";
+      state.ctx.textAlign = "center";
+      state.ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      state.ctx.strokeStyle = "rgba(0, 0, 0, 0.9)";
+      state.ctx.lineWidth = 4;
+      state.ctx.strokeText("⬥ DEATH STAR CORE ⬥", d.x, barY - 10);
+      state.ctx.fillText("⬥ DEATH STAR CORE ⬥", d.x, barY - 10);
     }
-    
-    // Boss title text
-    state.ctx.font = "bold 14px Orbitron, monospace";
-    state.ctx.textAlign = "center";
-    state.ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-    state.ctx.strokeStyle = "rgba(0, 0, 0, 0.8)";
-    state.ctx.lineWidth = 3;
-    state.ctx.strokeText("◆ DIAMOND BOSS ◆", d.x, barY - 8);
-    state.ctx.fillText("◆ DIAMOND BOSS ◆", d.x, barY - 8);
 
     // Draw enhanced barrier/shield formation with attached enemies
     if (d.attachments && d.attachments.length > 0) {

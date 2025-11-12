@@ -15,7 +15,7 @@ import { updateEnemies } from './enemies.js';
 import { updateLightning, checkBulletCollisions } from './collisions.js';
 import { updateGoldStar } from './goldstar.js';
 import { updateGoldStarAura, resetAuraOnDeath } from './aura.js';
-import { tryAdvanceWave, spawnWave } from './waveManager.js';
+import { tryAdvanceWave, spawnWave, renderCinematic } from './waveManager.js';
 import { updateReflectorSystem, updateHomingMissiles, drawHomingMissiles } from './homingMissiles.js';
 /* patched imports: consolidated drawing helpers from drawing.js */
 // Replace the single `from './drawing.js'` import with these direct imports:
@@ -48,8 +48,16 @@ import { respawnPlayer, respawnGoldStar } from './utils.js';
 // --- Game loop and integration with high-score UI ---
 
 export function gameLoop(now) {
-  // If cinematic is playing, skip frame
-  if (state.cinematic && state.cinematic.playing) return;
+  // If cinematic is playing, render it instead of game
+  if (state.cinematic && state.cinematic.playing) {
+    if (!ensureCanvas()) return;
+    if (state.ctx && state.canvas) {
+      state.ctx.clearRect(0, 0, state.canvas.width, state.canvas.height);
+      renderCinematic(state.ctx, state.canvas.width, state.canvas.height);
+    }
+    requestAnimationFrame(gameLoop);
+    return;
+  }
 
   // Increment frame count if available
   if (typeof state.incrementFrameCount === 'function') {
