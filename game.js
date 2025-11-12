@@ -17,6 +17,7 @@ import { updateGoldStar } from './goldstar.js';
 import { updateGoldStarAura, resetAuraOnDeath } from './aura.js';
 import { tryAdvanceWave, spawnWave, renderCinematic } from './waveManager.js';
 import { updateReflectorSystem, updateHomingMissiles, drawHomingMissiles } from './homingMissiles.js';
+import { renderOpeningCinematic, isOpeningCinematicComplete } from './openingCinematic.js';
 /* patched imports: consolidated drawing helpers from drawing.js */
 // Replace the single `from './drawing.js'` import with these direct imports:
 import { drawBackground, drawPlanetBackground, drawClouds, drawGroundObjects } from './drawing/background.js';
@@ -53,7 +54,28 @@ export function gameLoop(now) {
     if (!ensureCanvas()) return;
     if (state.ctx && state.canvas) {
       state.ctx.clearRect(0, 0, state.canvas.width, state.canvas.height);
-      renderCinematic(state.ctx, state.canvas.width, state.canvas.height);
+      
+      // Check if this is the opening cinematic (not yet played)
+      if (!state.cinematic.openingPlayed) {
+        const stillPlaying = renderOpeningCinematic(state.ctx, state.canvas.width, state.canvas.height);
+        
+        // If opening cinematic is complete, transition to Wave 1 (index 0, displayed as WAVE: 1)
+        if (!stillPlaying || isOpeningCinematicComplete()) {
+          console.log('[gameLoop] Opening cinematic complete, starting Wave 1');
+          state.cinematic.playing = false;
+          state.cinematic.openingPlayed = true;
+          // Start at Wave index 0 (displays as "WAVE: 1" in UI)
+          if (typeof state.setWave === 'function') {
+            state.setWave(0);
+          } else {
+            state.wave = 0;
+          }
+          spawnWave(0);
+        }
+      } else {
+        // Render other cinematics (Death Star, Planetfall, etc.)
+        renderCinematic(state.ctx, state.canvas.width, state.canvas.height);
+      }
     }
     requestAnimationFrame(gameLoop);
     return;
@@ -561,7 +583,7 @@ function startNewGame() {
   // Clear enemies that were spawned by resetGame (which spawns wave 1)
   if (Array.isArray(state.enemies)) state.enemies.length = 0;
   
-  // Set wave to 0 and spawn wave 0
+  // Set wave to 0 (displays as WAVE: 1) since opening cinematic was already shown
   if (typeof state.setWave === 'function') {
     try { state.setWave(0); } catch (e) { state.wave = 0; }
   } else {

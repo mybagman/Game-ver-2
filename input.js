@@ -1,5 +1,6 @@
 import * as state from './state.js';
 import { resetGame } from './game.js';
+import { skipOpeningCinematic } from './openingCinematic.js';
 
 const DOUBLE_TAP_WINDOW = 300; // milliseconds
 const DASH_DURATION = 15; // frames (~250ms at 60fps)
@@ -12,6 +13,12 @@ export function setupInputHandlers() {
     
     // Ignore key repeat events to prevent held keys from triggering dash
     if (e.repeat) {
+      return;
+    }
+    
+    // ESC key to skip cinematic
+    if (e.key === "Escape" && state.cinematic && state.cinematic.playing) {
+      skipOpeningCinematic();
       return;
     }
     
