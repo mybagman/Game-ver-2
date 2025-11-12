@@ -251,21 +251,71 @@ function drawStarfield(count, brightness) {
   for (let i = 0; i < count; i++) {
     // Deterministic pseudo-random positions based on index
     const x = ((i * 137.5) % width);
-    const y = ((i * 73.3) % height);
-    const size = ((i * 7) % 3) + 1;
+    const y = ((i * 73.3) % (height * 0.85)); // Keep stars in upper 85% to leave room for ocean
+    const sizeVariation = ((i * 7) % 4);
     const alpha = (((i * 23) % 70) + 30) / 100 * brightness;
     
-    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-    ctx.fillRect(x, y, size, size);
-    
-    // Add some colored stars for variety (16-bit style)
-    if (i % 7 === 0) {
-      ctx.fillStyle = `rgba(100, 150, 255, ${alpha * 0.6})`;
-      ctx.fillRect(x, y, size, size);
-    } else if (i % 11 === 0) {
-      ctx.fillStyle = `rgba(255, 200, 100, ${alpha * 0.6})`;
-      ctx.fillRect(x, y, size, size);
+    // Different star sizes and shapes for variety
+    if (sizeVariation === 0) {
+      // Small dot stars
+      ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+      ctx.fillRect(x, y, 1, 1);
+    } else if (sizeVariation === 1) {
+      // Medium dot stars
+      ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.9})`;
+      ctx.fillRect(x, y, 2, 2);
+    } else if (sizeVariation === 2) {
+      // Cross-shaped stars (larger, brighter)
+      const crossAlpha = alpha * 1.2;
+      ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(crossAlpha, 1.0)})`;
+      // Draw cross shape
+      ctx.fillRect(x, y - 1, 1, 3);  // Vertical line
+      ctx.fillRect(x - 1, y, 3, 1);  // Horizontal line
+      ctx.fillRect(x, y, 1, 1);      // Center pixel
+    } else {
+      // Larger bright stars
+      ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 1.1})`;
+      ctx.fillRect(x, y, 3, 3);
     }
+    
+    // Add blue and white colored stars scattered throughout
+    if (i % 5 === 0) {
+      ctx.fillStyle = `rgba(100, 150, 255, ${alpha * 0.8})`;
+      ctx.fillRect(x, y, 2, 2);
+    } else if (i % 7 === 0) {
+      ctx.fillStyle = `rgba(150, 200, 255, ${alpha * 0.7})`;
+      ctx.fillRect(x + 1, y, 1, 1);
+    }
+  }
+  
+  // Add ocean/water at the bottom
+  drawSpaceOcean();
+}
+
+// Draw ocean/water at bottom for space backgrounds
+function drawSpaceOcean() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  const oceanHeight = height * 0.15; // Bottom 15% of screen
+  const oceanY = height - oceanHeight;
+  
+  // Ocean gradient transitioning from space
+  const oceanGradient = ctx.createLinearGradient(0, oceanY, 0, height);
+  oceanGradient.addColorStop(0, "rgba(0, 10, 30, 0.3)"); // Transparent dark blue at top
+  oceanGradient.addColorStop(0.3, "rgba(0, 20, 50, 0.6)");
+  oceanGradient.addColorStop(0.6, "rgba(0, 30, 70, 0.8)");
+  oceanGradient.addColorStop(1, "rgba(0, 40, 90, 1.0)"); // Solid darker blue at bottom
+  
+  ctx.fillStyle = oceanGradient;
+  ctx.fillRect(0, oceanY, width, oceanHeight);
+  
+  // Add subtle wave reflections
+  ctx.fillStyle = "rgba(100, 150, 200, 0.1)";
+  for (let i = 0; i < 5; i++) {
+    const waveY = oceanY + (i * oceanHeight / 5) + Math.sin(state.frameCount * 0.02 + i) * 3;
+    ctx.fillRect(0, waveY, width, 1);
   }
 }
 
@@ -1114,50 +1164,127 @@ export function drawBackground(waveNum) {
     return;
   }
   
-  // ORIGINAL: Desert sky background for waves 15+ (warm desert atmosphere)
-  const skyGradient = state.ctx.createLinearGradient(0, 0, 0, state.canvas.height * 0.7);
-  skyGradient.addColorStop(0, "#87ceeb"); // Sky blue at top
-  skyGradient.addColorStop(0.6, "#e8d4a0"); // Hazy horizon
-  skyGradient.addColorStop(1, "#d4a574"); // Sandy horizon
+  // Waves 14+ (waveNum >= 13): Pixel art cloud backgrounds with light blue sky and ocean
+  // Light blue/cyan sky background
+  const skyGradient = state.ctx.createLinearGradient(0, 0, 0, state.canvas.height * 0.75);
+  skyGradient.addColorStop(0, "#87CEEB"); // Light blue at top
+  skyGradient.addColorStop(0.5, "#B0E0E6"); // Powder blue
+  skyGradient.addColorStop(1, "#E0F6FF"); // Very light blue near horizon
   
   state.ctx.fillStyle = skyGradient;
   state.ctx.fillRect(0, 0, state.canvas.width, state.canvas.height * 0.75);
   
-  // Draw a few small stationary clouds (requirement: only a few small clouds, stationary)
-  drawStaticDesertClouds();
+  // Draw fluffy pixel art clouds
+  drawPixelArtClouds();
   
-  // PERSISTENT desert ground across ALL waves (requirement: desert ground persists)
-  drawDesertGround();
+  // Draw ocean at the bottom
+  drawCloudBackgroundOcean();
 
   state.incrementBackgroundOffset(0.5);
 }
 
-// NEW: Static desert clouds (stationary, not moving)
-function drawStaticDesertClouds() {
+// Draw fluffy, volumetric pixel art clouds for waves 13+
+function drawPixelArtClouds() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Cloud definitions with layering for depth
   const clouds = [
-    { x: 150, y: 80, size: 30 },
-    { x: 400, y: 120, size: 25 },
-    { x: 800, y: 60, size: 35 },
-    { x: 1100, y: 100, size: 28 }
+    // Background layer (smaller, more transparent)
+    { x: width * 0.15, y: height * 0.15, baseSize: 60, layer: 0 },
+    { x: width * 0.65, y: height * 0.12, baseSize: 70, layer: 0 },
+    // Mid layer
+    { x: width * 0.35, y: height * 0.25, baseSize: 80, layer: 1 },
+    { x: width * 0.75, y: height * 0.30, baseSize: 75, layer: 1 },
+    { x: width * 0.50, y: height * 0.20, baseSize: 85, layer: 1 },
+    // Foreground layer (larger, more opaque)
+    { x: width * 0.10, y: height * 0.40, baseSize: 90, layer: 2 },
+    { x: width * 0.85, y: height * 0.45, baseSize: 95, layer: 2 },
+    { x: width * 0.45, y: height * 0.50, baseSize: 100, layer: 2 }
   ];
   
   clouds.forEach(cloud => {
-    // Only draw if within canvas bounds
-    if (cloud.x < state.canvas.width) {
-      state.ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-      state.ctx.beginPath();
-      state.ctx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
-      state.ctx.fill();
+    const layerScales = [0.7, 0.85, 1.0];
+    const layerAlphas = [0.6, 0.75, 0.9];
+    const scale = layerScales[cloud.layer];
+    const alpha = layerAlphas[cloud.layer];
+    const size = cloud.baseSize * scale;
+    
+    ctx.save();
+    
+    // Main cloud body (white/off-white) with pixel art style
+    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+    
+    // Draw cloud as collection of overlapping circles for fluffy look
+    const puffCount = 5;
+    for (let i = 0; i < puffCount; i++) {
+      const angle = (i / puffCount) * Math.PI * 2;
+      const puffX = cloud.x + Math.cos(angle) * size * 0.4;
+      const puffY = cloud.y + Math.sin(angle) * size * 0.3;
+      const puffSize = size * (0.5 + Math.sin(i * 1.7) * 0.2);
       
-      // Add fluffy bumps
-      state.ctx.beginPath();
-      state.ctx.arc(cloud.x - cloud.size * 0.5, cloud.y, cloud.size * 0.7, 0, Math.PI * 2);
-      state.ctx.fill();
-      state.ctx.beginPath();
-      state.ctx.arc(cloud.x + cloud.size * 0.5, cloud.y, cloud.size * 0.7, 0, Math.PI * 2);
-      state.ctx.fill();
+      ctx.beginPath();
+      ctx.arc(puffX, puffY, puffSize, 0, Math.PI * 2);
+      ctx.fill();
     }
+    
+    // Center puff (largest)
+    ctx.beginPath();
+    ctx.arc(cloud.x, cloud.y, size * 0.6, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Add light gray shading for depth (bottom of cloud)
+    ctx.fillStyle = `rgba(200, 210, 220, ${alpha * 0.5})`;
+    ctx.beginPath();
+    ctx.arc(cloud.x, cloud.y + size * 0.3, size * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Highlight on top (bright white)
+    ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.8})`;
+    ctx.beginPath();
+    ctx.arc(cloud.x - size * 0.2, cloud.y - size * 0.2, size * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.restore();
   });
+}
+
+// Draw ocean/water at bottom for cloud backgrounds
+function drawCloudBackgroundOcean() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  const oceanHeight = height * 0.25; // Bottom 25% of screen
+  const oceanY = height - oceanHeight;
+  
+  // Ocean gradient
+  const oceanGradient = ctx.createLinearGradient(0, oceanY, 0, height);
+  oceanGradient.addColorStop(0, "#4682B4"); // Steel blue at top
+  oceanGradient.addColorStop(0.3, "#4169E1"); // Royal blue
+  oceanGradient.addColorStop(0.7, "#1E90FF"); // Dodger blue
+  oceanGradient.addColorStop(1, "#0047AB"); // Cobalt blue at bottom
+  
+  ctx.fillStyle = oceanGradient;
+  ctx.fillRect(0, oceanY, width, oceanHeight);
+  
+  // Wave highlights (lighter blue)
+  ctx.fillStyle = "rgba(135, 206, 250, 0.4)";
+  for (let i = 0; i < 8; i++) {
+    const waveY = oceanY + (i * oceanHeight / 8) + Math.sin(state.frameCount * 0.015 + i * 0.5) * 5;
+    const waveHeight = 2;
+    ctx.fillRect(0, waveY, width, waveHeight);
+  }
+  
+  // Add foam/whitecaps
+  ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+  for (let i = 0; i < 15; i++) {
+    const foamX = ((i * 127.3 + state.frameCount * 0.3) % (width + 100)) - 50;
+    const foamY = oceanY + ((i * 53.7) % oceanHeight);
+    const foamSize = 3 + (i % 3);
+    ctx.fillRect(foamX, foamY, foamSize, 2);
+  }
 }
 
 // ----------------------
