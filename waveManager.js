@@ -43,10 +43,7 @@ export function spawnWave(waveIndex) {
 
   if (waveData.tunnel) spawns.spawnTunnel();
   
-  // Spawn ground objects for city/building waves
-  if (waveData.theme === "city-descent" || waveData.theme === "ruined-city") {
-    spawns.spawnGroundObjects();
-  }
+  // Ground object spawning removed - city themes no longer used
 
   if (waveData.enemies && Array.isArray(waveData.enemies)) {
     waveData.enemies.forEach(group => {
