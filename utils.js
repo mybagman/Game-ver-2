@@ -149,6 +149,7 @@ export function spawnDiamondEnemy() {
 }
 
 export function spawnTank(count) {
+  console.log('[spawnTank] called with count:', count);
   for (let i = 0; i < count; i++) {
     const x = Math.random() * state.canvas.width;
     const y = state.canvas.height - (30 + Math.random() * 60);
@@ -163,9 +164,11 @@ export function spawnTank(count) {
       turretAngle: 0
     });
   }
+  console.log('[spawnTank] tanks.length after spawn:', state.tanks.length);
 }
 
 export function spawnWalker(count) {
+  console.log('[spawnWalker] called with count:', count);
   for (let i = 0; i < count; i++) {
     const x = Math.random() * state.canvas.width;
     const y = state.canvas.height - (40 + Math.random() * 80);
@@ -180,9 +183,11 @@ export function spawnWalker(count) {
       legPhase: 0
     });
   }
+  console.log('[spawnWalker] walkers.length after spawn:', state.walkers.length);
 }
 
 export function spawnMech(count) {
+  console.log('[spawnMech] called with count:', count);
   for (let i = 0; i < count; i++) {
     const x = Math.random() * state.canvas.width;
     // Start high up for dropship deployment animation
@@ -201,6 +206,7 @@ export function spawnMech(count) {
       deployProgress: 0 // Track deployment animation progress
     });
   }
+  console.log('[spawnMech] mechs.length after spawn:', state.mechs.length);
 }
 
 export function spawnMotherCore() {
