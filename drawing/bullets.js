@@ -181,6 +181,109 @@ export function drawBullets() {
       }
       
       state.ctx.restore();
+    } else if (b.plasma) {
+      // Plasma Cannon bullets - bright, glowing plasma projectiles
+      state.ctx.save();
+      state.ctx.globalCompositeOperation = 'lighter';
+      
+      const plasmaPulse = Math.sin(state.frameCount * 0.2) * 0.3 + 0.7;
+      const plasmaSize = b.size || 10;
+      
+      // Outer plasma glow (purple/pink)
+      const plasmaGrad = state.ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, plasmaSize * 2);
+      plasmaGrad.addColorStop(0, `rgba(255, 100, 255, ${0.9 * plasmaPulse})`);
+      plasmaGrad.addColorStop(0.5, `rgba(200, 50, 255, ${0.5 * plasmaPulse})`);
+      plasmaGrad.addColorStop(1, 'rgba(150, 0, 200, 0)');
+      state.ctx.fillStyle = plasmaGrad;
+      state.ctx.beginPath();
+      state.ctx.arc(b.x, b.y, plasmaSize * 2, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Core (bright white/pink)
+      state.ctx.fillStyle = `rgba(255, 200, 255, ${plasmaPulse})`;
+      state.ctx.beginPath();
+      state.ctx.arc(b.x, b.y, plasmaSize * 0.6, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Energy sparks
+      if (state.frameCount % 2 === 0) {
+        for (let s = 0; s < 3; s++) {
+          const sparkAngle = Math.random() * Math.PI * 2;
+          const sparkDist = plasmaSize * (1 + Math.random());
+          const sparkX = b.x + Math.cos(sparkAngle) * sparkDist;
+          const sparkY = b.y + Math.sin(sparkAngle) * sparkDist;
+          state.ctx.fillStyle = `rgba(255, 150, 255, ${0.8 * plasmaPulse})`;
+          state.ctx.fillRect(sparkX - 1.5, sparkY - 1.5, 3, 3);
+        }
+      }
+      
+      state.ctx.restore();
+    } else if (b.repulsor) {
+      // Repulsor Fire bullets - blue energy with knockback effect
+      state.ctx.save();
+      state.ctx.globalCompositeOperation = 'lighter';
+      
+      const repulsorPulse = Math.sin(state.frameCount * 0.18) * 0.3 + 0.7;
+      const repulsorSize = b.size || 8;
+      
+      // Outer repulsor field (blue/cyan)
+      const repulsorGrad = state.ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, repulsorSize * 1.8);
+      repulsorGrad.addColorStop(0, `rgba(100, 200, 255, ${0.8 * repulsorPulse})`);
+      repulsorGrad.addColorStop(0.5, `rgba(50, 150, 255, ${0.4 * repulsorPulse})`);
+      repulsorGrad.addColorStop(1, 'rgba(0, 100, 200, 0)');
+      state.ctx.fillStyle = repulsorGrad;
+      state.ctx.beginPath();
+      state.ctx.arc(b.x, b.y, repulsorSize * 1.8, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Core (bright cyan)
+      state.ctx.fillStyle = `rgba(150, 220, 255, ${repulsorPulse})`;
+      state.ctx.beginPath();
+      state.ctx.arc(b.x, b.y, repulsorSize * 0.7, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Repulsion rings
+      state.ctx.strokeStyle = `rgba(100, 200, 255, ${0.6 * repulsorPulse})`;
+      state.ctx.lineWidth = 2;
+      state.ctx.beginPath();
+      state.ctx.arc(b.x, b.y, repulsorSize + 2 + Math.sin(state.frameCount * 0.15) * 2, 0, Math.PI * 2);
+      state.ctx.stroke();
+      
+      state.ctx.restore();
+    } else if (b.wave) {
+      // Wave Fire bullets - oscillating wave pattern
+      state.ctx.save();
+      state.ctx.globalCompositeOperation = 'lighter';
+      
+      const wavePulse = Math.sin(state.frameCount * 0.15) * 0.3 + 0.7;
+      const waveSize = b.size || 7;
+      
+      // Outer wave glow (orange/yellow)
+      const waveGrad = state.ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, waveSize * 1.6);
+      waveGrad.addColorStop(0, `rgba(255, 200, 100, ${0.8 * wavePulse})`);
+      waveGrad.addColorStop(0.5, `rgba(255, 150, 50, ${0.4 * wavePulse})`);
+      waveGrad.addColorStop(1, 'rgba(200, 100, 0, 0)');
+      state.ctx.fillStyle = waveGrad;
+      state.ctx.beginPath();
+      state.ctx.arc(b.x, b.y, waveSize * 1.6, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Core (bright yellow)
+      state.ctx.fillStyle = `rgba(255, 220, 150, ${wavePulse})`;
+      state.ctx.beginPath();
+      state.ctx.arc(b.x, b.y, waveSize * 0.6, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Wave oscillation rings
+      for (let w = 0; w < 2; w++) {
+        state.ctx.strokeStyle = `rgba(255, 180, 100, ${(0.4 - w * 0.15) * wavePulse})`;
+        state.ctx.lineWidth = 1.5;
+        state.ctx.beginPath();
+        state.ctx.arc(b.x, b.y, waveSize + 3 + w * 4 + Math.sin(state.frameCount * 0.12 + w) * 2, 0, Math.PI * 2);
+        state.ctx.stroke();
+      }
+      
+      state.ctx.restore();
     } else if (isBoss) {
       drawBossBullet(state.ctx, b);
     } else if (isMiniBoss) {

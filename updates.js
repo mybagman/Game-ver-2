@@ -316,7 +316,55 @@ export function handleShooting() {
     const auraActive = state.goldStarAura && state.goldStarAura.active;
     const auraLevel = state.goldStarAura ? state.goldStarAura.level : 0;
     
-    if (auraActive && auraLevel >= 9) {
+    if (auraActive && auraLevel >= 18) {
+      // Plasma Cannons at level 18+ (most powerful)
+      const spreadAngle = 0.12;
+      for (let i = -2; i <= 2; i++) {
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(baseAngle + i * spreadAngle) * 12, 
+          dy: Math.sin(baseAngle + i * spreadAngle) * 12, 
+          size: 10, 
+          owner: "player",
+          damage: 30,
+          color: "plasma",
+          plasma: true
+        });
+      }
+    } else if (auraActive && auraLevel >= 15) {
+      // Repulsor Fire at level 15+ (high power with knockback)
+      const spreadAngle = 0.13;
+      for (let i = -2; i <= 2; i++) {
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(baseAngle + i * spreadAngle) * 11, 
+          dy: Math.sin(baseAngle + i * spreadAngle) * 11, 
+          size: 8, 
+          owner: "player",
+          damage: 20,
+          color: "repulsor",
+          repulsor: true
+        });
+      }
+    } else if (auraActive && auraLevel >= 12) {
+      // Wave Fire at level 12+ (5-shot wave pattern)
+      const spreadAngle = 0.18;
+      for (let i = -2; i <= 2; i++) {
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(baseAngle + i * spreadAngle) * 10.5, 
+          dy: Math.sin(baseAngle + i * spreadAngle) * 10.5, 
+          size: 7, 
+          owner: "player",
+          damage: 15,
+          color: "wave",
+          wave: true
+        });
+      }
+    } else if (auraActive && auraLevel >= 9) {
       // Quad shot at level 9+
       const spreadAngle = 0.15;
       for (let i = -1.5; i <= 1.5; i++) {
