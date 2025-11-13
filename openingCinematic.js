@@ -29,20 +29,37 @@ const SCENES = [
     fadeOutDuration: 60
   },
   {
-    id: 'earth2025',
-    duration: 540, // 9 seconds at 60fps
+    id: 'earth2025_part1',
+    duration: 420, // 7 seconds at 60fps
     locationText: '2025',
     typeStartFrame: 30,
     dialogStartFrame: 90,
     dialogs: [
       {
         character: 'leader',
-        text: "It was the beginning of the end. AI was on the rise, and our freedom was being taken to feed the machine.",
+        text: "With the rise of AI, Everyone became distracted.",
         startFrame: 90,
-        duration: 300
+        duration: 210
       }
     ],
-    fadeOutStart: 480,
+    fadeOutStart: 360,
+    fadeOutDuration: 60
+  },
+  {
+    id: 'earth2025_part2',
+    duration: 480, // 8 seconds at 60fps
+    locationText: '',  // No location text for part 2
+    typeStartFrame: 0,
+    dialogStartFrame: 30,
+    dialogs: [
+      {
+        character: 'leader',
+        text: "Even the few that had escaped slavery couldnt control what came next.",
+        startFrame: 30,
+        duration: 240
+      }
+    ],
+    fadeOutStart: 420,
     fadeOutDuration: 60
   },
   {
@@ -250,83 +267,197 @@ function renderSceneBackground(ctx, width, height, scene, frame) {
       ctx.stroke();
     }
     
-  } else if (scene.id === 'earth2025') {
-    // Dystopian 2025 - dark skies, tech structures, ominous
+  } else if (scene.id === 'earth2025_part1') {
+    // Scene 2 Part 1: People distracted by phones, AI diamond core eye blinks
+    // Dark urban environment
     const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, '#1a1a2e'); // Dark blue-gray
-    gradient.addColorStop(0.5, '#16213e'); // Darker blue
-    gradient.addColorStop(1, '#0f3460'); // Deep blue
+    gradient.addColorStop(0, '#2a2a3e'); // Dark gray-blue
+    gradient.addColorStop(0.5, '#1a1a2e'); // Darker
+    gradient.addColorStop(1, '#0f0f1e'); // Very dark
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
     
-    // Ominous clouds
-    ctx.fillStyle = 'rgba(50, 50, 70, 0.6)';
-    for (let i = 0; i < 10; i++) {
-      const x = (i * width / 10) + Math.sin(frame * 0.02 + i) * 30;
-      const y = height * 0.2 + Math.cos(frame * 0.015 + i) * 20;
+    // Ground/street
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, height * 0.7, width, height * 0.3);
+    
+    // Street lines
+    ctx.strokeStyle = '#444444';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([20, 15]);
+    ctx.beginPath();
+    ctx.moveTo(0, height * 0.85);
+    ctx.lineTo(width, height * 0.85);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // Groups of people walking left to right, heads down, looking at phones
+    const walkCycle = (frame * 0.02) % 1; // Walking animation
+    for (let i = 0; i < 6; i++) {
+      const personX = ((frame * 2 + i * 150) % (width + 200)) - 100;
+      const personY = height * 0.7;
+      
+      // Person body (simple silhouette)
+      ctx.fillStyle = '#333344';
+      // Head (looking down)
       ctx.beginPath();
-      ctx.ellipse(x, y, 80, 40, 0, 0, Math.PI * 2);
+      ctx.arc(personX, personY - 40, 12, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Body
+      ctx.fillRect(personX - 8, personY - 28, 16, 30);
+      
+      // Phone glow in hands (blue glow)
+      ctx.fillStyle = 'rgba(100, 150, 255, 0.8)';
+      ctx.fillRect(personX - 5, personY - 15, 10, 15);
+      
+      // Phone glow effect
+      ctx.save();
+      ctx.shadowColor = 'rgba(100, 150, 255, 0.6)';
+      ctx.shadowBlur = 15;
+      ctx.fillStyle = 'rgba(150, 180, 255, 0.4)';
+      ctx.fillRect(personX - 6, personY - 16, 12, 17);
+      ctx.restore();
+      
+      // Legs (simple)
+      const legOffset = Math.sin(walkCycle * Math.PI * 2 + i) * 5;
+      ctx.fillStyle = '#333344';
+      ctx.fillRect(personX - 7, personY - 2, 5, 15 + legOffset);
+      ctx.fillRect(personX + 2, personY - 2, 5, 15 - legOffset);
+    }
+    
+    // AI Diamond Core in the distance (top center)
+    const coreX = width / 2;
+    const coreY = height * 0.15;
+    
+    // Diamond shape
+    ctx.fillStyle = '#1a1a2e';
+    ctx.save();
+    ctx.translate(coreX, coreY);
+    ctx.rotate(Math.PI / 4);
+    ctx.fillRect(-30, -30, 60, 60);
+    ctx.restore();
+    
+    // Red eye that blinks
+    const blinkCycle = frame % 120;
+    const eyeOpen = blinkCycle < 100 || blinkCycle > 110;
+    if (eyeOpen) {
+      const eyeIntensity = Math.sin(frame * 0.05) * 0.3 + 0.7;
+      ctx.save();
+      ctx.shadowColor = 'rgba(255, 0, 0, 0.8)';
+      ctx.shadowBlur = 30;
+      ctx.fillStyle = `rgba(255, 0, 0, ${eyeIntensity})`;
+      ctx.beginPath();
+      ctx.arc(coreX, coreY, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      
+      // Inner eye detail
+      ctx.fillStyle = `rgba(255, 100, 100, ${eyeIntensity})`;
+      ctx.beginPath();
+      ctx.arc(coreX, coreY, 6, 0, Math.PI * 2);
       ctx.fill();
     }
     
-    // Tech structures/buildings
-    for (let i = 0; i < 8; i++) {
-      const x = i * (width / 8) + 20;
-      const buildingHeight = 200 + Math.random() * 200;
-      const y = height - buildingHeight;
+  } else if (scene.id === 'earth2025_part2') {
+    // Scene 2 Part 2: Rise of machines, AI takeover, gold star as last hope
+    // Dark night sky
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, width, height);
+    
+    // Stars in the sky
+    for (let i = 0; i < 100; i++) {
+      const sx = (i * 137.5) % width;
+      const sy = (i * 217.3) % (height * 0.6);
+      const ssize = 1 + (i % 2);
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + (i % 5) * 0.1})`;
+      ctx.fillRect(sx, sy, ssize, ssize);
+    }
+    
+    // Earth/ground at bottom (being taken over)
+    const groundGradient = ctx.createLinearGradient(0, height * 0.6, 0, height);
+    groundGradient.addColorStop(0, '#0f0f1e');
+    groundGradient.addColorStop(0.5, '#1a1a2e');
+    groundGradient.addColorStop(1, '#2a2a3e');
+    ctx.fillStyle = groundGradient;
+    ctx.fillRect(0, height * 0.6, width, height * 0.4);
+    
+    // Machine structures rising from the ground
+    for (let i = 0; i < 6; i++) {
+      const mx = (i / 6) * width + width / 12;
+      const mheight = 80 + Math.sin(frame * 0.02 + i) * 20 + i * 20;
+      const my = height * 0.8 - mheight;
       
-      // Building body
+      // Machine tower
       ctx.fillStyle = '#2a2a3e';
-      ctx.fillRect(x, y, 60, buildingHeight);
+      ctx.fillRect(mx - 20, my, 40, mheight);
       
-      // Windows with red/orange glow
-      ctx.fillStyle = (frame + i * 10) % 40 < 20 ? '#ff4444' : '#ff8844';
-      for (let row = 0; row < buildingHeight / 30; row++) {
-        for (let col = 0; col < 2; col++) {
-          ctx.fillRect(x + 10 + col * 25, y + 10 + row * 30, 15, 15);
-        }
-      }
+      // Red glowing parts (AI control)
+      ctx.fillStyle = (frame + i * 15) % 40 < 20 ? '#ff0000' : '#880000';
+      ctx.fillRect(mx - 15, my + 10, 30, 5);
+      ctx.fillRect(mx - 15, my + mheight / 2, 30, 5);
+      ctx.fillRect(mx - 15, my + mheight - 15, 30, 5);
       
-      // Antenna
-      ctx.strokeStyle = '#666688';
+      // Red eye/scanner
+      ctx.save();
+      ctx.shadowColor = 'rgba(255, 0, 0, 0.8)';
+      ctx.shadowBlur = 15;
+      ctx.fillStyle = (frame + i * 10) % 30 < 15 ? 'rgba(255, 0, 0, 0.9)' : 'rgba(255, 0, 0, 0.5)';
+      ctx.beginPath();
+      ctx.arc(mx, my + 20, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    
+    // Gold Star in the night sky - representing the last hope of humankind
+    const starX = width * 0.75;
+    const starY = height * 0.25;
+    const starRotation = frame * 0.03;
+    const starPulse = Math.sin(frame * 0.08) * 0.2 + 1;
+    
+    // Glow around the star
+    ctx.save();
+    ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+    ctx.shadowBlur = 40;
+    ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+    ctx.beginPath();
+    ctx.arc(starX, starY, 30 * starPulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    
+    // Draw gold star (5-pointed)
+    ctx.save();
+    ctx.translate(starX, starY);
+    ctx.rotate(starRotation);
+    ctx.fillStyle = 'rgba(255, 215, 0, 1)';
+    ctx.shadowColor = 'rgba(255, 215, 0, 1)';
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
+      const outerRadius = 18 * starPulse;
+      const innerRadius = 9 * starPulse;
+      ctx.lineTo(Math.cos(angle) * outerRadius, Math.sin(angle) * outerRadius);
+      ctx.lineTo(Math.cos(angle + Math.PI / 5) * innerRadius, Math.sin(angle + Math.PI / 5) * innerRadius);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    
+    // Light rays from the star
+    ctx.save();
+    ctx.translate(starX, starY);
+    ctx.rotate(starRotation * 0.5);
+    for (let i = 0; i < 8; i++) {
+      const rayAngle = (i / 8) * Math.PI * 2;
+      ctx.strokeStyle = `rgba(255, 215, 0, ${0.3 - (i % 2) * 0.1})`;
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(x + 30, y);
-      ctx.lineTo(x + 30, y - 40);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(rayAngle) * 50, Math.sin(rayAngle) * 50);
       ctx.stroke();
-      
-      // Red light on antenna
-      ctx.fillStyle = (frame + i * 15) % 30 < 15 ? '#ff0000' : '#880000';
-      ctx.beginPath();
-      ctx.arc(x + 30, y - 40, 4, 0, Math.PI * 2);
-      ctx.fill();
     }
-    
-    // AI surveillance drones
-    for (let i = 0; i < 4; i++) {
-      const droneX = width * 0.2 + i * (width * 0.2) + Math.sin(frame * 0.03 + i * 2) * 50;
-      const droneY = height * 0.4 + Math.cos(frame * 0.04 + i * 2) * 40;
-      
-      // Drone body
-      ctx.fillStyle = '#444466';
-      ctx.fillRect(droneX - 15, droneY - 5, 30, 10);
-      
-      // Propellers
-      ctx.strokeStyle = 'rgba(150, 150, 200, 0.5)';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(droneX - 20, droneY, 8, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(droneX + 20, droneY, 8, 0, Math.PI * 2);
-      ctx.stroke();
-      
-      // Red scanning light
-      ctx.fillStyle = (frame + i * 10) % 20 < 10 ? 'rgba(255, 0, 0, 0.8)' : 'rgba(255, 0, 0, 0.3)';
-      ctx.beginPath();
-      ctx.arc(droneX, droneY, 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    ctx.restore();
     
   } else if (scene.id === 'asteroid') {
     // Space scene with asteroid base
