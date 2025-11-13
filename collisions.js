@@ -371,7 +371,7 @@ export function updateLightningStrikes() {
 }
 
 function createLightningStrike(level) {
-  // Find nearest enemies to target
+  // Find nearest enemy to target (single bolt, long range)
   const allTargets = [
     ...state.enemies.filter(e => e.type !== "reflector"),
     ...state.tanks,
@@ -382,13 +382,10 @@ function createLightningStrike(level) {
   
   if (allTargets.length === 0) return;
   
-  // Number of targets based on level
-  let chainCount = 1;
-  if (level >= 13) chainCount = 3;
-  else if (level >= 12) chainCount = 2;
-  else chainCount = 1;
+  // Always target only ONE enemy (single bolt)
+  const chainCount = 1;
   
-  // Find closest targets to player
+  // Find closest target to player
   const sorted = allTargets
     .map(t => ({
       target: t,
@@ -399,15 +396,15 @@ function createLightningStrike(level) {
   const targets = sorted.slice(0, Math.min(chainCount, sorted.length)).map(t => t.target);
   
   if (targets.length > 0) {
-    // Create lightning strike arc
+    // Create single lightning strike bolt (long duration for better visibility)
     state.pushLightningStrike({
       targets: targets,
-      life: 30, // 0.5 seconds at 60fps
-      maxLife: 30,
+      life: 20, // Shorter duration for single bolt
+      maxLife: 20,
       color: "rgba(150, 220, 255, 0.9)"
     });
     
-    // Visual and audio feedback
+    // Visual feedback
     targets.forEach(target => {
       createExplosion(target.x, target.y, "cyan");
     });
