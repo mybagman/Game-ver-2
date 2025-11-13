@@ -90,26 +90,26 @@ export function gameLoop(now) {
   }
 
   // Updates (order preserved)
-  try { updatePlayerMovement(); } catch (e) {}
-  try { handleShooting(); } catch (e) {}
-  try { updateBullets(); } catch (e) {}
-  try { updateEmpProjectiles(); } catch (e) {}
-  try { updateMegatonneBombs(); } catch (e) {}
-  try { updateLightning(); } catch (e) {}
-  try { updateLightningStrikes(); } catch (e) {}
-  try { updateExplosions(); } catch (e) {}
-  try { updatePowerUps(); } catch (e) {}
-  try { updateTunnels(); } catch (e) {}
-  try { updateRedPunchEffects(); } catch (e) {}
-  try { updateGoldStarAura(); } catch (e) {}
-  try { updateGoldStar(); } catch (e) {}
-  try { updateEnemies(); } catch (e) {}
-  try { updateDebris(); } catch (e) {}
-  try { updateCloudParticles(); } catch (e) {}
-  try { updateReflectorSystem(); } catch (e) {}
-  try { updateHomingMissiles(); } catch (e) {}
-  try { checkBulletCollisions(); } catch (e) {}
-  try { tryAdvanceWave(); } catch (e) {}
+  try { updatePlayerMovement(); } catch (e) { console.error('[gameLoop] updatePlayerMovement error:', e); }
+  try { handleShooting(); } catch (e) { console.error('[gameLoop] handleShooting error:', e); }
+  try { updateBullets(); } catch (e) { console.error('[gameLoop] updateBullets error:', e); }
+  try { updateEmpProjectiles(); } catch (e) { console.error('[gameLoop] updateEmpProjectiles error:', e); }
+  try { updateMegatonneBombs(); } catch (e) { console.error('[gameLoop] updateMegatonneBombs error:', e); }
+  try { updateLightning(); } catch (e) { console.error('[gameLoop] updateLightning error:', e); }
+  try { updateLightningStrikes(); } catch (e) { console.error('[gameLoop] updateLightningStrikes error:', e); }
+  try { updateExplosions(); } catch (e) { console.error('[gameLoop] updateExplosions error:', e); }
+  try { updatePowerUps(); } catch (e) { console.error('[gameLoop] updatePowerUps error:', e); }
+  try { updateTunnels(); } catch (e) { console.error('[gameLoop] updateTunnels error:', e); }
+  try { updateRedPunchEffects(); } catch (e) { console.error('[gameLoop] updateRedPunchEffects error:', e); }
+  try { updateGoldStarAura(); } catch (e) { console.error('[gameLoop] updateGoldStarAura error:', e); }
+  try { updateGoldStar(); } catch (e) { console.error('[gameLoop] updateGoldStar error:', e); }
+  try { updateEnemies(); } catch (e) { console.error('[gameLoop] updateEnemies error:', e); }
+  try { updateDebris(); } catch (e) { console.error('[gameLoop] updateDebris error:', e); }
+  try { updateCloudParticles(); } catch (e) { console.error('[gameLoop] updateCloudParticles error:', e); }
+  try { updateReflectorSystem(); } catch (e) { console.error('[gameLoop] updateReflectorSystem error:', e); }
+  try { updateHomingMissiles(); } catch (e) { console.error('[gameLoop] updateHomingMissiles error:', e); }
+  try { checkBulletCollisions(); } catch (e) { console.error('[gameLoop] checkBulletCollisions error:', e); }
+  try { tryAdvanceWave(); } catch (e) { console.error('[gameLoop] tryAdvanceWave error:', e); }
 
   // Player death handling
   if (state.player && typeof state.player.health === 'number' && state.player.health <= 0) {

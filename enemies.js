@@ -458,6 +458,31 @@ export function updateTanks() {
       });
     }
 
+    // Collision with player
+    const distToPlayer = Math.hypot(tank.x - state.player.x, tank.y - state.player.y);
+    const collisionDist = (tank.width / 2 || 25) + (state.player.size / 2);
+    if (distToPlayer < collisionDist) {
+      applyPlayerDamage(20);
+      createExplosion(tank.x, tank.y, "orange");
+      tank.health -= 50; // Tank takes damage from collision too
+    }
+
+    // Collision with gold star
+    if (state.goldStar.alive) {
+      const distToGoldStar = Math.hypot(tank.x - state.goldStar.x, tank.y - state.goldStar.y);
+      const gsCollisionDist = (tank.width / 2 || 25) + (state.goldStar.size / 2);
+      if (distToGoldStar < gsCollisionDist) {
+        state.goldStar.health -= 20;
+        if (state.goldStar.health <= 0) {
+          state.goldStar.alive = false;
+          state.goldStar.respawnTimer = 0;
+          createExplosion(state.goldStar.x, state.goldStar.y, "gold");
+        }
+        createExplosion(tank.x, tank.y, "orange");
+        tank.health -= 50;
+      }
+    }
+
     if (tank.health <= 0) {
       createExplosion(tank.x, tank.y, "orange");
       spawnDebris(tank.x, tank.y, 8);
@@ -507,6 +532,31 @@ export function updateWalkers() {
           size: 6,
           damage: 15
         });
+      }
+    }
+
+    // Collision with player
+    const distToPlayer = Math.hypot(walker.x - state.player.x, walker.y - state.player.y);
+    const collisionDist = (walker.width / 2 || 20) + (state.player.size / 2);
+    if (distToPlayer < collisionDist) {
+      applyPlayerDamage(25);
+      createExplosion(walker.x, walker.y, "cyan");
+      walker.health -= 60; // Walker takes damage from collision too
+    }
+
+    // Collision with gold star
+    if (state.goldStar.alive) {
+      const distToGoldStar = Math.hypot(walker.x - state.goldStar.x, walker.y - state.goldStar.y);
+      const gsCollisionDist = (walker.width / 2 || 20) + (state.goldStar.size / 2);
+      if (distToGoldStar < gsCollisionDist) {
+        state.goldStar.health -= 25;
+        if (state.goldStar.health <= 0) {
+          state.goldStar.alive = false;
+          state.goldStar.respawnTimer = 0;
+          createExplosion(state.goldStar.x, state.goldStar.y, "gold");
+        }
+        createExplosion(walker.x, walker.y, "cyan");
+        walker.health -= 60;
       }
     }
 
@@ -709,6 +759,31 @@ export function updateMechs() {
             damage: 25
           });
         });
+      }
+    }
+
+    // Collision with player (works for both flying and grounded mechs)
+    const distToPlayer = Math.hypot(mech.x - state.player.x, mech.y - state.player.y);
+    const collisionDist = (mech.size / 2) + (state.player.size / 2);
+    if (distToPlayer < collisionDist) {
+      applyPlayerDamage(35);
+      createExplosion(mech.x, mech.y, "yellow");
+      mech.health -= 80; // Mech takes damage from collision too
+    }
+
+    // Collision with gold star
+    if (state.goldStar.alive) {
+      const distToGoldStar = Math.hypot(mech.x - state.goldStar.x, mech.y - state.goldStar.y);
+      const gsCollisionDist = (mech.size / 2) + (state.goldStar.size / 2);
+      if (distToGoldStar < gsCollisionDist) {
+        state.goldStar.health -= 35;
+        if (state.goldStar.health <= 0) {
+          state.goldStar.alive = false;
+          state.goldStar.respawnTimer = 0;
+          createExplosion(state.goldStar.x, state.goldStar.y, "gold");
+        }
+        createExplosion(mech.x, mech.y, "yellow");
+        mech.health -= 80;
       }
     }
 
