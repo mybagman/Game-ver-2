@@ -119,6 +119,7 @@ function drawThrusterParticles(ctx, player) {
 
 // replace drawPlayer rectangle with an 8-bit craft
 export function drawPlayer() {
+  console.log('[drawPlayer] called at wave', state.wave, 'player pos:', state.player.x, state.player.y);
   // ensure any lingering canvas state is reset before drawing player
   state.ctx.save();
   state.ctx.filter = 'none';

@@ -523,14 +523,30 @@ export function drawLightningStrikes() {
       const target = strike.targets[t];
       if (!target) continue;
       
-      // Main lightning arc
-      ctx.strokeStyle = `rgba(150, 220, 255, ${0.9 * alpha})`;
-      ctx.lineWidth = 3;
+      // Wide outer glow for long-range visibility
+      ctx.strokeStyle = `rgba(80, 160, 255, ${0.3 * alpha})`;
+      ctx.lineWidth = 12;
+      ctx.beginPath();
+      ctx.moveTo(sourceX, sourceY);
+      ctx.lineTo(target.x, target.y);
+      ctx.stroke();
+      
+      // Medium glow
+      ctx.strokeStyle = `rgba(100, 180, 255, ${0.5 * alpha})`;
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(sourceX, sourceY);
+      ctx.lineTo(target.x, target.y);
+      ctx.stroke();
+      
+      // Main lightning arc (thicker and brighter for single bolt)
+      ctx.strokeStyle = `rgba(150, 220, 255, ${0.95 * alpha})`;
+      ctx.lineWidth = 5;
       ctx.beginPath();
       ctx.moveTo(sourceX, sourceY);
       
       // Create jagged lightning effect with multiple segments
-      const segments = 8;
+      const segments = 10;
       const dx = target.x - sourceX;
       const dy = target.y - sourceY;
       
@@ -543,7 +559,7 @@ export function drawLightningStrikes() {
         const perpX = -dy;
         const perpY = dx;
         const perpLen = Math.sqrt(perpX * perpX + perpY * perpY) || 1;
-        const offset = (Math.random() - 0.5) * 20 * (1 - t * 0.5);
+        const offset = (Math.random() - 0.5) * 25 * (1 - t * 0.5);
         
         ctx.lineTo(
           x + (perpX / perpLen) * offset,
@@ -553,23 +569,15 @@ export function drawLightningStrikes() {
       
       ctx.stroke();
       
-      // Outer glow
-      ctx.strokeStyle = `rgba(100, 180, 255, ${0.4 * alpha})`;
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.moveTo(sourceX, sourceY);
-      ctx.lineTo(target.x, target.y);
-      ctx.stroke();
-      
-      // Electric sparks along the arc
+      // Electric sparks along the arc (more frequent for single bolt)
       if (state.frameCount % 2 === 0) {
-        for (let s = 0; s < 5; s++) {
+        for (let s = 0; s < 8; s++) {
           const t = Math.random();
           const sparkX = sourceX + dx * t;
           const sparkY = sourceY + dy * t;
           
-          ctx.fillStyle = `rgba(200, 240, 255, ${0.8 * alpha})`;
-          ctx.fillRect(sparkX - 2, sparkY - 2, 4, 4);
+          ctx.fillStyle = `rgba(200, 240, 255, ${0.9 * alpha})`;
+          ctx.fillRect(sparkX - 2.5, sparkY - 2.5, 5, 5);
         }
       }
       

@@ -391,23 +391,21 @@ export function handleShooting() {
       }
       
     } else if (auraActive && auraLevel >= 8) {
-      // Level 8: Wave Fire + Repulsor Fire
-      // Keep wave, add repulsor
+      // Level 8: Spiral Fire + Repulsor Fire
+      // Keep spiral, add repulsor
       
-      // Wave Fire (rotating pattern)
-      const waveCount = 6;
-      for (let i = 0; i < waveCount; i++) {
-        const waveAngle = state.waveFireRotation + (i / waveCount) * Math.PI * 2;
+      // Spiral Fire (rotating pattern with quad fire styling)
+      const spiralCount = 6;
+      for (let i = 0; i < spiralCount; i++) {
+        const spiralAngle = state.waveFireRotation + (i / spiralCount) * Math.PI * 2;
         state.pushBullet({
           x: state.player.x, 
           y: state.player.y, 
-          dx: Math.cos(waveAngle) * 10, 
-          dy: Math.sin(waveAngle) * 10, 
-          size: 7, 
+          dx: Math.cos(spiralAngle) * 10, 
+          dy: Math.sin(spiralAngle) * 10, 
+          size: 6, 
           owner: "player",
-          damage: 12,
-          color: "wave",
-          wave: true
+          damage: 12
         });
       }
       state.waveFireRotation += 0.15; // Rotate for next shot
@@ -430,20 +428,18 @@ export function handleShooting() {
       }
       
     } else if (auraActive && auraLevel >= 6) {
-      // Level 6: Wave Fire (rotating circular pattern)
-      const waveCount = 6;
-      for (let i = 0; i < waveCount; i++) {
-        const waveAngle = state.waveFireRotation + (i / waveCount) * Math.PI * 2;
+      // Level 6: Spiral Fire (rotating circular pattern with quad fire styling)
+      const spiralCount = 6;
+      for (let i = 0; i < spiralCount; i++) {
+        const spiralAngle = state.waveFireRotation + (i / spiralCount) * Math.PI * 2;
         state.pushBullet({
           x: state.player.x, 
           y: state.player.y, 
-          dx: Math.cos(waveAngle) * 10, 
-          dy: Math.sin(waveAngle) * 10, 
-          size: 7, 
+          dx: Math.cos(spiralAngle) * 10, 
+          dy: Math.sin(spiralAngle) * 10, 
+          size: 6, 
           owner: "player",
-          damage: 12,
-          color: "wave",
-          wave: true
+          damage: 12
         });
       }
       // Increment rotation for spiral/rotating effect

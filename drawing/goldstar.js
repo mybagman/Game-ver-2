@@ -1,6 +1,7 @@
 import * as state from '../state.js';
 
 export function drawGoldStar() {
+  console.log('[drawGoldStar] called, alive:', state.goldStar.alive, 'pos:', state.goldStar.x, state.goldStar.y);
   if (!state.goldStar.alive) return;
   
   const gs = state.goldStar;
