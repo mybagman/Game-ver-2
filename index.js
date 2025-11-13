@@ -2,6 +2,7 @@ import { loadHighScores, ensureCanvas, gameLoop } from './game.js';
 import { respawnPlayer, respawnGoldStar } from './utils.js';
 import { spawnWave } from './waveManager.js';
 import { setupInputHandlers } from './input.js';
+import * as state from './state.js';
 
 /**
  * index.js
@@ -173,6 +174,17 @@ function wireOverlayButtons() {
   if (continueBtn) {
     continueBtn.addEventListener('click', () => {
       hideOverlay();
+      // Reset game over state
+      if (typeof state.setGameOver === 'function') {
+        state.setGameOver(false);
+      } else {
+        state.gameOver = false;
+      }
+      // Reset player lives and health
+      state.player.lives = 3;
+      state.player.health = state.player.maxHealth || 100;
+      state.player.invulnerable = true;
+      state.player.invulnerableTimer = 180; // 3 seconds at 60fps
       respawnPlayer();
       respawnGoldStar();
       spawnWave(currentWave);
@@ -182,6 +194,25 @@ function wireOverlayButtons() {
   if (restartBtn) {
     restartBtn.addEventListener('click', () => {
       hideOverlay();
+      // Reset game over state
+      if (typeof state.setGameOver === 'function') {
+        state.setGameOver(false);
+      } else {
+        state.gameOver = false;
+      }
+      // Use the state's resetGame function for proper full reset
+      if (typeof state.resetGame === 'function') {
+        state.resetGame();
+      } else {
+        // Fallback manual reset
+        state.player.lives = 3;
+        state.player.health = state.player.maxHealth || 100;
+        if (typeof state.setScore === 'function') {
+          state.setScore(0);
+        } else {
+          state.score = 0;
+        }
+      }
       currentWave = 0;
       respawnPlayer();
       respawnGoldStar();
