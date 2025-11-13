@@ -71,6 +71,81 @@ function applyKnockback(entity, bullet, force = 8) {
   entity.y += (dy / dist) * force;
 }
 
+// Helper function to apply plasma AOE damage
+function applyPlasmaAOE(bullet) {
+  if (!bullet.plasma || !bullet.aoeRadius) return;
+  
+  const aoeRadius = bullet.aoeRadius;
+  const aoeDamage = (bullet.damage || 25) * 0.6; // 60% damage in AOE
+  
+  // Create explosion visual
+  createExplosion(bullet.x, bullet.y, "plasma");
+  
+  // Create shockwave particles
+  for (let i = 0; i < 20; i++) {
+    const angle = (i / 20) * Math.PI * 2;
+    state.pushExplosion({
+      x: bullet.x,
+      y: bullet.y,
+      dx: Math.cos(angle) * 3,
+      dy: Math.sin(angle) * 3,
+      radius: 8,
+      color: "rgba(255, 100, 255, 0.8)",
+      life: 20
+    });
+  }
+  
+  // Damage all enemies in AOE radius
+  state.enemies.forEach(e => {
+    if (!e) return;
+    const dist = Math.hypot(e.x - bullet.x, e.y - bullet.y);
+    if (dist <= aoeRadius) {
+      e.health -= aoeDamage;
+      // Visual feedback for AOE damage
+      createExplosion(e.x, e.y, "purple");
+    }
+  });
+  
+  state.tanks.forEach(tank => {
+    const dist = Math.hypot(tank.x - bullet.x, tank.y - bullet.y);
+    if (dist <= aoeRadius) {
+      tank.health -= aoeDamage;
+      createExplosion(tank.x, tank.y, "purple");
+    }
+  });
+  
+  state.walkers.forEach(walker => {
+    const dist = Math.hypot(walker.x - bullet.x, walker.y - bullet.y);
+    if (dist <= aoeRadius) {
+      walker.health -= aoeDamage;
+      createExplosion(walker.x, walker.y, "purple");
+    }
+  });
+  
+  state.mechs.forEach(mech => {
+    const dist = Math.hypot(mech.x - bullet.x, mech.y - bullet.y);
+    if (dist <= aoeRadius) {
+      if (mech.shieldActive && mech.shieldHealth > 0) {
+        mech.shieldHealth -= aoeDamage;
+        if (mech.shieldHealth <= 0) {
+          mech.shieldActive = false;
+        }
+      } else {
+        mech.health -= aoeDamage;
+      }
+      createExplosion(mech.x, mech.y, "purple");
+    }
+  });
+  
+  state.dropships.forEach(dropship => {
+    const dist = Math.hypot(dropship.x - bullet.x, dropship.y - bullet.y);
+    if (dist <= aoeRadius) {
+      dropship.health -= aoeDamage;
+      createExplosion(dropship.x, dropship.y, "purple");
+    }
+  });
+}
+
 export function checkBulletCollisions() {
   for (let bi = state.bullets.length-1; bi >= 0; bi--) {
     const b = state.bullets[bi];
@@ -81,6 +156,7 @@ export function checkBulletCollisions() {
       if (Math.hypot(b.x - tank.x, b.y - tank.y) < 30) {
         tank.health -= damage;
         applyKnockback(tank, b, 5);
+        applyPlasmaAOE(b); // Apply AOE before removing bullet
         state.bullets.splice(bi, 1);
         createExplosion(tank.x, tank.y, "orange");
         break;
@@ -92,6 +168,7 @@ export function checkBulletCollisions() {
       if (Math.hypot(b.x - walker.x, b.y - walker.y) < 25) {
         walker.health -= damage;
         applyKnockback(walker, b, 6);
+        applyPlasmaAOE(b); // Apply AOE before removing bullet
         state.bullets.splice(bi, 1);
         createExplosion(walker.x, walker.y, "cyan");
         break;
@@ -110,6 +187,7 @@ export function checkBulletCollisions() {
           mech.health -= damage;
         }
         applyKnockback(mech, b, 4);
+        applyPlasmaAOE(b); // Apply AOE before removing bullet
         state.bullets.splice(bi, 1);
         createExplosion(mech.x, mech.y, "yellow");
         break;
@@ -121,6 +199,7 @@ export function checkBulletCollisions() {
       if (Math.hypot(b.x - dropship.x, b.y - dropship.y) < 35) {
         dropship.health -= damage;
         applyKnockback(dropship, b, 3);
+        applyPlasmaAOE(b); // Apply AOE before removing bullet
         state.bullets.splice(bi, 1);
         createExplosion(dropship.x, dropship.y, "orange");
         break;
@@ -245,5 +324,92 @@ export function checkBulletCollisions() {
         break;
       }
     }
+  }
+}
+
+// Lightning Strike Weapon System
+export function updateLightningStrikes() {
+  // Create new lightning strikes if triggered
+  if (state.fireLightningStrike) {
+    state.fireLightningStrike = false;
+    createLightningStrike(state.lightningStrikeLevel);
+  }
+  
+  // Update existing lightning strikes
+  state.filterLightningStrikes(strike => {
+    strike.life--;
+    
+    // Apply damage to chained enemies
+    if (strike.life > 0) {
+      strike.targets.forEach(target => {
+        // Check if target still exists
+        let targetStillExists = false;
+        const allTargets = [
+          ...state.enemies,
+          ...state.tanks,
+          ...state.walkers,
+          ...state.mechs,
+          ...state.dropships
+        ];
+        
+        if (allTargets.includes(target)) {
+          targetStillExists = true;
+          // Apply continuous damage
+          const damagePerFrame = 2; // 2 damage per frame
+          target.health -= damagePerFrame;
+          
+          // Visual feedback
+          if (state.frameCount % 5 === 0) {
+            createExplosion(target.x, target.y, "cyan");
+          }
+        }
+      });
+    }
+    
+    return strike.life > 0;
+  });
+}
+
+function createLightningStrike(level) {
+  // Find nearest enemies to target
+  const allTargets = [
+    ...state.enemies.filter(e => e.type !== "reflector"),
+    ...state.tanks,
+    ...state.walkers,
+    ...state.mechs,
+    ...state.dropships
+  ];
+  
+  if (allTargets.length === 0) return;
+  
+  // Number of targets based on level
+  let chainCount = 1;
+  if (level >= 13) chainCount = 3;
+  else if (level >= 12) chainCount = 2;
+  else chainCount = 1;
+  
+  // Find closest targets to player
+  const sorted = allTargets
+    .map(t => ({
+      target: t,
+      dist: Math.hypot(t.x - state.player.x, t.y - state.player.y)
+    }))
+    .sort((a, b) => a.dist - b.dist);
+  
+  const targets = sorted.slice(0, Math.min(chainCount, sorted.length)).map(t => t.target);
+  
+  if (targets.length > 0) {
+    // Create lightning strike arc
+    state.pushLightningStrike({
+      targets: targets,
+      life: 30, // 0.5 seconds at 60fps
+      maxLife: 30,
+      color: "rgba(150, 220, 255, 0.9)"
+    });
+    
+    // Visual and audio feedback
+    targets.forEach(target => {
+      createExplosion(target.x, target.y, "cyan");
+    });
   }
 }

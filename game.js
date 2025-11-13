@@ -13,7 +13,7 @@ import {
   updateCloudParticles
 } from './updates.js';
 import { updateEnemies } from './enemies.js';
-import { updateLightning, checkBulletCollisions } from './collisions.js';
+import { updateLightning, checkBulletCollisions, updateLightningStrikes } from './collisions.js';
 import { updateGoldStar } from './goldstar.js';
 import { updateGoldStarAura, resetAuraOnDeath } from './aura.js';
 import { tryAdvanceWave, spawnWave, renderCinematic } from './waveManager.js';
@@ -22,7 +22,7 @@ import { renderOpeningCinematic, isOpeningCinematicComplete } from './openingCin
 /* patched imports: consolidated drawing helpers from drawing.js */
 // Replace the single `from './drawing.js'` import with these direct imports:
 import { drawBackground, drawPlanetBackground, drawClouds, drawGroundObjects } from './drawing/background.js';
-import { drawBullets, drawEmpProjectiles, drawMegatonneBombs } from './drawing/bullets.js';
+import { drawBullets, drawEmpProjectiles, drawMegatonneBombs, drawLightningStrikes } from './drawing/bullets.js';
 import { drawDiamonds, drawEnemies, drawDropship, drawDropships, drawTanks, drawWalkers, drawMechs } from './drawing/Enemies.js';
 import { drawGoldStarAura, drawGoldStar } from './drawing/goldstar.js';
 import { drawUI } from './drawing/UI.js';
@@ -96,6 +96,7 @@ export function gameLoop(now) {
   try { updateEmpProjectiles(); } catch (e) {}
   try { updateMegatonneBombs(); } catch (e) {}
   try { updateLightning(); } catch (e) {}
+  try { updateLightningStrikes(); } catch (e) {}
   try { updateExplosions(); } catch (e) {}
   try { updatePowerUps(); } catch (e) {}
   try { updateTunnels(); } catch (e) {}
@@ -276,6 +277,9 @@ export function renderFrame() {
   }
   if (typeof drawLightning === 'function') {
     try { drawLightning(); } catch (e) {}
+  }
+  if (typeof drawLightningStrikes === 'function') {
+    try { drawLightningStrikes(); } catch (e) {}
   }
   if (typeof drawHomingMissiles === 'function') {
     try { drawHomingMissiles(state.ctx); } catch (e) {}

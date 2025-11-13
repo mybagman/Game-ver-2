@@ -30,6 +30,13 @@ export let shootCooldown = 0;
 export let frameCount = 0;
 export let firingIndicatorAngle = 0;
 
+// Weapon system state
+export let waveFireRotation = 0;
+export let lightningStrikeCooldown = 0;
+export let fireLightningStrike = false;
+export let lightningStrikeLevel = 0;
+export let lightningStrikes = []; // Active lightning strike arcs
+
 export let score = 0;
 export let wave = 0;
 export let waveTransition = false;
@@ -236,6 +243,7 @@ export function pushHomingMissile(m) { homingMissiles.push(m); }
 export function pushEmpProjectile(e) { empProjectiles.push(e); }
 export function pushGroundObject(g) { groundObjects.push(g); }
 export function pushMegatonneBomb(b) { megatonneBombs.push(b); }
+export function pushLightningStrike(s) { lightningStrikes.push(s); }
 
 export function filterAuraSparks(fn) { auraSparks = auraSparks.filter(fn); }
 export function filterAuraShockwaves(fn) { auraShockwaves = auraShockwaves.filter(fn); }
@@ -252,6 +260,11 @@ export function filterEmpProjectiles(fn) {
 export function filterMegatonneBombs(fn) { 
   for (let i = megatonneBombs.length - 1; i >= 0; i--) {
     if (!fn(megatonneBombs[i])) megatonneBombs.splice(i, 1);
+  }
+}
+export function filterLightningStrikes(fn) { 
+  for (let i = lightningStrikes.length - 1; i >= 0; i--) {
+    if (!fn(lightningStrikes[i])) lightningStrikes.splice(i, 1);
   }
 }
 
@@ -290,11 +303,16 @@ export function resetGame() {
   empProjectiles.length = 0;
   groundObjects.length = 0;
   megatonneBombs.length = 0;
+  lightningStrikes.length = 0;
 
   // reset simple state
   keys = {};
   shootCooldown = 0;
   frameCount = 0;
+  waveFireRotation = 0;
+  lightningStrikeCooldown = 0;
+  fireLightningStrike = false;
+  lightningStrikeLevel = 0;
   firingIndicatorAngle = 0;
   score = 0;
   wave = 0;
