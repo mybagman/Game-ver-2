@@ -1,5 +1,5 @@
 import { loadHighScores, ensureCanvas, gameLoop } from './game.js';
-import { respawnPlayer, respawnGoldStar } from './utils.js';
+import { respawnPlayer, respawnGoldStar, resetGoldStar } from './utils.js';
 import { spawnWave } from './waveManager.js';
 import { setupInputHandlers } from './input.js';
 import * as state from './state.js';
@@ -190,7 +190,7 @@ function wireOverlayButtons() {
       state.player.invulnerable = true;
       state.player.invulnerableTimer = 180; // 3 seconds at 60fps
       respawnPlayer();
-      respawnGoldStar();
+      respawnGoldStar(); // Preserve Gold Star levels on continue
       spawnWave(currentWave);
       // Restart game loop in case it stopped
       requestAnimationFrame(gameLoop);
@@ -221,7 +221,7 @@ function wireOverlayButtons() {
       }
       currentWave = 0;
       respawnPlayer();
-      respawnGoldStar();
+      resetGoldStar(); // Full reset for new game
       spawnWave(0);
     });
   }
@@ -287,12 +287,12 @@ window.addEventListener('load', () => {
         
         // Initialize player and gold star but don't spawn wave yet
         respawnPlayer();
-        respawnGoldStar();
+        resetGoldStar(); // Full reset for new game
         currentWave = 0;
       } else {
         // If already played (e.g., on restart), start at Wave 0
         respawnPlayer();
-        respawnGoldStar();
+        resetGoldStar(); // Full reset for new game
         currentWave = 0;
         spawnWave(0);
       }

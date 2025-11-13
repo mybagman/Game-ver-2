@@ -45,7 +45,7 @@ import {
 // import { drawDiamonds } from './drawing/Enemies.js';
 // import { drawDiamonds } from './drawing/diamonds.js';
 
-import { respawnPlayer, respawnGoldStar } from './utils.js';
+import { respawnPlayer, respawnGoldStar, resetGoldStar } from './utils.js';
 
 // --- Game loop and integration with high-score UI ---
 
@@ -469,7 +469,7 @@ export function resetGame() {
   state.player.vy = 0;
   if (!state.player.thrusterParticles) state.player.thrusterParticles = [];
 
-  try { respawnGoldStar(); } catch (e) {}
+  try { resetGoldStar(); } catch (e) {} // Full reset for new game
   try { resetAuraOnDeath(); } catch (e) {}
 
   // Start wave 1

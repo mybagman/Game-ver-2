@@ -250,13 +250,31 @@ export function spawnGroundObjects() {
   }
 }
 
+// Respawn Gold Star while preserving levels/upgrades (used for continue after death)
 export function respawnGoldStar() {
   state.goldStar.x = state.canvas.width/4; 
   state.goldStar.y = state.canvas.height/2;
   state.goldStar.health = state.goldStar.maxHealth;
   state.goldStar.alive = true;
+  state.goldStar.collecting = false;
+  state.goldStar.collectTimer = 0;
+  state.goldStar.targetPowerUp = null;
+  state.goldStar.respawnTimer = 0;
+  state.goldStar.punchCooldown = 0;
+  state.goldStar.cannonCooldown = 0;
+  state.goldStar.reflectAvailable = false;
+  state.goldStar.healAccumulator = 0;
+  state.goldStar.homingMissileCooldown = 0;
+  // NOTE: Preserve redPunchLevel, blueCannonLevel, homingMissileLevel, redKills, blueKills, homingMissilePowerUpCount
+}
+
+// Full reset of Gold Star (used for new game start)
+export function resetGoldStar() {
+  state.goldStar.x = state.canvas.width/4; 
+  state.goldStar.y = state.canvas.height/2;
+  state.goldStar.health = state.goldStar.maxHealth;
+  state.goldStar.alive = true;
   state.goldStar.redPunchLevel = 0;
-  // fix typo: ensure blueCannonLevel matches drawing code (was blueCannonnLevel)
   state.goldStar.blueCannonLevel = 0;
   state.goldStar.redKills = 0;
   state.goldStar.blueKills = 0;
@@ -268,10 +286,10 @@ export function respawnGoldStar() {
   state.goldStar.cannonCooldown = 0;
   state.goldStar.reflectAvailable = false;
   state.goldStar.healAccumulator = 0;
-  // Reset homing missile state
   state.goldStar.homingMissileLevel = 0;
   state.goldStar.homingMissileCooldown = 0;
-  // Reset player reflector level when gold star dies
+  state.goldStar.homingMissilePowerUpCount = 0;
+  // Reset player reflector level when gold star is fully reset
   state.player.reflectorLevel = 0;
 }
 
