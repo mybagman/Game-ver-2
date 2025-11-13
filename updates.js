@@ -1,5 +1,5 @@
 import * as state from './state.js';
-import { DASH_SPEED_MULTIPLIER } from './input.js';
+import { DASH_SPEED_MULTIPLIER, BOOST_SPEED_MULTIPLIER, BOOST_DEPLETION_RATE, BOOST_REGENERATION_RATE } from './input.js';
 import { triggerTunnelCollision } from './drawing/Effects.js';
 
 export function updatePlayerMovement() {
@@ -12,6 +12,22 @@ export function updatePlayerMovement() {
   }
   if (state.player.dashCooldown > 0) {
     state.player.dashCooldown--;
+  }
+
+  // Update boost meter
+  if (state.player.boosting) {
+    // Deplete boost meter while boosting
+    state.player.boostMeter -= BOOST_DEPLETION_RATE;
+    if (state.player.boostMeter <= 0) {
+      state.player.boostMeter = 0;
+      state.player.boosting = false;
+      state.player.boostKey = null;
+    }
+  } else {
+    // Regenerate boost meter when not boosting
+    if (state.player.boostMeter < state.player.maxBoostMeter) {
+      state.player.boostMeter = Math.min(state.player.maxBoostMeter, state.player.boostMeter + BOOST_REGENERATION_RATE);
+    }
   }
 
   // Handle slow effect from EMP
@@ -30,6 +46,15 @@ export function updatePlayerMovement() {
   if (state.keys["a"]) dirX = -1;
   if (state.keys["d"]) dirX = 1;
 
+  // If boosting, override movement to continue in boost direction
+  if (state.player.boosting) {
+    // Force movement in the boost direction
+    if (state.player.boostKey === 'w' || state.player.boostKey === 'arrowup') dirY = -1;
+    else if (state.player.boostKey === 's' || state.player.boostKey === 'arrowdown') dirY = 1;
+    else if (state.player.boostKey === 'a' || state.player.boostKey === 'arrowleft') dirX = -1;
+    else if (state.player.boostKey === 'd' || state.player.boostKey === 'arrowright') dirX = 1;
+  }
+
   // Track if player is moving
   const isMoving = dirX !== 0 || dirY !== 0;
   
@@ -39,8 +64,15 @@ export function updatePlayerMovement() {
     const normalizedDirX = dirX / mag;
     const normalizedDirY = dirY / mag;
     
-    // Apply dash speed multiplier if dashing, and slow multiplier from EMP
-    const speedMultiplier = (state.player.dashing ? DASH_SPEED_MULTIPLIER : 1) * slowMultiplier;
+    // Apply dash/boost speed multiplier, and slow multiplier from EMP
+    let speedMultiplier = 1;
+    if (state.player.dashing) {
+      speedMultiplier = DASH_SPEED_MULTIPLIER;
+    } else if (state.player.boosting) {
+      speedMultiplier = BOOST_SPEED_MULTIPLIER;
+    }
+    speedMultiplier *= slowMultiplier;
+    
     const effectiveSpeed = state.player.speed * speedMultiplier;
     
     state.player.x += normalizedDirX * effectiveSpeed;
@@ -53,8 +85,12 @@ export function updatePlayerMovement() {
     // Calculate target rotation based on movement direction
     state.player.targetRotation = Math.atan2(normalizedDirY, normalizedDirX);
     
-    // Add thruster particles when moving
+    // Add thruster particles when moving (more when boosting)
     addThrusterParticles();
+    if (state.player.boosting) {
+      // Add extra thruster particles when boosting
+      addThrusterParticles();
+    }
   } else {
     state.player.vx = 0;
     state.player.vy = 0;

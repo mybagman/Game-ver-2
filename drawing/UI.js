@@ -407,6 +407,45 @@ export function drawUI() {
     ctx.fillText('SHIELD', shbX + 3, shbY - 8);
   }
   
+  // Boost meter (horizontal, below health) - Added for boost system
+  const boostX = leftPanelX + 15;
+  const boostY = leftPanelY + 130;
+  const boostW = leftPanelW - 30;
+  const boostH = 12;
+  
+  // Boost bar background
+  ctx.fillStyle = `rgba(0, 30, 50, ${0.6 * leftPanelTransparency})`;
+  ctx.fillRect(boostX, boostY, boostW, boostH);
+  
+  // Boost bar border
+  ctx.strokeStyle = `rgba(100, 200, 255, ${0.6 * leftPanelTransparency})`;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(boostX, boostY, boostW, boostH);
+  
+  // Boost fill
+  const boostRatio = Math.max(0, state.player.boostMeter / state.player.maxBoostMeter);
+  const boostWidth = boostW * boostRatio;
+  
+  // Gradient based on boost level (with transparency)
+  const boostGrad = ctx.createLinearGradient(boostX, boostY, boostX + boostW, boostY);
+  if (state.player.boosting) {
+    // Pulsing effect when boosting
+    const pulseIntensity = Math.sin(state.frameCount * 0.3) * 0.2 + 0.8;
+    boostGrad.addColorStop(0, `rgba(255, 200, 50, ${pulseIntensity * leftPanelTransparency})`);
+    boostGrad.addColorStop(1, `rgba(255, 150, 0, ${pulseIntensity * leftPanelTransparency})`);
+  } else {
+    boostGrad.addColorStop(0, `rgba(100, 200, 255, ${0.9 * leftPanelTransparency})`);
+    boostGrad.addColorStop(1, `rgba(50, 150, 255, ${0.9 * leftPanelTransparency})`);
+  }
+  
+  ctx.fillStyle = boostGrad;
+  ctx.fillRect(boostX + 2, boostY + 2, boostWidth - 4, boostH - 4);
+  
+  // Boost label
+  ctx.fillStyle = `rgba(100, 200, 255, ${0.9 * leftPanelTransparency})`;
+  ctx.font = '9px Orbitron, monospace';
+  ctx.fillText('BOOST', boostX, boostY - 4);
+  
   // Lives indicator - Made smaller
   ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * leftPanelTransparency})`;
   ctx.font = '9px Orbitron, monospace';

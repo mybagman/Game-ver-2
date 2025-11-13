@@ -76,6 +76,11 @@ export let player = {
   dashTimer: 0,
   dashCooldown: 0,
   lastKeyPress: { key: null, time: 0 },
+  // Boost meter system properties
+  boosting: false,
+  boostMeter: 100,
+  maxBoostMeter: 100,
+  boostKey: null, // Track which key activated boost
   // Reflector power-up system (now creates shield instead of missiles)
   reflectorLevel: 0,
   reflectorCooldown: 0,
@@ -306,6 +311,10 @@ export function resetGame() {
   player.dashTimer = 0;
   player.dashCooldown = 0;
   player.lastKeyPress = { key: null, time: 0 };
+  player.boosting = false;
+  player.boostMeter = 100;
+  player.maxBoostMeter = 100;
+  player.boostKey = null;
   player.reflectorLevel = 0;
   player.reflectorCooldown = 0;
   player.shieldHealth = 0;
