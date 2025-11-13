@@ -298,38 +298,38 @@ export function drawMegatonneBombs() {
     if (!bomb) continue;
     
     const x = bomb.x, y = bomb.y;
-    const size = bomb.size || 20;
+    const size = (bomb.size || 20) * 1.5; // Increased size by 50% (from 20 to 30)
     const t = bomb.frame || 0;
     
-    // Massive outer glow (orange/red)
+    // Massive outer glow (orange/red) - MORE INTENSE
     state.ctx.save();
     state.ctx.globalCompositeOperation = 'lighter';
     const pulse = Math.sin(t * 0.15) * 0.3 + 0.7;
     
-    // Outer explosive aura
-    const outerGrad = state.ctx.createRadialGradient(x, y, 0, x, y, size * 3);
-    outerGrad.addColorStop(0, `rgba(255, 150, 0, ${0.9 * pulse})`);
-    outerGrad.addColorStop(0.5, `rgba(255, 100, 0, ${0.5 * pulse})`);
+    // Outer explosive aura - LARGER RADIUS
+    const outerGrad = state.ctx.createRadialGradient(x, y, 0, x, y, size * 4.5); // Increased from 3 to 4.5
+    outerGrad.addColorStop(0, `rgba(255, 180, 0, ${1.0 * pulse})`); // Brighter
+    outerGrad.addColorStop(0.4, `rgba(255, 130, 0, ${0.7 * pulse})`);
     outerGrad.addColorStop(1, 'rgba(200, 50, 0, 0)');
     state.ctx.fillStyle = outerGrad;
     state.ctx.beginPath();
-    state.ctx.arc(x, y, size * 3, 0, Math.PI * 2);
+    state.ctx.arc(x, y, size * 4.5, 0, Math.PI * 2);
     state.ctx.fill();
     
-    // Middle layer (bright orange)
-    const midGrad = state.ctx.createRadialGradient(x, y, 0, x, y, size * 1.8);
-    midGrad.addColorStop(0, `rgba(255, 200, 50, ${0.95 * pulse})`);
-    midGrad.addColorStop(0.6, `rgba(255, 150, 0, ${0.6 * pulse})`);
+    // Middle layer (bright orange) - ENHANCED
+    const midGrad = state.ctx.createRadialGradient(x, y, 0, x, y, size * 2.5); // Increased from 1.8 to 2.5
+    midGrad.addColorStop(0, `rgba(255, 220, 80, ${1.0 * pulse})`); // Brighter
+    midGrad.addColorStop(0.5, `rgba(255, 180, 0, ${0.8 * pulse})`);
     midGrad.addColorStop(1, 'rgba(255, 100, 0, 0)');
     state.ctx.fillStyle = midGrad;
     state.ctx.beginPath();
-    state.ctx.arc(x, y, size * 1.8, 0, Math.PI * 2);
+    state.ctx.arc(x, y, size * 2.5, 0, Math.PI * 2);
     state.ctx.fill();
     
-    // Core (bright yellow-white)
-    state.ctx.fillStyle = `rgba(255, 255, 200, ${0.95 * pulse})`;
+    // Core (bright yellow-white) - LARGER
+    state.ctx.fillStyle = `rgba(255, 255, 220, ${1.0 * pulse})`;
     state.ctx.beginPath();
-    state.ctx.arc(x, y, size, 0, Math.PI * 2);
+    state.ctx.arc(x, y, size * 1.2, 0, Math.PI * 2); // Slightly larger core
     state.ctx.fill();
     
     // Rotating danger symbol
@@ -349,37 +349,44 @@ export function drawMegatonneBombs() {
     }
     state.ctx.restore();
     
-    // Energy sparks
-    if (t % 3 === 0) {
-      for (let s = 0; s < 5; s++) {
+    // Energy sparks - MORE FREQUENT AND LARGER
+    if (t % 2 === 0) { // More frequent (changed from % 3 to % 2)
+      for (let s = 0; s < 10; s++) { // More sparks (increased from 5 to 10)
         const sparkAngle = (Math.random() * Math.PI * 2);
-        const sparkDist = size * (1.5 + Math.random() * 0.8);
+        const sparkDist = size * (1.5 + Math.random() * 1.2); // Further out
         const sparkX = x + Math.cos(sparkAngle) * sparkDist;
         const sparkY = y + Math.sin(sparkAngle) * sparkDist;
-        state.ctx.fillStyle = `rgba(255, 200, 100, ${0.8 * pulse})`;
-        state.ctx.fillRect(sparkX - 2, sparkY - 2, 4, 4);
+        state.ctx.fillStyle = `rgba(255, 220, 120, ${0.9 * pulse})`;
+        state.ctx.fillRect(sparkX - 3, sparkY - 3, 6, 6); // Larger sparks
       }
     }
     
-    // Outer ring pulse
+    // Outer ring pulse - MORE PROMINENT
     state.ctx.beginPath();
-    state.ctx.strokeStyle = `rgba(255, 150, 0, ${0.9 * pulse})`;
-    state.ctx.lineWidth = 3;
-    state.ctx.arc(x, y, size + 8 + Math.sin(t * 0.2) * 3, 0, Math.PI * 2);
+    state.ctx.strokeStyle = `rgba(255, 180, 0, ${1.0 * pulse})`;
+    state.ctx.lineWidth = 4; // Thicker (increased from 3)
+    state.ctx.arc(x, y, size + 12 + Math.sin(t * 0.2) * 5, 0, Math.PI * 2); // Larger pulse
+    state.ctx.stroke();
+    
+    // Additional outer ring for more intensity
+    state.ctx.beginPath();
+    state.ctx.strokeStyle = `rgba(255, 150, 0, ${0.6 * pulse})`;
+    state.ctx.lineWidth = 2;
+    state.ctx.arc(x, y, size + 20 + Math.sin(t * 0.15) * 7, 0, Math.PI * 2);
     state.ctx.stroke();
     
     state.ctx.restore();
     
-    // Trail particles (fire trail)
-    if (Math.random() > 0.3) {
+    // Trail particles (fire trail) - MORE PROMINENT
+    if (Math.random() > 0.2) { // More frequent trails (changed from 0.3 to 0.2)
       state.pushExplosion({
         x: x - bomb.dx * 0.8,
         y: y - bomb.dy * 0.8,
-        dx: (Math.random() - 0.5) * 1,
-        dy: (Math.random() - 0.5) * 1,
-        radius: 8,
-        color: "rgba(255, 150, 50, 0.7)",
-        life: 15
+        dx: (Math.random() - 0.5) * 2,
+        dy: (Math.random() - 0.5) * 2,
+        radius: 12, // Larger trail particles (increased from 8)
+        color: "rgba(255, 180, 80, 0.85)", // Brighter trails
+        life: 25 // Longer lasting (increased from 15)
       });
     }
   }
