@@ -196,6 +196,7 @@ export function updateGoldStar() {
                 // Level up after collecting 3 power-ups
                 gs.homingMissileLevel = Math.min(10, (gs.homingMissileLevel || 0) + 1);
                 gs.homingMissilePowerUpCount = 0;
+                safeCall(levelUpGoldStar, state);
                 safeCall(createExplosion, pu.x, pu.y, "orange");
                 safeCall(state.addScore, 15);
               } else {
