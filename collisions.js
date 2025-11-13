@@ -54,14 +54,33 @@ export function updateLightning() {
   });
 }
 
+// Helper function to get bullet damage
+function getBulletDamage(bullet) {
+  return bullet.damage || 10;
+}
+
+// Helper function to apply knockback from repulsor bullets
+function applyKnockback(entity, bullet, force = 8) {
+  if (!bullet.repulsor) return;
+  
+  const dx = entity.x - bullet.x;
+  const dy = entity.y - bullet.y;
+  const dist = Math.hypot(dx, dy) || 1;
+  
+  entity.x += (dx / dist) * force;
+  entity.y += (dy / dist) * force;
+}
+
 export function checkBulletCollisions() {
   for (let bi = state.bullets.length-1; bi >= 0; bi--) {
     const b = state.bullets[bi];
+    const damage = getBulletDamage(b);
 
     for (let ti = state.tanks.length - 1; ti >= 0; ti--) {
       const tank = state.tanks[ti];
       if (Math.hypot(b.x - tank.x, b.y - tank.y) < 30) {
-        tank.health -= 10;
+        tank.health -= damage;
+        applyKnockback(tank, b, 5);
         state.bullets.splice(bi, 1);
         createExplosion(tank.x, tank.y, "orange");
         break;
@@ -71,7 +90,8 @@ export function checkBulletCollisions() {
     for (let wi = state.walkers.length - 1; wi >= 0; wi--) {
       const walker = state.walkers[wi];
       if (Math.hypot(b.x - walker.x, b.y - walker.y) < 25) {
-        walker.health -= 10;
+        walker.health -= damage;
+        applyKnockback(walker, b, 6);
         state.bullets.splice(bi, 1);
         createExplosion(walker.x, walker.y, "cyan");
         break;
@@ -82,13 +102,14 @@ export function checkBulletCollisions() {
       const mech = state.mechs[mi];
       if (Math.hypot(b.x - mech.x, b.y - mech.y) < 45) {
         if (mech.shieldActive && mech.shieldHealth > 0) {
-          mech.shieldHealth -= 10;
+          mech.shieldHealth -= damage;
           if (mech.shieldHealth <= 0) {
             mech.shieldActive = false;
           }
         } else {
-          mech.health -= 10;
+          mech.health -= damage;
         }
+        applyKnockback(mech, b, 4);
         state.bullets.splice(bi, 1);
         createExplosion(mech.x, mech.y, "yellow");
         break;
@@ -98,7 +119,8 @@ export function checkBulletCollisions() {
     for (let di = state.dropships.length - 1; di >= 0; di--) {
       const dropship = state.dropships[di];
       if (Math.hypot(b.x - dropship.x, b.y - dropship.y) < 35) {
-        dropship.health -= 10;
+        dropship.health -= damage;
+        applyKnockback(dropship, b, 3);
         state.bullets.splice(bi, 1);
         createExplosion(dropship.x, dropship.y, "orange");
         break;
@@ -112,7 +134,7 @@ export function checkBulletCollisions() {
         for (let ci = e.cores.length - 1; ci >= 0; ci--) {
           const core = e.cores[ci];
           if (Math.hypot(b.x - core.x, b.y - core.y) < 25) {
-            core.health -= 10;
+            core.health -= getBulletDamage(b);
             state.bullets.splice(bi, 1);
             createExplosion(core.x, core.y, "cyan");
             if (core.health <= 0) {
@@ -124,7 +146,7 @@ export function checkBulletCollisions() {
         }
 
         if (e.cores.length === 0 && Math.hypot(b.x - e.x, b.y - e.y) < e.size / 2) {
-          e.health -= 15;
+          e.health -= getBulletDamage(b) * 1.5; // Mother core takes 1.5x damage
           state.bullets.splice(bi, 1);
           createExplosion(e.x, e.y, "red");
           if (e.health <= 0) {
@@ -142,7 +164,7 @@ export function checkBulletCollisions() {
         if (dist < Math.max(e.width,e.height)) {
           state.pushLightning({x: b.x, y: b.y, dx: -b.dx, dy: -b.dy, size: 6, damage: 15});
           state.pushReflectionEffect({x: b.x, y: b.y, dx: -b.dx, dy: -b.dy, life: 22, maxLife: 22});
-          state.bullets.splice(bi,1); e.health -= 5;
+          state.bullets.splice(bi,1); e.health -= getBulletDamage(b) * 0.5; // Reflectors take half damage
           if (e.health <= 0) { 
             createExplosion(e.x, e.y, "purple"); 
             state.enemies.splice(ei,1); 
@@ -157,12 +179,16 @@ export function checkBulletCollisions() {
         }
       } else {
         if (Math.hypot(b.x-e.x, b.y-e.y) < (e.size||20)/2) {
-          e.health -= (b.owner === "player" ? 10 : 6);
+          const bulletDamage = getBulletDamage(b);
+          e.health -= (b.owner === "player" ? bulletDamage : 6);
           
           // Track damage for blue triangle enemies to reduce speed
           if (e.type === "triangle") {
-            e.damageTaken = (e.damageTaken || 0) + (b.owner === "player" ? 10 : 6);
+            e.damageTaken = (e.damageTaken || 0) + (b.owner === "player" ? bulletDamage : 6);
           }
+          
+          // Apply knockback from repulsor bullets
+          applyKnockback(e, b, 8);
           
           state.bullets.splice(bi,1);
           if (e.health <= 0) {
@@ -185,7 +211,9 @@ export function checkBulletCollisions() {
       for (let ai = d.attachments.length-1; ai >= 0; ai--) {
         const a = d.attachments[ai], radius = (a.size||20)/2 || 10;
         if (Math.hypot(b.x-a.x, b.y-a.y) < radius) {
-          a.health = (a.health||30) - (b.owner === "player" ? 10 : 6); 
+          const bulletDamage = getBulletDamage(b);
+          a.health = (a.health||30) - (b.owner === "player" ? bulletDamage : 6);
+          applyKnockback(a, b, 6);
           state.bullets.splice(bi,1);
           if (a.health <= 0) {
             createExplosion(a.x, a.y, "white");
@@ -204,7 +232,9 @@ export function checkBulletCollisions() {
       }
       if (bi >= 0 && bi < state.bullets.length && Math.hypot(state.bullets[bi].x-d.x, state.bullets[bi].y-d.y) < d.size/2) {
         const damageMultiplier = d.vulnerable ? 1 : 0.3;
-        d.health -= (state.bullets[bi].owner === "player" ? 12 : 6) * damageMultiplier;
+        const bulletDamage = getBulletDamage(state.bullets[bi]);
+        d.health -= (state.bullets[bi].owner === "player" ? bulletDamage * 1.2 : 6) * damageMultiplier;
+        applyKnockback(d, state.bullets[bi], 3);
         state.bullets.splice(bi,1);
         if (d.health <= 0) { 
           createExplosion(d.x, d.y, "white"); 

@@ -316,8 +316,56 @@ export function handleShooting() {
     const auraActive = state.goldStarAura && state.goldStarAura.active;
     const auraLevel = state.goldStarAura ? state.goldStarAura.level : 0;
     
-    if (auraActive && auraLevel >= 9) {
-      // Quad shot at level 9+
+    if (auraActive && auraLevel >= 10) {
+      // Plasma Cannons at level 10+ (most powerful)
+      const spreadAngle = 0.12;
+      for (let i = -2; i <= 2; i++) {
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(baseAngle + i * spreadAngle) * 12, 
+          dy: Math.sin(baseAngle + i * spreadAngle) * 12, 
+          size: 10, 
+          owner: "player",
+          damage: 30,
+          color: "plasma",
+          plasma: true
+        });
+      }
+    } else if (auraActive && auraLevel >= 8) {
+      // Repulsor Fire at level 8+ (high power with knockback)
+      const spreadAngle = 0.13;
+      for (let i = -2; i <= 2; i++) {
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(baseAngle + i * spreadAngle) * 11, 
+          dy: Math.sin(baseAngle + i * spreadAngle) * 11, 
+          size: 8, 
+          owner: "player",
+          damage: 20,
+          color: "repulsor",
+          repulsor: true
+        });
+      }
+    } else if (auraActive && auraLevel >= 6) {
+      // Wave Fire at level 6+ (5-shot wave pattern)
+      const spreadAngle = 0.18;
+      for (let i = -2; i <= 2; i++) {
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(baseAngle + i * spreadAngle) * 10.5, 
+          dy: Math.sin(baseAngle + i * spreadAngle) * 10.5, 
+          size: 7, 
+          owner: "player",
+          damage: 15,
+          color: "wave",
+          wave: true
+        });
+      }
+    } else if (auraActive && auraLevel >= 4) {
+      // Quad shot at level 4+
       const spreadAngle = 0.15;
       for (let i = -1.5; i <= 1.5; i++) {
         state.pushBullet({
@@ -329,8 +377,8 @@ export function handleShooting() {
           owner: "player"
         });
       }
-    } else if (auraActive && auraLevel >= 6) {
-      // Triple shot at level 6+
+    } else if (auraActive && auraLevel >= 2) {
+      // Triple shot at level 2+
       const spreadAngle = 0.2;
       for (let i = -1; i <= 1; i++) {
         state.pushBullet({
@@ -342,25 +390,6 @@ export function handleShooting() {
           owner: "player"
         });
       }
-    } else if (auraActive && auraLevel >= 3) {
-      // Double shot at level 3+
-      const spreadAngle = 0.2;
-      state.pushBullet({
-        x: state.player.x, 
-        y: state.player.y, 
-        dx: Math.cos(baseAngle - spreadAngle) * 10, 
-        dy: Math.sin(baseAngle - spreadAngle) * 10, 
-        size: 6, 
-        owner: "player"
-      });
-      state.pushBullet({
-        x: state.player.x, 
-        y: state.player.y, 
-        dx: Math.cos(baseAngle + spreadAngle) * 10, 
-        dy: Math.sin(baseAngle + spreadAngle) * 10, 
-        size: 6, 
-        owner: "player"
-      });
     } else {
       // Single shot (normal or when aura not active)
       state.pushBullet({x: state.player.x, y: state.player.y, dx: (dirX/mag)*10, dy: (dirY/mag)*10, size: 6, owner: "player"});

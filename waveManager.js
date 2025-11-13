@@ -539,6 +539,23 @@ export function tryAdvanceWave() {
           state.player.y += (earthY - state.player.y) * 0.15;
           state.player.x += (state.canvas.width/2 - state.player.x) * 0.06;
         }
+        
+        // Spawn power-ups every 2 levels (wave+1 to match displayed wave number)
+        const displayedWave = state.wave + 1;
+        if (displayedWave % 2 === 0) {
+          // Spawn power-ups for the gold star to collect
+          const centerX = state.canvas.width / 2;
+          const centerY = state.canvas.height / 2;
+          const spreadRadius = 80;
+          
+          // Spawn 3 power-ups in a cluster
+          for (let i = 0; i < 3; i++) {
+            const angle = (i / 3) * Math.PI * 2;
+            const x = centerX + Math.cos(angle) * spreadRadius;
+            const y = centerY + Math.sin(angle) * spreadRadius;
+            spawns.spawnRandomPowerUp(x, y);
+          }
+        }
       }
       state.setWaveTransition(false);
       state.setWaveTransitionTimer(0);
