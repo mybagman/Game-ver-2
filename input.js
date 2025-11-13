@@ -75,10 +75,12 @@ export function setupInputHandlers() {
     
     if (movementKeys.includes(normalizedKey)) {
       // Check for double-tap to activate boost
+      // Skip boost activation if EMP was just fired using the same key
       if (state.player.lastKeyPress.key === normalizedKey && 
           (now - state.player.lastKeyPress.time) < DOUBLE_TAP_WINDOW &&
           state.player.boostMeter > 0 &&
-          !state.player.boosting) {
+          !state.player.boosting &&
+          !state.player.firePlayerEMP) {
         // Trigger boost
         state.player.boosting = true;
         state.player.boostKey = normalizedKey;
