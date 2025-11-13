@@ -154,12 +154,12 @@ export function gameLoop(now) {
   // Some effects / overlays that were previously drawn after main scene:
   // draw any red punch effects (screen flash / hit indicators)
   if (typeof drawRedPunchEffects === 'function') {
-    try { drawRedPunchEffects(); } catch (e) {}
+    try { drawRedPunchEffects(); } catch (e) { console.error('[gameLoop] drawRedPunchEffects error:', e); }
   }
 
   // draw player on top of many world objects (keep original drawPlayer if present)
   if (typeof drawPlayer === 'function') {
-    try { drawPlayer(); } catch (e) {}
+    try { drawPlayer(); } catch (e) { console.error('[gameLoop] drawPlayer error:', e); }
   } else if (state.player && state.ctx) {
     // fallback: simple player representation if drawPlayer helper isn't available.
     try {
@@ -171,7 +171,7 @@ export function gameLoop(now) {
       ctx.arc(p.x || state.canvas.width / 2, p.y || state.canvas.height / 2, p.size || 12, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
-    } catch (e) {}
+    } catch (e) { console.error('[gameLoop] fallback drawPlayer error:', e); }
   }
 
   // If gameOver, draw overlay on canvas
@@ -201,19 +201,22 @@ export function gameLoop(now) {
 /* New renderFrame() added per patch — this centralizes draw order */
 export function renderFrame() {
   // Defensive no-op if ctx or canvas missing
-  if (!state.ctx || !state.canvas) return;
+  if (!state.ctx || !state.canvas) {
+    console.error('[renderFrame] No ctx or canvas! ctx:', !!state.ctx, 'canvas:', !!state.canvas);
+    return;
+  }
 
   // 1) Background (base)
   if (typeof drawBackground === 'function') {
-    try { drawBackground(state.wave); } catch (e) {}
+    try { drawBackground(state.wave); } catch (e) { console.error('[renderFrame] drawBackground error:', e); }
   }
 
   // 2) Special planet / re-entry layers (if applicable)
   if (typeof drawPlanetBackground === 'function') {
-    try { drawPlanetBackground(); } catch (e) {}
+    try { drawPlanetBackground(); } catch (e) { console.error('[renderFrame] drawPlanetBackground error:', e); }
   }
   if (typeof drawReentryEffects === 'function') {
-    try { drawReentryEffects(); } catch (e) {}
+    try { drawReentryEffects(); } catch (e) { console.error('[renderFrame] drawReentryEffects error:', e); }
   }
 
   // 3) Environment/clouds/city
@@ -293,10 +296,10 @@ export function renderFrame() {
 
   // 8) Gold star aura & star itself (before UI so aura sits behind UI)
   if (typeof drawGoldStarAura === 'function') {
-    try { drawGoldStarAura(state.ctx); } catch (e) {}
+    try { drawGoldStarAura(state.ctx); } catch (e) { console.error('[renderFrame] drawGoldStarAura error:', e); }
   }
   if (typeof drawGoldStar === 'function') {
-    try { drawGoldStar(); } catch (e) {}
+    try { drawGoldStar(); } catch (e) { console.error('[renderFrame] drawGoldStar error:', e); }
   }
 
   // 9) UI last (HUD)
