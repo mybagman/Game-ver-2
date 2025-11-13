@@ -13,6 +13,7 @@ const BOOST_REGENERATION_RATE = 0.3; // Boost meter regeneration per frame
 export function setupInputHandlers() {
   window.addEventListener("keydown", (e) => {
     const key = e.key.toLowerCase();
+    const now = Date.now(); // Get timestamp early for double-tap detection
     
     // Ignore key repeat events to prevent held keys from triggering dash
     if (e.repeat) {
@@ -30,7 +31,25 @@ export function setupInputHandlers() {
         resetGame();
       }
     }
-    // Arrow keys
+    // Arrow keys - also check for double-tap to fire EMP
+    const fireKeys = ['arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
+    const normalizedFireKey = e.key === 'ArrowUp' ? 'arrowup' : 
+                              e.key === 'ArrowDown' ? 'arrowdown' :
+                              e.key === 'ArrowLeft' ? 'arrowleft' :
+                              e.key === 'ArrowRight' ? 'arrowright' : null;
+    
+    if (normalizedFireKey && fireKeys.includes(normalizedFireKey)) {
+      // Check for double-tap to fire EMP
+      if (state.player.lastFireKeyPress.key === normalizedFireKey && 
+          (now - state.player.lastFireKeyPress.time) < DOUBLE_TAP_WINDOW &&
+          state.player.empCooldown === 0 &&
+          state.player.boostMeter >= 30) { // Require at least 30% boost
+        // Trigger EMP firing (will be handled in handleShooting)
+        state.player.firePlayerEMP = true;
+      }
+      state.player.lastFireKeyPress = { key: normalizedFireKey, time: now };
+    }
+    
     if (e.key === "ArrowUp") state.keys["arrowup"] = true;
     if (e.key === "ArrowDown") state.keys["arrowdown"] = true;
     if (e.key === "ArrowLeft") state.keys["arrowleft"] = true;
@@ -48,7 +67,6 @@ export function setupInputHandlers() {
     }
 
     // Detect double-tap for boost on WASD and arrow keys
-    const now = Date.now();
     const movementKeys = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
     const normalizedKey = e.key === 'ArrowUp' ? 'arrowup' : 
                           e.key === 'ArrowDown' ? 'arrowdown' :

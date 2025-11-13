@@ -202,6 +202,11 @@ export function handleShooting() {
     state.player.megatonneBombCooldown--;
   }
   
+  // Handle Player EMP cooldown
+  if (state.player.empCooldown > 0) {
+    state.player.empCooldown--;
+  }
+  
   // Check if Megatonne Bomb should be fired (Space bar pressed)
   if (state.player.fireMegatonneBomb && state.player.megatonneBombCooldown === 0) {
     // Calculate direction to screen center
@@ -231,6 +236,70 @@ export function handleShooting() {
     
     // Reset flag
     state.player.fireMegatonneBomb = false;
+  }
+  
+  // Check if Player EMP should be fired (double-tap arrow key)
+  if (state.player.firePlayerEMP && state.player.empCooldown === 0 && state.player.boostMeter >= 30) {
+    // Find nearest enemy for homing
+    const allTargets = [
+      ...state.enemies,
+      ...state.diamonds,
+      ...state.tanks,
+      ...state.walkers,
+      ...state.mechs,
+      ...state.dropships
+    ];
+    
+    if (allTargets.length > 0) {
+      // Find closest enemy
+      let closestTarget = null;
+      let closestDist = Infinity;
+      
+      for (const target of allTargets) {
+        if (!target || target.health <= 0) continue;
+        const dist = Math.hypot(target.x - state.player.x, target.y - state.player.y);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closestTarget = target;
+        }
+      }
+      
+      if (closestTarget) {
+        // Calculate direction to target
+        const dx = closestTarget.x - state.player.x;
+        const dy = closestTarget.y - state.player.y;
+        const mag = Math.hypot(dx, dy) || 1;
+        
+        // Create player EMP projectile (player-themed, weaker than Gold Star's)
+        const empAOE = 80; // Fixed radius
+        const slowDuration = 120; // 2 seconds at 60fps
+        const slowStrength = 0.4; // 40% slow
+        
+        state.pushEmpProjectile({
+          x: state.player.x,
+          y: state.player.y,
+          dx: (dx / mag) * 6,
+          dy: (dy / mag) * 6,
+          targetX: closestTarget.x,
+          targetY: closestTarget.y,
+          size: 10,
+          owner: "player",
+          aoe: empAOE,
+          slowDuration: slowDuration,
+          slowStrength: slowStrength,
+          level: 0
+        });
+        
+        // Drain boost meter by 30
+        state.player.boostMeter = Math.max(0, state.player.boostMeter - 30);
+        
+        // Set cooldown (3 seconds at 60fps)
+        state.player.empCooldown = state.player.empCooldownMax;
+      }
+    }
+    
+    // Reset flag
+    state.player.firePlayerEMP = false;
   }
   
   let dirX = 0, dirY = 0;
@@ -312,6 +381,31 @@ export function updateBullets() {
 
 export function updateEmpProjectiles() {
   state.filterEmpProjectiles(emp => {
+    // Apply homing behavior - redirect toward target
+    if (emp.targetX !== undefined && emp.targetY !== undefined) {
+      const dx = emp.targetX - emp.x;
+      const dy = emp.targetY - emp.y;
+      const dist = Math.hypot(dx, dy);
+      
+      if (dist > 0) {
+        // Gradually turn toward target (homing strength)
+        const homingStrength = 0.15; // How aggressively it homes
+        const speed = Math.hypot(emp.dx, emp.dy);
+        const targetDx = (dx / dist) * speed;
+        const targetDy = (dy / dist) * speed;
+        
+        emp.dx += (targetDx - emp.dx) * homingStrength;
+        emp.dy += (targetDy - emp.dy) * homingStrength;
+        
+        // Normalize speed to maintain consistent velocity
+        const currentSpeed = Math.hypot(emp.dx, emp.dy);
+        if (currentSpeed > 0) {
+          emp.dx = (emp.dx / currentSpeed) * speed;
+          emp.dy = (emp.dy / currentSpeed) * speed;
+        }
+      }
+    }
+    
     emp.x += emp.dx;
     emp.y += emp.dy;
     
@@ -345,15 +439,19 @@ export function updateEmpProjectiles() {
       }
       
       // Apply slow effect based on EMP owner
-      if (emp.owner === "gold") {
-        // Gold star EMP affects enemies
+      if (emp.owner === "gold" || emp.owner === "player") {
+        // Gold star or player EMP affects enemies
         const allTargets = [
           ...state.enemies,
           ...state.mechs,
           ...state.tanks,
           ...state.dropships,
-          ...state.walkers
+          ...state.walkers,
+          ...state.diamonds
         ];
+        
+        // Use different visual color for player EMP
+        const empColor = emp.owner === "player" ? "rgba(200, 255, 150, 0.8)" : "rgba(150, 220, 255, 0.8)";
         
         for (const target of allTargets) {
           const dist = Math.hypot((target.x || 0) - emp.x, (target.y || 0) - emp.y);
@@ -370,7 +468,7 @@ export function updateEmpProjectiles() {
               dx: 0,
               dy: 0,
               radius: 8,
-              color: "rgba(150, 220, 255, 0.8)",
+              color: empColor,
               life: 15
             });
           }

@@ -224,34 +224,42 @@ export function drawEmpProjectiles() {
     const size = emp.size || 12;
     const t = state.frameCount;
     
-    // EMP outer glow (electric blue)
+    // Color scheme based on owner (player = green, gold = blue)
+    const isPlayerEMP = emp.owner === "player";
+    const color1 = isPlayerEMP ? [150, 255, 100] : [100, 200, 255]; // RGB
+    const color2 = isPlayerEMP ? [100, 200, 50] : [50, 150, 255];
+    const color3 = isPlayerEMP ? [50, 150, 0] : [0, 100, 200];
+    const color4 = isPlayerEMP ? [180, 255, 120] : [150, 220, 255];
+    const color5 = isPlayerEMP ? [220, 255, 180] : [200, 240, 255];
+    const color6 = isPlayerEMP ? [200, 255, 150] : [180, 230, 255];
+    const trailColor = isPlayerEMP ? "rgba(150, 255, 100, 0.6)" : "rgba(100, 200, 255, 0.6)";
+    
+    // EMP outer glow
     state.ctx.save();
     state.ctx.globalCompositeOperation = 'lighter';
     const pulse = Math.sin(t * 0.2) * 0.3 + 0.7;
     
     // Outer electric aura
     const grad = state.ctx.createRadialGradient(x, y, 0, x, y, size * 2.5);
-    grad.addColorStop(0, `rgba(100, 200, 255, ${0.8 * pulse})`);
-    grad.addColorStop(0.5, `rgba(50, 150, 255, ${0.4 * pulse})`);
-    grad.addColorStop(1, 'rgba(0, 100, 200, 0)');
+    grad.addColorStop(0, `rgba(${color1[0]}, ${color1[1]}, ${color1[2]}, ${0.8 * pulse})`);
+    grad.addColorStop(0.5, `rgba(${color2[0]}, ${color2[1]}, ${color2[2]}, ${0.4 * pulse})`);
+    grad.addColorStop(1, `rgba(${color3[0]}, ${color3[1]}, ${color3[2]}, 0)`);
     state.ctx.fillStyle = grad;
     state.ctx.beginPath();
     state.ctx.arc(x, y, size * 2.5, 0, Math.PI * 2);
     state.ctx.fill();
     
     // Core sphere
-    // shadowBlur removed for performance
-    state.ctx.fillStyle = `rgba(150, 220, 255, ${pulse})`;
+    state.ctx.fillStyle = `rgba(${color4[0]}, ${color4[1]}, ${color4[2]}, ${pulse})`;
     state.ctx.beginPath();
     state.ctx.arc(x, y, size, 0, Math.PI * 2);
     state.ctx.fill();
-    // shadowBlur removed for performance
     
     // Electric arcs rotating around core
     state.ctx.save();
     state.ctx.translate(x, y);
     state.ctx.rotate(t * 0.05);
-    state.ctx.strokeStyle = `rgba(200, 240, 255, ${0.8 * pulse})`;
+    state.ctx.strokeStyle = `rgba(${color5[0]}, ${color5[1]}, ${color5[2]}, ${0.8 * pulse})`;
     state.ctx.lineWidth = 2;
     
     for (let a = 0; a < 4; a++) {
@@ -269,7 +277,7 @@ export function drawEmpProjectiles() {
     
     // Inner ring pulse
     state.ctx.beginPath();
-    state.ctx.strokeStyle = `rgba(180, 230, 255, ${0.6 * pulse})`;
+    state.ctx.strokeStyle = `rgba(${color6[0]}, ${color6[1]}, ${color6[2]}, ${0.6 * pulse})`;
     state.ctx.lineWidth = 1.5;
     state.ctx.arc(x, y, size + 3 + Math.sin(t * 0.15) * 2, 0, Math.PI * 2);
     state.ctx.stroke();
@@ -284,7 +292,7 @@ export function drawEmpProjectiles() {
         dx: (Math.random() - 0.5) * 0.5,
         dy: (Math.random() - 0.5) * 0.5,
         radius: 3,
-        color: "rgba(100, 200, 255, 0.6)",
+        color: trailColor,
         life: 10
       });
     }
