@@ -292,13 +292,42 @@ function renderSceneBackground(ctx, width, height, scene, frame) {
     ctx.setLineDash([]);
     
     // Groups of people walking left to right, heads down, looking at phones
+    // Walking slower and falling off cliff lemming-style
     const walkCycle = (frame * 0.02) % 1; // Walking animation
+    const cliffEdge = width * 0.85; // Edge of the platform
+    
     for (let i = 0; i < 6; i++) {
-      const personX = ((frame * 2 + i * 150) % (width + 200)) - 100;
-      const personY = height * 0.7;
+      // Slower walk speed: changed from frame * 2 to frame * 0.8
+      const baseX = (frame * 0.8 + i * 150) % (width + 300);
+      let personX = baseX - 100;
+      let personY = height * 0.7;
+      let isFalling = false;
+      
+      // Check if person has walked past the cliff edge
+      if (personX > cliffEdge) {
+        isFalling = true;
+        // Calculate fall distance based on how far past the edge
+        const fallDistance = personX - cliffEdge;
+        personY = height * 0.7 + fallDistance * 1.5; // Fall faster as they go further
+        
+        // Don't draw if they've fallen off screen
+        if (personY > height + 50) {
+          continue;
+        }
+      }
       
       // Person body (simple silhouette)
       ctx.fillStyle = '#333344';
+      
+      // If falling, rotate the person slightly
+      if (isFalling) {
+        ctx.save();
+        ctx.translate(personX, personY);
+        const fallRotation = Math.min((personY - height * 0.7) * 0.02, Math.PI / 4);
+        ctx.rotate(fallRotation);
+        ctx.translate(-personX, -personY);
+      }
+      
       // Head (looking down)
       ctx.beginPath();
       ctx.arc(personX, personY - 40, 12, 0, Math.PI * 2);
@@ -319,12 +348,24 @@ function renderSceneBackground(ctx, width, height, scene, frame) {
       ctx.fillRect(personX - 6, personY - 16, 12, 17);
       ctx.restore();
       
-      // Legs (simple)
-      const legOffset = Math.sin(walkCycle * Math.PI * 2 + i) * 5;
+      // Legs (simple) - less movement when falling
+      const legOffset = isFalling ? 0 : Math.sin(walkCycle * Math.PI * 2 + i) * 5;
       ctx.fillStyle = '#333344';
       ctx.fillRect(personX - 7, personY - 2, 5, 15 + legOffset);
       ctx.fillRect(personX + 2, personY - 2, 5, 15 - legOffset);
+      
+      if (isFalling) {
+        ctx.restore();
+      }
     }
+    
+    // Draw the cliff edge/platform edge
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, height * 0.7, cliffEdge, height * 0.3);
+    
+    // Cliff face going down
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(cliffEdge, height * 0.7, 50, height * 0.3);
     
     // AI Diamond Core in the distance (top center)
     const coreX = width / 2;
@@ -360,58 +401,85 @@ function renderSceneBackground(ctx, width, height, scene, frame) {
     }
     
   } else if (scene.id === 'earth2025_part2') {
-    // Scene 2 Part 2: Rise of machines, AI takeover, gold star as last hope
-    // Dark night sky
+    // Scene 2 Part 2: Matrix-style falling green text/characters
+    // Black background
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, width, height);
     
-    // Stars in the sky
-    for (let i = 0; i < 100; i++) {
-      const sx = (i * 137.5) % width;
-      const sy = (i * 217.3) % (height * 0.6);
-      const ssize = 1 + (i % 2);
-      ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + (i % 5) * 0.1})`;
-      ctx.fillRect(sx, sy, ssize, ssize);
+    // Matrix digital rain effect
+    const columnWidth = 20;
+    const numColumns = Math.floor(width / columnWidth);
+    const fontSize = 16;
+    
+    // Characters for the matrix effect (katakana, numbers, symbols)
+    const matrixChars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789:・."=*+-<>¦|'.split('');
+    
+    ctx.font = `${fontSize}px "Share Tech Mono", monospace`;
+    
+    // Draw multiple columns of falling characters
+    for (let col = 0; col < numColumns; col++) {
+      const x = col * columnWidth;
+      
+      // Use frame and column to create pseudo-random but consistent positions
+      const seed = col * 17 + Math.floor(frame / 3);
+      const columnHeight = 10 + (seed % 15); // Different column lengths
+      const yOffset = (frame * 2 + col * 137) % (height + columnHeight * fontSize);
+      
+      // Draw the trail of characters
+      for (let row = 0; row < columnHeight; row++) {
+        const y = yOffset - row * fontSize;
+        
+        // Skip if not visible
+        if (y < -fontSize || y > height + fontSize) continue;
+        
+        // Select character based on position
+        const charIndex = (seed + row * 7) % matrixChars.length;
+        const char = matrixChars[charIndex];
+        
+        // Calculate fade - brightest at the head, fading toward tail
+        let alpha;
+        if (row === 0) {
+          // Head of the column - white and bright
+          ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+          ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+          ctx.shadowBlur = 5;
+        } else if (row < 3) {
+          // Near head - bright green
+          alpha = 1 - (row * 0.2);
+          ctx.fillStyle = `rgba(150, 255, 150, ${alpha})`;
+          ctx.shadowColor = `rgba(150, 255, 150, ${alpha * 0.5})`;
+          ctx.shadowBlur = 3;
+        } else {
+          // Tail - darker green
+          alpha = 1 - (row / columnHeight);
+          ctx.fillStyle = `rgba(0, 255, 65, ${alpha * 0.8})`;
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+        }
+        
+        ctx.fillText(char, x, y);
+      }
     }
     
-    // Earth/ground at bottom (being taken over)
-    const groundGradient = ctx.createLinearGradient(0, height * 0.6, 0, height);
-    groundGradient.addColorStop(0, '#0f0f1e');
-    groundGradient.addColorStop(0.5, '#1a1a2e');
-    groundGradient.addColorStop(1, '#2a2a3e');
-    ctx.fillStyle = groundGradient;
-    ctx.fillRect(0, height * 0.6, width, height * 0.4);
+    // Reset shadow for subsequent drawing
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
     
-    // Machine structures rising from the ground
-    for (let i = 0; i < 6; i++) {
-      const mx = (i / 6) * width + width / 12;
-      const mheight = 80 + Math.sin(frame * 0.02 + i) * 20 + i * 20;
-      const my = height * 0.8 - mheight;
-      
-      // Machine tower
-      ctx.fillStyle = '#2a2a3e';
-      ctx.fillRect(mx - 20, my, 40, mheight);
-      
-      // Red glowing parts (AI control)
-      ctx.fillStyle = (frame + i * 15) % 40 < 20 ? '#ff0000' : '#880000';
-      ctx.fillRect(mx - 15, my + 10, 30, 5);
-      ctx.fillRect(mx - 15, my + mheight / 2, 30, 5);
-      ctx.fillRect(mx - 15, my + mheight - 15, 30, 5);
-      
-      // Red eye/scanner
-      ctx.save();
-      ctx.shadowColor = 'rgba(255, 0, 0, 0.8)';
-      ctx.shadowBlur = 15;
-      ctx.fillStyle = (frame + i * 10) % 30 < 15 ? 'rgba(255, 0, 0, 0.9)' : 'rgba(255, 0, 0, 0.5)';
-      ctx.beginPath();
-      ctx.arc(mx, my + 20, 6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+    // Add some random character changes (glitch effect)
+    if (frame % 5 === 0) {
+      for (let i = 0; i < 20; i++) {
+        const rx = Math.random() * width;
+        const ry = Math.random() * height;
+        const char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+        
+        ctx.fillStyle = `rgba(0, 255, 65, ${Math.random() * 0.5})`;
+        ctx.fillText(char, rx, ry);
+      }
     }
     
-    // Gold Star in the night sky - representing the last hope of humankind
+    // Gold Star in the matrix rain - glowing, representing hope
     const starX = width * 0.75;
-    const starY = height * 0.25;
+    const starY = height * 0.3;
     const starRotation = frame * 0.03;
     const starPulse = Math.sin(frame * 0.08) * 0.2 + 1;
     

@@ -180,6 +180,10 @@ function wireOverlayButtons() {
       } else {
         state.gameOver = false;
       }
+      // Ensure cinematic is not playing
+      if (state.cinematic) {
+        state.cinematic.playing = false;
+      }
       // Reset player lives and health
       state.player.lives = 3;
       state.player.health = state.player.maxHealth || 100;
@@ -188,6 +192,8 @@ function wireOverlayButtons() {
       respawnPlayer();
       respawnGoldStar();
       spawnWave(currentWave);
+      // Restart game loop in case it stopped
+      requestAnimationFrame(gameLoop);
     });
   }
 
