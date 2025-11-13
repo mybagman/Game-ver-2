@@ -92,7 +92,12 @@ export let player = {
   shieldActive: false,
   // Megatonne Bomb system
   fireMegatonneBomb: false,
-  megatonneBombCooldown: 0
+  megatonneBombCooldown: 0,
+  // Player Homing EMP system
+  lastFireKeyPress: { key: null, time: 0 }, // Track double-tap for fire buttons
+  empCooldown: 0, // Cooldown timer for EMP (frames)
+  empCooldownMax: 180, // 3 seconds at 60fps
+  firePlayerEMP: false // Flag to trigger EMP firing
 };
 
 export let goldStar = {
@@ -331,6 +336,10 @@ export function resetGame() {
   player.shieldHealth = 0;
   player.maxShieldHealth = 0;
   player.shieldActive = false;
+  player.lastFireKeyPress = { key: null, time: 0 };
+  player.empCooldown = 0;
+  player.empCooldownMax = 180;
+  player.firePlayerEMP = false;
 
   // reset gold star
   goldStar.x = 0;
