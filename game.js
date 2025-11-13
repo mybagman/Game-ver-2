@@ -596,25 +596,15 @@ function startNewGame() {
 }
 
 // Hook up DOM buttons if they exist - queries elements lazily
+// NOTE: Continue and Restart buttons are now handled in index.js to avoid conflicts
 (function hookUpButtons() {
   if (typeof document === 'undefined') return;
   
   // Use setTimeout to ensure DOM is ready
   setTimeout(() => {
-    const { continueBtn, restartBtn, saveHighscoreBtn, newHighscoreInput } = getOverlayElements();
+    const { saveHighscoreBtn, newHighscoreInput } = getOverlayElements();
 
-    if (continueBtn) {
-      continueBtn.addEventListener('click', () => {
-        try { continueFromCurrentWave(); } catch (e) {}
-      });
-    }
-
-    if (restartBtn) {
-      restartBtn.addEventListener('click', () => {
-        try { startNewGame(); } catch (e) {}
-      });
-    }
-
+    // Only handle save highscore button here - continue/restart handled in index.js
     if (saveHighscoreBtn && newHighscoreInput) {
       saveHighscoreBtn.addEventListener('click', () => {
         const raw = newHighscoreInput.value || '---';
