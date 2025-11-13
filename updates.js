@@ -196,6 +196,49 @@ export function updatePlayerMovement() {
 
 export function handleShooting() {
   if (state.shootCooldown > 0) state.decrementShootCooldown();
+  
+  // Handle Megatonne Bomb cooldown
+  if (state.player.megatonneBombCooldown > 0) {
+    state.player.megatonneBombCooldown--;
+  }
+  
+  // Check if Megatonne Bomb should be fired (Space bar pressed)
+  if (state.player.fireMegatonneBomb && state.player.megatonneBombCooldown === 0) {
+    // Get current shooting direction from arrow keys
+    let dirX = 0, dirY = 0;
+    if (state.keys["arrowup"]) dirY = -1;
+    if (state.keys["arrowdown"]) dirY = 1;
+    if (state.keys["arrowleft"]) dirX = -1;
+    if (state.keys["arrowright"]) dirX = 1;
+    
+    // If no direction, fire upward by default
+    if (dirX === 0 && dirY === 0) {
+      dirY = -1;
+    }
+    
+    const mag = Math.hypot(dirX, dirY) || 1;
+    state.pushMegatonneBomb({
+      x: state.player.x,
+      y: state.player.y,
+      dx: (dirX / mag) * 6, // Slower than regular bullets
+      dy: (dirY / mag) * 6,
+      size: 20, // Larger than regular bullets
+      owner: "player",
+      frame: 0
+    });
+    
+    // Deplete boost meter and shields completely
+    state.player.boostMeter = 0;
+    state.player.shieldHealth = 0;
+    state.player.shieldActive = false;
+    
+    // Set cooldown (5 seconds at 60fps)
+    state.player.megatonneBombCooldown = 300;
+    
+    // Reset flag
+    state.player.fireMegatonneBomb = false;
+  }
+  
   let dirX = 0, dirY = 0;
   // arrows control shooting (no change here)
   if (state.keys["arrowup"]) dirY = -1; 
@@ -365,6 +408,104 @@ export function updateEmpProjectiles() {
     
     return true; // Keep EMP projectile
   });
+}
+
+export function updateMegatonneBombs() {
+  state.filterMegatonneBombs(bomb => {
+    bomb.x += bomb.dx;
+    bomb.y += bomb.dy;
+    bomb.frame = (bomb.frame || 0) + 1;
+    
+    // Check if bomb hit any enemy
+    const allTargets = [
+      ...state.enemies,
+      ...state.mechs,
+      ...state.tanks,
+      ...state.dropships,
+      ...state.walkers,
+      ...state.diamonds
+    ];
+    
+    for (const target of allTargets) {
+      if (!target || target.health === undefined) continue;
+      const dist = Math.hypot((target.x || 0) - bomb.x, (target.y || 0) - bomb.y);
+      if (dist < bomb.size + (target.size || 20)) {
+        // Bomb hit - create massive explosion
+        createMegatonneExplosion(bomb.x, bomb.y);
+        return false; // Remove bomb
+      }
+    }
+    
+    // Remove if off screen
+    if (bomb.x < -40 || bomb.x > state.canvas.width + 40 || 
+        bomb.y < -40 || bomb.y > state.canvas.height + 40) {
+      return false;
+    }
+    
+    return true; // Keep bomb
+  });
+}
+
+function createMegatonneExplosion(x, y) {
+  const AOE_RADIUS = 150; // Area of effect radius
+  
+  // Create main explosion visual
+  state.pushExplosion({
+    x: x,
+    y: y,
+    dx: 0,
+    dy: 0,
+    radius: 40,
+    color: "rgba(255, 150, 0, 1)",
+    life: 30
+  });
+  
+  // Create expanding shockwave rings
+  for (let ring = 0; ring < 5; ring++) {
+    state.pushRedPunchEffect({
+      x: x,
+      y: y,
+      maxR: AOE_RADIUS,
+      r: ring * 30,
+      life: 40 - ring * 5,
+      maxLife: 40 - ring * 5,
+      color: `rgba(255, 100, 0, ${0.8 - ring * 0.15})`,
+      fill: false,
+      ring: true
+    });
+  }
+  
+  // Damage all enemies in AOE
+  const allTargets = [
+    ...state.enemies,
+    ...state.mechs,
+    ...state.tanks,
+    ...state.dropships,
+    ...state.walkers,
+    ...state.diamonds
+  ];
+  
+  for (const target of allTargets) {
+    if (!target || target.health === undefined) continue;
+    const dist = Math.hypot((target.x || 0) - x, (target.y || 0) - y);
+    if (dist < AOE_RADIUS) {
+      // Damage scales with distance (more damage closer to center)
+      const damageFactor = 1 - (dist / AOE_RADIUS);
+      const damage = 50 * damageFactor; // Up to 50 damage at center
+      target.health -= damage;
+      
+      // Visual feedback
+      state.pushExplosion({
+        x: target.x,
+        y: target.y,
+        dx: 0,
+        dy: 0,
+        radius: 15,
+        color: "rgba(255, 150, 0, 0.8)",
+        life: 20
+      });
+    }
+  }
 }
 
 export function updatePowerUps() {

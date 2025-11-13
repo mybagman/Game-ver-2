@@ -290,3 +290,97 @@ export function drawEmpProjectiles() {
     }
   }
 }
+
+// Draw Megatonne Bombs
+export function drawMegatonneBombs() {
+  for (let i = 0; i < state.megatonneBombs.length; i++) {
+    const bomb = state.megatonneBombs[i];
+    if (!bomb) continue;
+    
+    const x = bomb.x, y = bomb.y;
+    const size = bomb.size || 20;
+    const t = bomb.frame || 0;
+    
+    // Massive outer glow (orange/red)
+    state.ctx.save();
+    state.ctx.globalCompositeOperation = 'lighter';
+    const pulse = Math.sin(t * 0.15) * 0.3 + 0.7;
+    
+    // Outer explosive aura
+    const outerGrad = state.ctx.createRadialGradient(x, y, 0, x, y, size * 3);
+    outerGrad.addColorStop(0, `rgba(255, 150, 0, ${0.9 * pulse})`);
+    outerGrad.addColorStop(0.5, `rgba(255, 100, 0, ${0.5 * pulse})`);
+    outerGrad.addColorStop(1, 'rgba(200, 50, 0, 0)');
+    state.ctx.fillStyle = outerGrad;
+    state.ctx.beginPath();
+    state.ctx.arc(x, y, size * 3, 0, Math.PI * 2);
+    state.ctx.fill();
+    
+    // Middle layer (bright orange)
+    const midGrad = state.ctx.createRadialGradient(x, y, 0, x, y, size * 1.8);
+    midGrad.addColorStop(0, `rgba(255, 200, 50, ${0.95 * pulse})`);
+    midGrad.addColorStop(0.6, `rgba(255, 150, 0, ${0.6 * pulse})`);
+    midGrad.addColorStop(1, 'rgba(255, 100, 0, 0)');
+    state.ctx.fillStyle = midGrad;
+    state.ctx.beginPath();
+    state.ctx.arc(x, y, size * 1.8, 0, Math.PI * 2);
+    state.ctx.fill();
+    
+    // Core (bright yellow-white)
+    state.ctx.fillStyle = `rgba(255, 255, 200, ${0.95 * pulse})`;
+    state.ctx.beginPath();
+    state.ctx.arc(x, y, size, 0, Math.PI * 2);
+    state.ctx.fill();
+    
+    // Rotating danger symbol
+    state.ctx.save();
+    state.ctx.translate(x, y);
+    state.ctx.rotate(t * 0.08);
+    
+    // Draw radiation/hazard symbol
+    state.ctx.fillStyle = `rgba(50, 50, 50, ${0.8 * pulse})`;
+    for (let s = 0; s < 3; s++) {
+      const angle = (s / 3) * Math.PI * 2;
+      state.ctx.beginPath();
+      state.ctx.moveTo(0, 0);
+      state.ctx.arc(0, 0, size * 0.7, angle - 0.3, angle + 0.3);
+      state.ctx.closePath();
+      state.ctx.fill();
+    }
+    state.ctx.restore();
+    
+    // Energy sparks
+    if (t % 3 === 0) {
+      for (let s = 0; s < 5; s++) {
+        const sparkAngle = (Math.random() * Math.PI * 2);
+        const sparkDist = size * (1.5 + Math.random() * 0.8);
+        const sparkX = x + Math.cos(sparkAngle) * sparkDist;
+        const sparkY = y + Math.sin(sparkAngle) * sparkDist;
+        state.ctx.fillStyle = `rgba(255, 200, 100, ${0.8 * pulse})`;
+        state.ctx.fillRect(sparkX - 2, sparkY - 2, 4, 4);
+      }
+    }
+    
+    // Outer ring pulse
+    state.ctx.beginPath();
+    state.ctx.strokeStyle = `rgba(255, 150, 0, ${0.9 * pulse})`;
+    state.ctx.lineWidth = 3;
+    state.ctx.arc(x, y, size + 8 + Math.sin(t * 0.2) * 3, 0, Math.PI * 2);
+    state.ctx.stroke();
+    
+    state.ctx.restore();
+    
+    // Trail particles (fire trail)
+    if (Math.random() > 0.3) {
+      state.pushExplosion({
+        x: x - bomb.dx * 0.8,
+        y: y - bomb.dy * 0.8,
+        dx: (Math.random() - 0.5) * 1,
+        dy: (Math.random() - 0.5) * 1,
+        radius: 8,
+        color: "rgba(255, 150, 50, 0.7)",
+        life: 15
+      });
+    }
+  }
+}

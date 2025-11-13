@@ -36,6 +36,17 @@ export function setupInputHandlers() {
     if (e.key === "ArrowLeft") state.keys["arrowleft"] = true;
     if (e.key === "ArrowRight") state.keys["arrowright"] = true;
 
+    // Space bar for Megatonne Bomb
+    if (e.key === " " || key === "space") {
+      state.keys["space"] = true;
+      // Fire Megatonne Bomb if requirements met
+      if (state.player.boostMeter > 0 &&
+          state.player.shieldHealth > 0 &&
+          !state.player.megatonneBombCooldown) {
+        state.player.fireMegatonneBomb = true;
+      }
+    }
+
     // Detect double-tap for boost on WASD and arrow keys
     const now = Date.now();
     const movementKeys = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
@@ -71,6 +82,11 @@ export function setupInputHandlers() {
     if (e.key === "ArrowDown") state.keys["arrowdown"] = false;
     if (e.key === "ArrowLeft") state.keys["arrowleft"] = false;
     if (e.key === "ArrowRight") state.keys["arrowright"] = false;
+    
+    // Space bar release
+    if (e.key === " " || key === "space") {
+      state.keys["space"] = false;
+    }
 
     // End boost if the boost key is released
     if (state.player.boosting && state.player.boostKey === normalizedKey) {

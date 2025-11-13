@@ -1016,8 +1016,99 @@ function drawDescentToDesert() {
   }
 }
 
-// Wave 14 (index 13): Desert Planet Surface (Dune-like)
-function drawDesertPlanetSurface() {
+// Waves 14+ (index 13+): Pixel Art Earth Background
+// Simple pixel art style with Earth/planet view, green ground, and blue sky
+function drawPixelArtEarth() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Blue sky gradient
+  const skyGradient = ctx.createLinearGradient(0, 0, 0, height * 0.7);
+  skyGradient.addColorStop(0, "#87CEEB"); // Sky blue
+  skyGradient.addColorStop(0.5, "#B0E0E6"); // Powder blue
+  skyGradient.addColorStop(1, "#E0F6FF"); // Light blue
+  ctx.fillStyle = skyGradient;
+  ctx.fillRect(0, 0, width, height * 0.7);
+  
+  // Earth/Planet in the sky (upper right)
+  const earthX = width * 0.75;
+  const earthY = height * 0.25;
+  const earthRadius = Math.min(width, height) * 0.15;
+  
+  // Planet glow
+  const glowGradient = ctx.createRadialGradient(earthX, earthY, earthRadius * 0.5, earthX, earthY, earthRadius * 1.3);
+  glowGradient.addColorStop(0, 'rgba(100, 150, 255, 0.1)');
+  glowGradient.addColorStop(1, 'rgba(100, 150, 255, 0)');
+  ctx.fillStyle = glowGradient;
+  ctx.fillRect(0, 0, width, height);
+  
+  // Earth sphere with pixel art style
+  const earthGradient = ctx.createRadialGradient(
+    earthX - earthRadius * 0.3, earthY - earthRadius * 0.3, 0,
+    earthX, earthY, earthRadius
+  );
+  earthGradient.addColorStop(0, "#6B9BD1"); // Light blue
+  earthGradient.addColorStop(0.5, "#4A7BA7"); // Medium blue
+  earthGradient.addColorStop(1, "#2C5F8D"); // Dark blue
+  ctx.fillStyle = earthGradient;
+  ctx.beginPath();
+  ctx.arc(earthX, earthY, earthRadius, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Green continents (pixel art style - simplified shapes)
+  ctx.fillStyle = "#5FAD56";
+  // Continent 1
+  ctx.beginPath();
+  ctx.arc(earthX - earthRadius * 0.3, earthY - earthRadius * 0.2, earthRadius * 0.25, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Continent 2
+  ctx.beginPath();
+  ctx.arc(earthX + earthRadius * 0.2, earthY + earthRadius * 0.3, earthRadius * 0.3, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // White clouds on Earth (pixel art dots)
+  ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+  for (let i = 0; i < 12; i++) {
+    const angle = (i * 30) * Math.PI / 180;
+    const dist = (i % 3) * earthRadius * 0.3;
+    const cx = earthX + Math.cos(angle) * dist;
+    const cy = earthY + Math.sin(angle) * dist;
+    const cloudSize = 3 + (i % 2) * 2;
+    ctx.fillRect(cx, cy, cloudSize, cloudSize);
+  }
+  
+  // Simple green ground at bottom
+  const groundY = height * 0.7;
+  const groundGradient = ctx.createLinearGradient(0, groundY, 0, height);
+  groundGradient.addColorStop(0, "#90EE90"); // Light green
+  groundGradient.addColorStop(0.5, "#7CCD7C"); // Medium green
+  groundGradient.addColorStop(1, "#6B8E23"); // Darker green
+  ctx.fillStyle = groundGradient;
+  ctx.fillRect(0, groundY, width, height - groundY);
+  
+  // Simple grass texture (pixel art style)
+  ctx.fillStyle = "rgba(80, 120, 60, 0.3)";
+  for (let i = 0; i < 20; i++) {
+    const x = ((i * 157.3) % width);
+    const y = groundY + ((i * 67) % (height - groundY));
+    const grassWidth = 3 + (i % 2);
+    ctx.fillRect(x, y, grassWidth, 2);
+  }
+  
+  // Some flowers/plants (simple colored pixels)
+  const plantColors = ["#FF6B9D", "#FFD700", "#FF4500"];
+  for (let i = 0; i < 15; i++) {
+    const x = ((i * 127.5) % width);
+    const y = groundY + 5 + ((i * 89) % (height - groundY - 10));
+    ctx.fillStyle = plantColors[i % 3];
+    ctx.fillRect(x, y, 4, 4);
+  }
+}
+
+// OLD Desert function kept for reference but no longer used
+function drawDesertPlanetSurface_UNUSED() {
   const ctx = state.ctx;
   const width = state.canvas.width;
   const height = state.canvas.height;
@@ -1030,7 +1121,7 @@ function drawDesertPlanetSurface() {
   ctx.fillStyle = skyGradient;
   ctx.fillRect(0, 0, width, height * 0.6);
   
-  // Distant sand dunes (background layer - 16-bit pixel art)
+  // Distant sand dunes (background layer - 16-bit pixel art) - STATIC
   ctx.fillStyle = "rgba(180, 140, 90, 0.4)";
   for (let i = 0; i < 8; i++) {
     const x = (i * width / 8);
@@ -1046,7 +1137,7 @@ function drawDesertPlanetSurface() {
     ctx.fill();
   }
   
-  // Mid-ground dunes (16-bit style)
+  // Mid-ground dunes (16-bit style) - STATIC
   ctx.fillStyle = "rgba(200, 160, 110, 0.6)";
   for (let i = 0; i < 12; i++) {
     const x = (i * width / 12);
@@ -1071,37 +1162,37 @@ function drawDesertPlanetSurface() {
   ctx.fillStyle = groundGradient;
   ctx.fillRect(0, groundY, width, height - groundY);
   
-  // Sand ripples and texture (16-bit pixel detail)
+  // Sand ripples and texture (16-bit pixel detail) - Reduced from 15 to 8 for performance
   ctx.fillStyle = "rgba(200, 160, 110, 0.3)";
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < 8; i++) {
     const x = ((i * 173.5) % width);
     const y = groundY + ((i * 67) % (height - groundY));
     const rippleWidth = ((i * 31) % 80) + 40;
     ctx.fillRect(x, y, rippleWidth, 2);
   }
   
-  // Sand particles/dust (pixel detail)
+  // Sand particles/dust (pixel detail) - Reduced from 80 to 40 for performance
   ctx.fillStyle = "rgba(220, 180, 130, 0.2)";
-  for (let i = 0; i < 80; i++) {
+  for (let i = 0; i < 40; i++) {
     const x = ((i * 137.5) % width);
     const y = groundY + ((i * 89) % (height - groundY));
     ctx.fillRect(x, y, 2, 2);
   }
   
-  // Floating dust particles in air (animated)
+  // Floating dust particles in air - Reduced from 30 to 15 and optimized animation
   ctx.fillStyle = "rgba(240, 200, 150, 0.4)";
-  for (let i = 0; i < 30; i++) {
-    const x = ((i * 127.5 + state.frameCount * 0.5) % (width + 50)) - 25;
+  const frameOffset = (state.frameCount || 0) * 0.5;
+  for (let i = 0; i < 15; i++) {
+    const x = ((i * 127.5 + frameOffset) % (width + 50)) - 25;
     const y = ((i * 73.3) % (height * 0.5)) + height * 0.2;
     const size = ((i * 3) % 3) + 1;
     ctx.fillRect(x, y, size, size);
   }
   
-  // Heat shimmer effect (horizontal lines with alpha variation)
+  // Heat shimmer effect - Made static to prevent performance issues
+  ctx.fillStyle = "rgba(255, 220, 180, 0.15)";
   for (let i = 0; i < 5; i++) {
     const y = groundY + (i * 20);
-    const shimmer = Math.sin(state.frameCount * 0.1 + i) * 0.1 + 0.1;
-    ctx.fillStyle = `rgba(255, 220, 180, ${shimmer})`;
     ctx.fillRect(0, y, width, 1);
   }
 }
@@ -1165,17 +1256,9 @@ export function drawBackground(waveNum) {
     return;
   }
   
-  if (waveNum === 13) {
-    // Wave 14: Desert Planet Surface (Dune-like)
-    drawDesertPlanetSurface();
-    state.incrementBackgroundOffset(0.5);
-    return;
-  }
-  
-  // Waves 15+ (waveNum >= 14): Static 16-bit Terminator-style Earth scene
-  // Optimized static background to prevent freezing
-  if (waveNum >= 14) {
-    drawTerminatorEarth();
+  // Waves 14+ (waveNum >= 13): Pixel art Earth scene with planet view, green ground, blue sky
+  if (waveNum >= 13) {
+    drawPixelArtEarth();
     state.incrementBackgroundOffset(0.5);
     return;
   }
