@@ -4,6 +4,7 @@ import {
   handleShooting,
   updateBullets,
   updateEmpProjectiles,
+  updateMegatonneBombs,
   updatePowerUps,
   updateTunnels,
   updateExplosions,
@@ -21,7 +22,7 @@ import { renderOpeningCinematic, isOpeningCinematicComplete } from './openingCin
 /* patched imports: consolidated drawing helpers from drawing.js */
 // Replace the single `from './drawing.js'` import with these direct imports:
 import { drawBackground, drawPlanetBackground, drawClouds, drawGroundObjects } from './drawing/background.js';
-import { drawBullets, drawEmpProjectiles } from './drawing/bullets.js';
+import { drawBullets, drawEmpProjectiles, drawMegatonneBombs } from './drawing/bullets.js';
 import { drawDiamonds, drawEnemies, drawDropship, drawDropships, drawTanks, drawWalkers, drawMechs } from './drawing/Enemies.js';
 import { drawGoldStarAura, drawGoldStar } from './drawing/goldstar.js';
 import { drawUI } from './drawing/UI.js';
@@ -93,6 +94,7 @@ export function gameLoop(now) {
   try { handleShooting(); } catch (e) {}
   try { updateBullets(); } catch (e) {}
   try { updateEmpProjectiles(); } catch (e) {}
+  try { updateMegatonneBombs(); } catch (e) {}
   try { updateLightning(); } catch (e) {}
   try { updateExplosions(); } catch (e) {}
   try { updatePowerUps(); } catch (e) {}
@@ -257,6 +259,9 @@ export function renderFrame() {
   }
   if (typeof drawEmpProjectiles === 'function') {
     try { drawEmpProjectiles(); } catch (e) {}
+  }
+  if (typeof drawMegatonneBombs === 'function') {
+    try { drawMegatonneBombs(); } catch (e) {}
   }
   if (typeof updateAndDrawReflectionEffects === 'function') {
     try { updateAndDrawReflectionEffects(); } catch (e) {}

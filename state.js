@@ -23,6 +23,7 @@ export let minionsToAdd = [];
 export let homingMissiles = [];
 export let empProjectiles = [];
 export let groundObjects = []; // Ground collision objects for building waves
+export let megatonneBombs = []; // Megatonne bomb projectiles
 
 export let keys = {};
 export let shootCooldown = 0;
@@ -88,7 +89,10 @@ export let player = {
   // Shield system
   shieldHealth: 0,
   maxShieldHealth: 0,
-  shieldActive: false
+  shieldActive: false,
+  // Megatonne Bomb system
+  fireMegatonneBomb: false,
+  megatonneBombCooldown: 0
 };
 
 export let goldStar = {
@@ -226,6 +230,7 @@ export function pushAuraShockwave(s) { auraShockwaves.push(s); }
 export function pushHomingMissile(m) { homingMissiles.push(m); }
 export function pushEmpProjectile(e) { empProjectiles.push(e); }
 export function pushGroundObject(g) { groundObjects.push(g); }
+export function pushMegatonneBomb(b) { megatonneBombs.push(b); }
 
 export function filterAuraSparks(fn) { auraSparks = auraSparks.filter(fn); }
 export function filterAuraShockwaves(fn) { auraShockwaves = auraShockwaves.filter(fn); }
@@ -237,6 +242,11 @@ export function filterHomingMissiles(fn) {
 export function filterEmpProjectiles(fn) { 
   for (let i = empProjectiles.length - 1; i >= 0; i--) {
     if (!fn(empProjectiles[i])) empProjectiles.splice(i, 1);
+  }
+}
+export function filterMegatonneBombs(fn) { 
+  for (let i = megatonneBombs.length - 1; i >= 0; i--) {
+    if (!fn(megatonneBombs[i])) megatonneBombs.splice(i, 1);
   }
 }
 
@@ -274,6 +284,7 @@ export function resetGame() {
   homingMissiles.length = 0;
   empProjectiles.length = 0;
   groundObjects.length = 0;
+  megatonneBombs.length = 0;
 
   // reset simple state
   keys = {};
