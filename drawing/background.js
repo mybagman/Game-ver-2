@@ -1172,22 +1172,23 @@ export function drawBackground(waveNum) {
     return;
   }
   
-  // Waves 14+ (waveNum >= 13): Pixel art cloud backgrounds with light blue sky and ocean
-  // Light blue/cyan sky background
+  // Waves 15+ (waveNum >= 14): Static 16-bit Terminator-style Earth scene
+  // Optimized static background to prevent freezing
+  if (waveNum >= 14) {
+    drawTerminatorEarth();
+    state.incrementBackgroundOffset(0.5);
+    return;
+  }
+  
+  // Fallback: shouldn't reach here but keeping for safety
   const skyGradient = state.ctx.createLinearGradient(0, 0, 0, state.canvas.height * 0.75);
-  skyGradient.addColorStop(0, "#87CEEB"); // Light blue at top
-  skyGradient.addColorStop(0.5, "#B0E0E6"); // Powder blue
-  skyGradient.addColorStop(1, "#E0F6FF"); // Very light blue near horizon
+  skyGradient.addColorStop(0, "#87CEEB");
+  skyGradient.addColorStop(0.5, "#B0E0E6");
+  skyGradient.addColorStop(1, "#E0F6FF");
   
   state.ctx.fillStyle = skyGradient;
   state.ctx.fillRect(0, 0, state.canvas.width, state.canvas.height * 0.75);
   
-  // Draw fluffy pixel art clouds
-  drawPixelArtClouds();
-  
-  // Draw ocean at the bottom
-  drawCloudBackgroundOcean();
-
   state.incrementBackgroundOffset(0.5);
 }
 
@@ -1292,6 +1293,158 @@ function drawCloudBackgroundOcean() {
     const foamY = oceanY + ((i * 53.7) % oceanHeight);
     const foamSize = 3 + (i % 3);
     ctx.fillRect(foamX, foamY, foamSize, 2);
+  }
+}
+
+// =====================================================
+// WAVE 15+ TERMINATOR-STYLE EARTH BACKGROUND
+// Static, optimized background to prevent freezing
+// =====================================================
+
+function drawTerminatorEarth() {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Dark, post-apocalyptic sky gradient (Terminator aesthetic)
+  const skyGradient = ctx.createLinearGradient(0, 0, 0, height * 0.7);
+  skyGradient.addColorStop(0, "#1a1a2e"); // Dark purple-gray
+  skyGradient.addColorStop(0.4, "#2a2a3a"); // Medium dark gray
+  skyGradient.addColorStop(1, "#3a3a4a"); // Lighter gray horizon
+  ctx.fillStyle = skyGradient;
+  ctx.fillRect(0, 0, width, height * 0.7);
+  
+  // Damaged Earth in the sky (distant, post-war)
+  const earthX = width * 0.75;
+  const earthY = height * 0.25;
+  const earthRadius = Math.min(width, height) * 0.15;
+  
+  // Earth sphere (damaged, dark)
+  const earthGradient = ctx.createRadialGradient(
+    earthX - earthRadius * 0.3, earthY - earthRadius * 0.3, 0,
+    earthX, earthY, earthRadius
+  );
+  earthGradient.addColorStop(0, "#4a5563");
+  earthGradient.addColorStop(0.6, "#374151");
+  earthGradient.addColorStop(1, "#1f2937");
+  ctx.fillStyle = earthGradient;
+  ctx.beginPath();
+  ctx.arc(earthX, earthY, earthRadius, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Scar/damage on Earth (16-bit pixel style)
+  ctx.fillStyle = "#2a2a2a";
+  ctx.beginPath();
+  ctx.arc(earthX + earthRadius * 0.3, earthY, earthRadius * 0.4, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Small craters/damage marks (static - deterministic)
+  ctx.fillStyle = "rgba(30, 30, 40, 0.6)";
+  for (let i = 0; i < 12; i++) {
+    const angle = (i * 30) * Math.PI / 180; // Static positions
+    const dist = (i % 3) * earthRadius * 0.25;
+    const cx = earthX + Math.cos(angle) * dist;
+    const cy = earthY + Math.sin(angle) * dist;
+    const craterSize = 3 + (i % 3) * 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, craterSize, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  // Ground/wasteland (16-bit pixel art style)
+  const groundY = height * 0.7;
+  const groundGradient = ctx.createLinearGradient(0, groundY, 0, height);
+  groundGradient.addColorStop(0, "#2a2a3a");
+  groundGradient.addColorStop(0.5, "#1a1a2a");
+  groundGradient.addColorStop(1, "#0a0a1a");
+  ctx.fillStyle = groundGradient;
+  ctx.fillRect(0, groundY, width, height - groundY);
+  
+  // Destroyed cityscape silhouette (static buildings)
+  ctx.fillStyle = "#1a1a2a";
+  const buildings = [
+    { x: 0.05, width: 0.08, height: 0.12 },
+    { x: 0.15, width: 0.06, height: 0.15 },
+    { x: 0.23, width: 0.10, height: 0.10 },
+    { x: 0.40, width: 0.07, height: 0.18 },
+    { x: 0.52, width: 0.09, height: 0.14 },
+    { x: 0.65, width: 0.06, height: 0.11 },
+    { x: 0.75, width: 0.08, height: 0.16 },
+    { x: 0.88, width: 0.07, height: 0.13 }
+  ];
+  
+  buildings.forEach(building => {
+    const bx = width * building.x;
+    const bWidth = width * building.width;
+    const bHeight = height * building.height;
+    const by = groundY - bHeight;
+    
+    // Building body
+    ctx.fillRect(bx, by, bWidth, bHeight);
+    
+    // Damaged top (jagged)
+    ctx.fillStyle = "#0a0a1a";
+    ctx.beginPath();
+    ctx.moveTo(bx, by);
+    ctx.lineTo(bx + bWidth * 0.3, by + 8);
+    ctx.lineTo(bx + bWidth * 0.5, by - 5);
+    ctx.lineTo(bx + bWidth * 0.7, by + 10);
+    ctx.lineTo(bx + bWidth, by);
+    ctx.lineTo(bx + bWidth, by + 15);
+    ctx.lineTo(bx, by + 15);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.fillStyle = "#1a1a2a";
+  });
+  
+  // Red warning lights on buildings (static, not animated for performance)
+  ctx.fillStyle = "rgba(255, 50, 50, 0.7)";
+  buildings.forEach((building, i) => {
+    if (i % 2 === 0) { // Only some buildings have lights
+      const bx = width * building.x;
+      const bWidth = width * building.width;
+      const bHeight = height * building.height;
+      const by = groundY - bHeight;
+      
+      // Single red light at top
+      ctx.fillRect(bx + bWidth * 0.4, by + 5, 4, 4);
+    }
+  });
+  
+  // Ground debris (static pixel details)
+  ctx.fillStyle = "rgba(60, 60, 80, 0.4)";
+  const debrisPositions = [
+    { x: 0.1, y: 0.75, w: 0.03, h: 0.02 },
+    { x: 0.25, y: 0.78, w: 0.04, h: 0.015 },
+    { x: 0.45, y: 0.77, w: 0.025, h: 0.02 },
+    { x: 0.62, y: 0.79, w: 0.035, h: 0.018 },
+    { x: 0.80, y: 0.76, w: 0.03, h: 0.02 }
+  ];
+  
+  debrisPositions.forEach(debris => {
+    ctx.fillRect(
+      width * debris.x,
+      height * debris.y,
+      width * debris.w,
+      height * debris.h
+    );
+  });
+  
+  // Sparse stars in the dark sky (static, deterministic)
+  ctx.fillStyle = "rgba(200, 200, 220, 0.6)";
+  for (let i = 0; i < 40; i++) {
+    const sx = (i * 137.5) % width;
+    const sy = (i * 73.3) % (height * 0.65);
+    const size = 1 + (i % 2);
+    ctx.fillRect(sx, sy, size, size);
+  }
+  
+  // Smoke/haze layers (static, no animation)
+  ctx.fillStyle = "rgba(40, 40, 50, 0.15)";
+  for (let i = 0; i < 3; i++) {
+    const hy = groundY - 50 - (i * 40);
+    ctx.fillRect(0, hy, width, 30);
   }
 }
 

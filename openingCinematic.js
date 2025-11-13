@@ -30,19 +30,19 @@ const SCENES = [
   },
   {
     id: 'earth2025_part1',
-    duration: 420, // 7 seconds at 60fps
+    duration: 760, // Extended to ~12.7 seconds (340 frames new opening + 420 frames original)
     locationText: '2025',
-    typeStartFrame: 30,
-    dialogStartFrame: 90,
+    typeStartFrame: 370, // Shifted to start after new opening
+    dialogStartFrame: 430, // Shifted to start after new opening
     dialogs: [
       {
         character: 'leader',
         text: "With the rise of AI, Everyone became distracted.",
-        startFrame: 90,
+        startFrame: 430, // Shifted from 90 to 430 (90 + 340)
         duration: 210
       }
     ],
-    fadeOutStart: 360,
+    fadeOutStart: 700, // Shifted from 360 to 700 (360 + 340)
     fadeOutDuration: 60
   },
   {
@@ -268,136 +268,144 @@ function renderSceneBackground(ctx, width, height, scene, frame) {
     }
     
   } else if (scene.id === 'earth2025_part1') {
-    // Scene 2 Part 1: People distracted by phones, AI diamond core eye blinks
-    // Dark urban environment
-    const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, '#2a2a3e'); // Dark gray-blue
-    gradient.addColorStop(0.5, '#1a1a2e'); // Darker
-    gradient.addColorStop(1, '#0f0f1e'); // Very dark
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-    
-    // Ground/street
-    ctx.fillStyle = '#1a1a1a';
-    ctx.fillRect(0, height * 0.7, width, height * 0.3);
-    
-    // Street lines
-    ctx.strokeStyle = '#444444';
-    ctx.lineWidth = 3;
-    ctx.setLineDash([20, 15]);
-    ctx.beginPath();
-    ctx.moveTo(0, height * 0.85);
-    ctx.lineTo(width, height * 0.85);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    
-    // Groups of people walking left to right, heads down, looking at phones
-    // Walking slower and falling off cliff lemming-style
-    const walkCycle = (frame * 0.02) % 1; // Walking animation
-    const cliffEdge = width * 0.85; // Edge of the platform
-    
-    for (let i = 0; i < 6; i++) {
-      // Slower walk speed: changed from frame * 2 to frame * 0.8
-      const baseX = (frame * 0.8 + i * 150) % (width + 300);
-      let personX = baseX - 100;
-      let personY = height * 0.7;
-      let isFalling = false;
+    // NEW OPENING SEQUENCE: Frames 0-340
+    if (frame < 340) {
+      renderEarth2025Opening(ctx, width, height, frame);
+    } else {
+      // ORIGINAL SCENE: Adjusted to start after opening (frame 340+)
+      const adjustedFrame = frame - 340; // Adjust frame counter for original scene timing
       
-      // Check if person has walked past the cliff edge
-      if (personX > cliffEdge) {
-        isFalling = true;
-        // Calculate fall distance based on how far past the edge
-        const fallDistance = personX - cliffEdge;
-        personY = height * 0.7 + fallDistance * 1.5; // Fall faster as they go further
+      // Scene 2 Part 1: People distracted by phones, AI diamond core eye blinks
+      // Dark urban environment
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, '#2a2a3e'); // Dark gray-blue
+      gradient.addColorStop(0.5, '#1a1a2e'); // Darker
+      gradient.addColorStop(1, '#0f0f1e'); // Very dark
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+      
+      // Ground/street
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(0, height * 0.7, width, height * 0.3);
+      
+      // Street lines
+      ctx.strokeStyle = '#444444';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([20, 15]);
+      ctx.beginPath();
+      ctx.moveTo(0, height * 0.85);
+      ctx.lineTo(width, height * 0.85);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Groups of people walking left to right, heads down, looking at phones
+      // Walking slower and falling off cliff lemming-style
+      const walkCycle = (adjustedFrame * 0.02) % 1; // Walking animation
+      const cliffEdge = width * 0.85; // Edge of the platform
+      
+      for (let i = 0; i < 6; i++) {
+        // Slower walk speed: changed from frame * 2 to frame * 0.8
+        const baseX = (adjustedFrame * 0.8 + i * 150) % (width + 300);
+        let personX = baseX - 100;
+        let personY = height * 0.7;
+        let isFalling = false;
         
-        // Don't draw if they've fallen off screen
-        if (personY > height + 50) {
-          continue;
+        // Check if person has walked past the cliff edge
+        if (personX > cliffEdge) {
+          isFalling = true;
+          // Calculate fall distance based on how far past the edge
+          const fallDistance = personX - cliffEdge;
+          personY = height * 0.7 + fallDistance * 1.5; // Fall faster as they go further
+          
+          // Don't draw if they've fallen off screen
+          if (personY > height + 50) {
+            continue;
+          }
+        }
+        
+        // Person body (simple silhouette)
+        ctx.fillStyle = '#333344';
+        
+        // If falling, rotate the person slightly
+        if (isFalling) {
+          ctx.save();
+          ctx.translate(personX, personY);
+          const fallRotation = Math.min((personY - height * 0.7) * 0.02, Math.PI / 4);
+          ctx.rotate(fallRotation);
+          ctx.translate(-personX, -personY);
+        }
+        
+        // Head (looking down)
+        ctx.beginPath();
+        ctx.arc(personX, personY - 40, 12, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Body
+        ctx.fillRect(personX - 8, personY - 28, 16, 30);
+        
+        // Phone glow in hands (blue glow)
+        ctx.fillStyle = 'rgba(100, 150, 255, 0.8)';
+        ctx.fillRect(personX - 5, personY - 15, 10, 15);
+        
+        // Phone glow effect
+        ctx.save();
+        ctx.shadowColor = 'rgba(100, 150, 255, 0.6)';
+        ctx.shadowBlur = 15;
+        ctx.fillStyle = 'rgba(150, 180, 255, 0.4)';
+        ctx.fillRect(personX - 6, personY - 16, 12, 17);
+        ctx.restore();
+        
+        // Legs (simple) - less movement when falling
+        const legOffset = isFalling ? 0 : Math.sin(walkCycle * Math.PI * 2 + i) * 5;
+        ctx.fillStyle = '#333344';
+        ctx.fillRect(personX - 7, personY - 2, 5, 15 + legOffset);
+        ctx.fillRect(personX + 2, personY - 2, 5, 15 - legOffset);
+        
+        if (isFalling) {
+          ctx.restore();
         }
       }
       
-      // Person body (simple silhouette)
-      ctx.fillStyle = '#333344';
+      // Draw the cliff edge/platform edge
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(0, height * 0.7, cliffEdge, height * 0.3);
       
-      // If falling, rotate the person slightly
-      if (isFalling) {
+      // Cliff face going down
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(cliffEdge, height * 0.7, 50, height * 0.3);
+      
+      // AI Diamond Core in the distance (top center)
+      const coreX = width / 2;
+      const coreY = height * 0.15;
+      
+      // Diamond shape
+      ctx.fillStyle = '#1a1a2e';
+      ctx.save();
+      ctx.translate(coreX, coreY);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillRect(-30, -30, 60, 60);
+      ctx.restore();
+      
+      // Red eye that blinks
+      const blinkCycle = adjustedFrame % 120;
+      const eyeOpen = blinkCycle < 100 || blinkCycle > 110;
+      if (eyeOpen) {
+        const eyeIntensity = Math.sin(adjustedFrame * 0.05) * 0.3 + 0.7;
         ctx.save();
-        ctx.translate(personX, personY);
-        const fallRotation = Math.min((personY - height * 0.7) * 0.02, Math.PI / 4);
-        ctx.rotate(fallRotation);
-        ctx.translate(-personX, -personY);
-      }
-      
-      // Head (looking down)
-      ctx.beginPath();
-      ctx.arc(personX, personY - 40, 12, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Body
-      ctx.fillRect(personX - 8, personY - 28, 16, 30);
-      
-      // Phone glow in hands (blue glow)
-      ctx.fillStyle = 'rgba(100, 150, 255, 0.8)';
-      ctx.fillRect(personX - 5, personY - 15, 10, 15);
-      
-      // Phone glow effect
-      ctx.save();
-      ctx.shadowColor = 'rgba(100, 150, 255, 0.6)';
-      ctx.shadowBlur = 15;
-      ctx.fillStyle = 'rgba(150, 180, 255, 0.4)';
-      ctx.fillRect(personX - 6, personY - 16, 12, 17);
-      ctx.restore();
-      
-      // Legs (simple) - less movement when falling
-      const legOffset = isFalling ? 0 : Math.sin(walkCycle * Math.PI * 2 + i) * 5;
-      ctx.fillStyle = '#333344';
-      ctx.fillRect(personX - 7, personY - 2, 5, 15 + legOffset);
-      ctx.fillRect(personX + 2, personY - 2, 5, 15 - legOffset);
-      
-      if (isFalling) {
+        ctx.shadowColor = 'rgba(255, 0, 0, 0.8)';
+        ctx.shadowBlur = 30;
+        ctx.fillStyle = `rgba(255, 0, 0, ${eyeIntensity})`;
+        ctx.beginPath();
+        ctx.arc(coreX, coreY, 12, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
+        
+        // Inner eye detail
+        ctx.fillStyle = `rgba(255, 100, 100, ${eyeIntensity})`;
+        ctx.beginPath();
+        ctx.arc(coreX, coreY, 6, 0, Math.PI * 2);
+        ctx.fill();
       }
-    }
-    
-    // Draw the cliff edge/platform edge
-    ctx.fillStyle = '#1a1a1a';
-    ctx.fillRect(0, height * 0.7, cliffEdge, height * 0.3);
-    
-    // Cliff face going down
-    ctx.fillStyle = '#0a0a0a';
-    ctx.fillRect(cliffEdge, height * 0.7, 50, height * 0.3);
-    
-    // AI Diamond Core in the distance (top center)
-    const coreX = width / 2;
-    const coreY = height * 0.15;
-    
-    // Diamond shape
-    ctx.fillStyle = '#1a1a2e';
-    ctx.save();
-    ctx.translate(coreX, coreY);
-    ctx.rotate(Math.PI / 4);
-    ctx.fillRect(-30, -30, 60, 60);
-    ctx.restore();
-    
-    // Red eye that blinks
-    const blinkCycle = frame % 120;
-    const eyeOpen = blinkCycle < 100 || blinkCycle > 110;
-    if (eyeOpen) {
-      const eyeIntensity = Math.sin(frame * 0.05) * 0.3 + 0.7;
-      ctx.save();
-      ctx.shadowColor = 'rgba(255, 0, 0, 0.8)';
-      ctx.shadowBlur = 30;
-      ctx.fillStyle = `rgba(255, 0, 0, ${eyeIntensity})`;
-      ctx.beginPath();
-      ctx.arc(coreX, coreY, 12, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-      
-      // Inner eye detail
-      ctx.fillStyle = `rgba(255, 100, 100, ${eyeIntensity})`;
-      ctx.beginPath();
-      ctx.arc(coreX, coreY, 6, 0, Math.PI * 2);
-      ctx.fill();
     }
     
   } else if (scene.id === 'earth2025_part2') {
@@ -760,6 +768,267 @@ function renderDialogs(ctx, width, height, scene, sceneFrame) {
       ctx.restore();
     }
   });
+}
+
+// Render the new opening sequence for earth2025_part1
+function renderEarth2025Opening(ctx, width, height, frame) {
+  // Sequence:
+  // Frames 0-60: Fade from black to close-up of man's eye
+  // Frames 60-120: Zoom out from eye to reveal full figure
+  // Frames 120-200: Man walking toward cliff edge
+  // Frames 200-280: Screen spirals/rotates downward as he falls
+  // Frames 280-340: Zoom back in to eye during spiral fall
+  
+  // Dark background
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, width, height);
+  
+  if (frame < 60) {
+    // PHASE 1: Fade from black to eye close-up (frames 0-60)
+    const fadeProgress = frame / 60;
+    const eyeAlpha = fadeProgress;
+    
+    // Draw close-up eye
+    const eyeX = width / 2;
+    const eyeY = height / 2;
+    const eyeWidth = 200;
+    const eyeHeight = 80;
+    
+    ctx.save();
+    ctx.globalAlpha = eyeAlpha;
+    
+    // Eye white
+    ctx.fillStyle = '#e8d8c8';
+    ctx.fillRect(eyeX - eyeWidth / 2, eyeY - eyeHeight / 2, eyeWidth, eyeHeight);
+    
+    // Iris (blue-gray)
+    const irisRadius = 30;
+    ctx.fillStyle = '#4a5563';
+    ctx.beginPath();
+    ctx.arc(eyeX, eyeY, irisRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Pupil (black, dilated)
+    const pupilRadius = 15;
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(eyeX, eyeY, pupilRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Eye highlights
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.beginPath();
+    ctx.arc(eyeX - 8, eyeY - 8, 6, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Eye outline/lashes (top)
+    ctx.strokeStyle = '#2a2a2a';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(eyeX - eyeWidth / 2, eyeY - eyeHeight / 2);
+    ctx.lineTo(eyeX + eyeWidth / 2, eyeY - eyeHeight / 2);
+    ctx.stroke();
+    
+    // Eye outline/lashes (bottom)
+    ctx.beginPath();
+    ctx.moveTo(eyeX - eyeWidth / 2, eyeY + eyeHeight / 2);
+    ctx.lineTo(eyeX + eyeWidth / 2, eyeY + eyeHeight / 2);
+    ctx.stroke();
+    
+    ctx.restore();
+    
+  } else if (frame < 120) {
+    // PHASE 2: Zoom out from eye to reveal full figure (frames 60-120)
+    const zoomProgress = (frame - 60) / 60;
+    const scale = 1 + zoomProgress * 3; // Zoom out effect
+    
+    ctx.save();
+    ctx.translate(width / 2, height / 2);
+    ctx.scale(1 / scale, 1 / scale);
+    ctx.translate(-width / 2, -height / 2);
+    
+    // Draw full figure (man in coat)
+    const manX = width / 2;
+    const manY = height * 0.6;
+    
+    // Body/coat (dark gray)
+    ctx.fillStyle = '#3a3a4a';
+    ctx.fillRect(manX - 30, manY - 50, 60, 80);
+    
+    // Head
+    ctx.fillStyle = '#d4a574';
+    ctx.beginPath();
+    ctx.arc(manX, manY - 70, 25, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Eye (visible but small now)
+    const eyeWidth = 40;
+    const eyeHeight = 16;
+    const eyeY = manY - 70;
+    
+    ctx.fillStyle = '#e8d8c8';
+    ctx.fillRect(manX - eyeWidth / 2, eyeY - eyeHeight / 2, eyeWidth, eyeHeight);
+    
+    ctx.fillStyle = '#4a5563';
+    ctx.beginPath();
+    ctx.arc(manX, eyeY, 6, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(manX, eyeY, 3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Legs
+    ctx.fillStyle = '#2a2a3a';
+    ctx.fillRect(manX - 20, manY + 30, 15, 40);
+    ctx.fillRect(manX + 5, manY + 30, 15, 40);
+    
+    ctx.restore();
+    
+  } else if (frame < 200) {
+    // PHASE 3: Man walking toward cliff edge (frames 120-200)
+    const walkProgress = (frame - 120) / 80;
+    
+    // Background: cliff edge visible
+    const cliffEdge = width * 0.7;
+    
+    // Ground
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, height * 0.7, cliffEdge, height * 0.3);
+    
+    // Cliff face
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(cliffEdge, height * 0.7, width - cliffEdge, height * 0.3);
+    
+    // Man walking (moves from left to cliff edge)
+    const startX = width * 0.3;
+    const endX = cliffEdge - 20;
+    const manX = startX + (endX - startX) * walkProgress;
+    const manY = height * 0.7;
+    
+    // Walking animation
+    const walkCycle = (frame * 0.15) % 1;
+    const legOffset = Math.sin(walkCycle * Math.PI * 2) * 8;
+    
+    // Body/coat
+    ctx.fillStyle = '#3a3a4a';
+    ctx.fillRect(manX - 15, manY - 50, 30, 50);
+    
+    // Head
+    ctx.fillStyle = '#d4a574';
+    ctx.beginPath();
+    ctx.arc(manX, manY - 65, 12, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Eye
+    ctx.fillStyle = '#4a5563';
+    ctx.beginPath();
+    ctx.arc(manX + 3, manY - 65, 3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Legs
+    ctx.fillStyle = '#2a2a3a';
+    ctx.fillRect(manX - 10, manY, 8, 25 + legOffset);
+    ctx.fillRect(manX + 2, manY, 8, 25 - legOffset);
+    
+  } else if (frame < 280) {
+    // PHASE 4: Screen spirals/rotates downward as he falls (frames 200-280)
+    const fallProgress = (frame - 200) / 80;
+    const rotation = fallProgress * Math.PI * 4; // Multiple rotations
+    const fallDistance = fallProgress * height * 0.8;
+    
+    ctx.save();
+    ctx.translate(width / 2, height / 2);
+    ctx.rotate(rotation);
+    ctx.translate(-width / 2, -height / 2);
+    
+    // Background gets darker as he falls
+    const darkness = fallProgress * 0.5;
+    ctx.fillStyle = `rgba(10, 10, 10, ${darkness})`;
+    ctx.fillRect(0, 0, width, height);
+    
+    // Falling man (center, moving down)
+    const manX = width / 2;
+    const manY = height * 0.3 + fallDistance;
+    
+    // Man in falling pose
+    ctx.fillStyle = '#3a3a4a';
+    ctx.save();
+    ctx.translate(manX, manY);
+    ctx.rotate(fallProgress * Math.PI); // Man also rotates
+    
+    // Body
+    ctx.fillRect(-15, -25, 30, 50);
+    
+    // Head
+    ctx.fillStyle = '#d4a574';
+    ctx.beginPath();
+    ctx.arc(0, -40, 12, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Arms flailing
+    ctx.fillStyle = '#3a3a4a';
+    ctx.fillRect(-25, -15, 10, 30);
+    ctx.fillRect(15, -15, 10, 30);
+    
+    // Legs
+    ctx.fillStyle = '#2a2a3a';
+    ctx.fillRect(-10, 25, 8, 20);
+    ctx.fillRect(2, 25, 8, 20);
+    
+    ctx.restore();
+    ctx.restore();
+    
+  } else if (frame < 340) {
+    // PHASE 5: Zoom back in to eye during spiral fall (frames 280-340)
+    const zoomProgress = (frame - 280) / 60;
+    const scale = 3 - zoomProgress * 2; // Zoom in from far to close
+    const rotation = (frame - 280) * 0.05; // Continue gentle rotation
+    
+    ctx.save();
+    ctx.translate(width / 2, height / 2);
+    ctx.rotate(rotation);
+    ctx.scale(1 / scale, 1 / scale);
+    ctx.translate(-width / 2, -height / 2);
+    
+    // Draw man's face getting closer
+    const manX = width / 2;
+    const manY = height / 2;
+    
+    // Head
+    ctx.fillStyle = '#d4a574';
+    ctx.beginPath();
+    ctx.arc(manX, manY, 25, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Eye becoming more prominent
+    const eyeWidth = 40 + zoomProgress * 160;
+    const eyeHeight = 16 + zoomProgress * 64;
+    
+    ctx.fillStyle = '#e8d8c8';
+    ctx.fillRect(manX - eyeWidth / 2, manY - eyeHeight / 2, eyeWidth, eyeHeight);
+    
+    const irisRadius = 6 + zoomProgress * 24;
+    ctx.fillStyle = '#4a5563';
+    ctx.beginPath();
+    ctx.arc(manX, manY, irisRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    const pupilRadius = 3 + zoomProgress * 12;
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(manX, manY, pupilRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Eye highlight
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.beginPath();
+    ctx.arc(manX - 8, manY - 8, 6, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.restore();
+  }
 }
 
 // Draw character portrait
