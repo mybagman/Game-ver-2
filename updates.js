@@ -316,54 +316,139 @@ export function handleShooting() {
     const auraActive = state.goldStarAura && state.goldStarAura.active;
     const auraLevel = state.goldStarAura ? state.goldStarAura.level : 0;
     
-    if (auraActive && auraLevel >= 10) {
-      // Plasma Cannons at level 10+ (most powerful)
-      const spreadAngle = 0.12;
-      for (let i = -2; i <= 2; i++) {
+    // Initialize wave rotation angle if not present
+    if (state.waveFireRotation === undefined) {
+      state.waveFireRotation = 0;
+    }
+    
+    if (auraActive && auraLevel >= 11) {
+      // Level 11+: Repulsor Fire + Lightning Strike
+      // Keep repulsor, add lightning (replaces plasma)
+      
+      // Repulsor blasts (short range knockback)
+      const repulsorSpread = 0.25;
+      for (let i = -1; i <= 1; i++) {
         state.pushBullet({
           x: state.player.x, 
           y: state.player.y, 
-          dx: Math.cos(baseAngle + i * spreadAngle) * 12, 
-          dy: Math.sin(baseAngle + i * spreadAngle) * 12, 
-          size: 10, 
-          owner: "player",
-          damage: 30,
-          color: "plasma",
-          plasma: true
-        });
-      }
-    } else if (auraActive && auraLevel >= 8) {
-      // Repulsor Fire at level 8+ (high power with knockback)
-      const spreadAngle = 0.13;
-      for (let i = -2; i <= 2; i++) {
-        state.pushBullet({
-          x: state.player.x, 
-          y: state.player.y, 
-          dx: Math.cos(baseAngle + i * spreadAngle) * 11, 
-          dy: Math.sin(baseAngle + i * spreadAngle) * 11, 
-          size: 8, 
-          owner: "player",
-          damage: 20,
-          color: "repulsor",
-          repulsor: true
-        });
-      }
-    } else if (auraActive && auraLevel >= 6) {
-      // Wave Fire at level 6+ (5-shot wave pattern)
-      const spreadAngle = 0.18;
-      for (let i = -2; i <= 2; i++) {
-        state.pushBullet({
-          x: state.player.x, 
-          y: state.player.y, 
-          dx: Math.cos(baseAngle + i * spreadAngle) * 10.5, 
-          dy: Math.sin(baseAngle + i * spreadAngle) * 10.5, 
+          dx: Math.cos(baseAngle + i * repulsorSpread) * 9, 
+          dy: Math.sin(baseAngle + i * repulsorSpread) * 9, 
           size: 7, 
           owner: "player",
           damage: 15,
+          color: "repulsor",
+          repulsor: true,
+          range: 180  // Short range
+        });
+      }
+      
+      // Lightning strikes (continuous arcs that chain between enemies)
+      // Create lightning strike targeting system
+      state.lightningStrikeCooldown = (state.lightningStrikeCooldown || 0) + 1;
+      if (state.lightningStrikeCooldown >= 15) { // Fire lightning every 15 frames
+        state.lightningStrikeCooldown = 0;
+        // Flag to create lightning in collision detection
+        state.fireLightningStrike = true;
+        state.lightningStrikeLevel = auraLevel;
+      }
+      
+    } else if (auraActive && auraLevel >= 10) {
+      // Level 10: Repulsor Fire + Plasma Cannons
+      // Remove wave, keep repulsor, add plasma with AOE
+      
+      // Repulsor blasts (short range knockback)
+      const repulsorSpread = 0.25;
+      for (let i = -1; i <= 1; i++) {
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(baseAngle + i * repulsorSpread) * 9, 
+          dy: Math.sin(baseAngle + i * repulsorSpread) * 9, 
+          size: 7, 
+          owner: "player",
+          damage: 15,
+          color: "repulsor",
+          repulsor: true,
+          range: 180  // Short range
+        });
+      }
+      
+      // Plasma cannons (large AOE projectiles)
+      const plasmaSpread = 0.3;
+      for (let i = -1; i <= 1; i++) {
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(baseAngle + i * plasmaSpread) * 7, 
+          dy: Math.sin(baseAngle + i * plasmaSpread) * 7, 
+          size: 12, 
+          owner: "player",
+          damage: 25,
+          color: "plasma",
+          plasma: true,
+          aoeRadius: 120  // AOE explosion on impact
+        });
+      }
+      
+    } else if (auraActive && auraLevel >= 8) {
+      // Level 8: Wave Fire + Repulsor Fire
+      // Keep wave, add repulsor
+      
+      // Wave Fire (rotating pattern)
+      const waveCount = 6;
+      for (let i = 0; i < waveCount; i++) {
+        const waveAngle = state.waveFireRotation + (i / waveCount) * Math.PI * 2;
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(waveAngle) * 10, 
+          dy: Math.sin(waveAngle) * 10, 
+          size: 7, 
+          owner: "player",
+          damage: 12,
           color: "wave",
           wave: true
         });
       }
+      state.waveFireRotation += 0.15; // Rotate for next shot
+      
+      // Repulsor blasts (short range knockback)
+      const repulsorSpread = 0.25;
+      for (let i = -1; i <= 1; i++) {
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(baseAngle + i * repulsorSpread) * 9, 
+          dy: Math.sin(baseAngle + i * repulsorSpread) * 9, 
+          size: 7, 
+          owner: "player",
+          damage: 15,
+          color: "repulsor",
+          repulsor: true,
+          range: 180  // Short range
+        });
+      }
+      
+    } else if (auraActive && auraLevel >= 6) {
+      // Level 6: Wave Fire (rotating circular pattern)
+      const waveCount = 6;
+      for (let i = 0; i < waveCount; i++) {
+        const waveAngle = state.waveFireRotation + (i / waveCount) * Math.PI * 2;
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(waveAngle) * 10, 
+          dy: Math.sin(waveAngle) * 10, 
+          size: 7, 
+          owner: "player",
+          damage: 12,
+          color: "wave",
+          wave: true
+        });
+      }
+      // Increment rotation for spiral/rotating effect
+      state.waveFireRotation += 0.15;
+      
     } else if (auraActive && auraLevel >= 4) {
       // Quad shot at level 4+
       const spreadAngle = 0.15;
@@ -404,6 +489,19 @@ export function handleShooting() {
 export function updateBullets() {
   state.filterBullets(b => {
     b.x += b.dx; b.y += b.dy;
+    
+    // Track distance traveled for range-limited bullets
+    if (b.repulsor && b.range) {
+      if (!b.startX) {
+        b.startX = b.x;
+        b.startY = b.y;
+      }
+      const distTraveled = Math.hypot(b.x - b.startX, b.y - b.startY);
+      if (distTraveled > b.range) {
+        return false; // Remove bullet if beyond range
+      }
+    }
+    
     return b.x >= -40 && b.x <= state.canvas.width+40 && b.y >= -40 && b.y <= state.canvas.height+40;
   });
 }

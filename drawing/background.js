@@ -1018,88 +1018,86 @@ function drawDescentToDesert() {
 
 // Waves 14+ (index 13+): Pixel Art Earth Background
 // Simple pixel art style with Earth/planet view, green ground, and blue sky
+// OPTIMIZED: Cached gradients and simplified drawing for 60fps performance
+let pixelArtEarthCache = null;
+
 function drawPixelArtEarth() {
   const ctx = state.ctx;
   const width = state.canvas.width;
   const height = state.canvas.height;
   
-  // Blue sky gradient
-  const skyGradient = ctx.createLinearGradient(0, 0, 0, height * 0.7);
-  skyGradient.addColorStop(0, "#87CEEB"); // Sky blue
-  skyGradient.addColorStop(0.5, "#B0E0E6"); // Powder blue
-  skyGradient.addColorStop(1, "#E0F6FF"); // Light blue
-  ctx.fillStyle = skyGradient;
-  ctx.fillRect(0, 0, width, height * 0.7);
+  // Cache key based on canvas dimensions
+  const cacheKey = `${width}x${height}`;
   
-  // Earth/Planet in the sky (upper right)
-  const earthX = width * 0.75;
-  const earthY = height * 0.25;
-  const earthRadius = Math.min(width, height) * 0.15;
+  // Initialize cache if needed or canvas size changed
+  if (!pixelArtEarthCache || pixelArtEarthCache.key !== cacheKey) {
+    pixelArtEarthCache = {
+      key: cacheKey,
+      groundY: height * 0.7,
+      earthX: width * 0.75,
+      earthY: height * 0.25,
+      earthRadius: Math.min(width, height) * 0.15
+    };
+  }
   
-  // Planet glow
-  const glowGradient = ctx.createRadialGradient(earthX, earthY, earthRadius * 0.5, earthX, earthY, earthRadius * 1.3);
-  glowGradient.addColorStop(0, 'rgba(100, 150, 255, 0.1)');
-  glowGradient.addColorStop(1, 'rgba(100, 150, 255, 0)');
-  ctx.fillStyle = glowGradient;
-  ctx.fillRect(0, 0, width, height);
+  const { groundY, earthX, earthY, earthRadius } = pixelArtEarthCache;
   
-  // Earth sphere with pixel art style
-  const earthGradient = ctx.createRadialGradient(
-    earthX - earthRadius * 0.3, earthY - earthRadius * 0.3, 0,
-    earthX, earthY, earthRadius
-  );
-  earthGradient.addColorStop(0, "#6B9BD1"); // Light blue
-  earthGradient.addColorStop(0.5, "#4A7BA7"); // Medium blue
-  earthGradient.addColorStop(1, "#2C5F8D"); // Dark blue
-  ctx.fillStyle = earthGradient;
+  // Sky - solid color bands instead of gradient (much faster)
+  ctx.fillStyle = "#87CEEB";
+  ctx.fillRect(0, 0, width, height * 0.23);
+  ctx.fillStyle = "#9DD9EE";
+  ctx.fillRect(0, height * 0.23, width, height * 0.24);
+  ctx.fillStyle = "#B0E0E6";
+  ctx.fillRect(0, height * 0.47, width, height * 0.23);
+  
+  // Earth sphere - simple solid color with one highlight (no complex gradients)
+  ctx.fillStyle = "#4A7BA7";
   ctx.beginPath();
   ctx.arc(earthX, earthY, earthRadius, 0, Math.PI * 2);
   ctx.fill();
   
-  // Green continents (pixel art style - simplified shapes)
+  // Simple highlight on earth (single color, no gradient)
+  ctx.fillStyle = "#6B9BD1";
+  ctx.beginPath();
+  ctx.arc(earthX - earthRadius * 0.3, earthY - earthRadius * 0.3, earthRadius * 0.6, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Green continents (simplified - use fillRect instead of arcs)
   ctx.fillStyle = "#5FAD56";
-  // Continent 1
-  ctx.beginPath();
-  ctx.arc(earthX - earthRadius * 0.3, earthY - earthRadius * 0.2, earthRadius * 0.25, 0, Math.PI * 2);
-  ctx.fill();
+  // Continent 1 - simple rect instead of arc
+  ctx.fillRect(earthX - earthRadius * 0.5, earthY - earthRadius * 0.3, earthRadius * 0.4, earthRadius * 0.3);
+  // Continent 2 - simple rect instead of arc
+  ctx.fillRect(earthX + earthRadius * 0.1, earthY + earthRadius * 0.15, earthRadius * 0.5, earthRadius * 0.4);
   
-  // Continent 2
-  ctx.beginPath();
-  ctx.arc(earthX + earthRadius * 0.2, earthY + earthRadius * 0.3, earthRadius * 0.3, 0, Math.PI * 2);
-  ctx.fill();
-  
-  // White clouds on Earth (pixel art dots)
+  // Clouds on Earth - reduced from 12 to 6 for performance
   ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-  for (let i = 0; i < 12; i++) {
-    const angle = (i * 30) * Math.PI / 180;
-    const dist = (i % 3) * earthRadius * 0.3;
+  for (let i = 0; i < 6; i++) {
+    const angle = (i * 60) * Math.PI / 180;
+    const dist = (i % 2) * earthRadius * 0.3;
     const cx = earthX + Math.cos(angle) * dist;
     const cy = earthY + Math.sin(angle) * dist;
-    const cloudSize = 3 + (i % 2) * 2;
-    ctx.fillRect(cx, cy, cloudSize, cloudSize);
+    ctx.fillRect(cx - 2, cy - 2, 4, 4);
   }
   
-  // Simple green ground at bottom
-  const groundY = height * 0.7;
-  const groundGradient = ctx.createLinearGradient(0, groundY, 0, height);
-  groundGradient.addColorStop(0, "#90EE90"); // Light green
-  groundGradient.addColorStop(0.5, "#7CCD7C"); // Medium green
-  groundGradient.addColorStop(1, "#6B8E23"); // Darker green
-  ctx.fillStyle = groundGradient;
-  ctx.fillRect(0, groundY, width, height - groundY);
+  // Ground - solid color bands instead of gradient
+  ctx.fillStyle = "#90EE90";
+  ctx.fillRect(0, groundY, width, (height - groundY) * 0.3);
+  ctx.fillStyle = "#7CCD7C";
+  ctx.fillRect(0, groundY + (height - groundY) * 0.3, width, (height - groundY) * 0.4);
+  ctx.fillStyle = "#6B8E23";
+  ctx.fillRect(0, groundY + (height - groundY) * 0.7, width, (height - groundY) * 0.3);
   
-  // Simple grass texture (pixel art style)
+  // Grass texture - reduced from 20 to 10
   ctx.fillStyle = "rgba(80, 120, 60, 0.3)";
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 10; i++) {
     const x = ((i * 157.3) % width);
     const y = groundY + ((i * 67) % (height - groundY));
-    const grassWidth = 3 + (i % 2);
-    ctx.fillRect(x, y, grassWidth, 2);
+    ctx.fillRect(x, y, 4, 2);
   }
   
-  // Some flowers/plants (simple colored pixels)
+  // Flowers - reduced from 15 to 8
   const plantColors = ["#FF6B9D", "#FFD700", "#FF4500"];
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < 8; i++) {
     const x = ((i * 127.5) % width);
     const y = groundY + 5 + ((i * 89) % (height - groundY - 10));
     ctx.fillStyle = plantColors[i % 3];

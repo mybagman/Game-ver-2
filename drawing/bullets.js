@@ -502,3 +502,110 @@ export function drawMegatonneBombs() {
     }
   }
 }
+
+// Draw Lightning Strike arcs
+export function drawLightningStrikes() {
+  for (let i = 0; i < state.lightningStrikes.length; i++) {
+    const strike = state.lightningStrikes[i];
+    if (!strike || !strike.targets || strike.targets.length === 0) continue;
+    
+    const alpha = strike.life / strike.maxLife;
+    const ctx = state.ctx;
+    
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    
+    // Draw arcs from player to each target
+    const sourceX = state.player.x;
+    const sourceY = state.player.y;
+    
+    for (let t = 0; t < strike.targets.length; t++) {
+      const target = strike.targets[t];
+      if (!target) continue;
+      
+      // Main lightning arc
+      ctx.strokeStyle = `rgba(150, 220, 255, ${0.9 * alpha})`;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(sourceX, sourceY);
+      
+      // Create jagged lightning effect with multiple segments
+      const segments = 8;
+      const dx = target.x - sourceX;
+      const dy = target.y - sourceY;
+      
+      for (let s = 1; s <= segments; s++) {
+        const t = s / segments;
+        const x = sourceX + dx * t;
+        const y = sourceY + dy * t;
+        
+        // Add random offset perpendicular to the line
+        const perpX = -dy;
+        const perpY = dx;
+        const perpLen = Math.sqrt(perpX * perpX + perpY * perpY) || 1;
+        const offset = (Math.random() - 0.5) * 20 * (1 - t * 0.5);
+        
+        ctx.lineTo(
+          x + (perpX / perpLen) * offset,
+          y + (perpY / perpLen) * offset
+        );
+      }
+      
+      ctx.stroke();
+      
+      // Outer glow
+      ctx.strokeStyle = `rgba(100, 180, 255, ${0.4 * alpha})`;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(sourceX, sourceY);
+      ctx.lineTo(target.x, target.y);
+      ctx.stroke();
+      
+      // Electric sparks along the arc
+      if (state.frameCount % 2 === 0) {
+        for (let s = 0; s < 5; s++) {
+          const t = Math.random();
+          const sparkX = sourceX + dx * t;
+          const sparkY = sourceY + dy * t;
+          
+          ctx.fillStyle = `rgba(200, 240, 255, ${0.8 * alpha})`;
+          ctx.fillRect(sparkX - 2, sparkY - 2, 4, 4);
+        }
+      }
+      
+      // Chain arcs between targets if multiple targets
+      if (t > 0 && strike.targets[t - 1]) {
+        const prevTarget = strike.targets[t - 1];
+        ctx.strokeStyle = `rgba(120, 200, 255, ${0.6 * alpha})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(prevTarget.x, prevTarget.y);
+        
+        // Jagged chain arc
+        const chainSegments = 6;
+        const cdx = target.x - prevTarget.x;
+        const cdy = target.y - prevTarget.y;
+        
+        for (let cs = 1; cs <= chainSegments; cs++) {
+          const ct = cs / chainSegments;
+          const cx = prevTarget.x + cdx * ct;
+          const cy = prevTarget.y + cdy * ct;
+          
+          const cperpX = -cdy;
+          const cperpY = cdx;
+          const cperpLen = Math.sqrt(cperpX * cperpX + cperpY * cperpY) || 1;
+          const coffset = (Math.random() - 0.5) * 15;
+          
+          ctx.lineTo(
+            cx + (cperpX / cperpLen) * coffset,
+            cy + (cperpY / cperpLen) * coffset
+          );
+        }
+        
+        ctx.stroke();
+      }
+    }
+    
+    ctx.restore();
+  }
+}

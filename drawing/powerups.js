@@ -14,6 +14,23 @@ export function drawPowerUps() {
     const pulse = Math.sin(state.frameCount * 0.15 + (p._seed || 0)) * 0.15 + 0.85;
     const shadowStrength = 12 * pulse;
     state.ctx.shadowBlur = shadowStrength;
+    
+    // Magnetic pull glow effect
+    if (p.magneticPull) {
+      state.ctx.save();
+      state.ctx.globalCompositeOperation = 'lighter';
+      const pullAlpha = p.magneticPullAlpha || 0.5;
+      const glowGradient = state.ctx.createRadialGradient(0, 0, 0, 0, 0, (p.size || 18));
+      glowGradient.addColorStop(0, `rgba(255, 220, 100, ${pullAlpha * 0.8})`);
+      glowGradient.addColorStop(0.5, `rgba(255, 200, 80, ${pullAlpha * 0.4})`);
+      glowGradient.addColorStop(1, 'rgba(255, 180, 60, 0)');
+      state.ctx.fillStyle = glowGradient;
+      state.ctx.beginPath();
+      state.ctx.arc(0, 0, (p.size || 18), 0, Math.PI * 2);
+      state.ctx.fill();
+      state.ctx.restore();
+    }
+    
     // type specific visuals
     if (p.type === "red-punch") {
       state.ctx.fillStyle = "rgba(220,40,40,0.95)";
