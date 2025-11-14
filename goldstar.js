@@ -255,17 +255,19 @@ export function updateGoldStar() {
     }
   });
 
-  // Magnetic pull effect for power-ups based on aura level
+  // Magnetic pull effect for power-ups - ALWAYS ACTIVE
   const auraLevel = state.goldStarAura ? state.goldStarAura.level : 0;
-  const auraRadius = state.goldStarAura ? state.goldStarAura.radius : 50;
-  const auraActive = state.goldStarAura && state.goldStarAura.active;
   
-  if (auraActive && auraLevel > 0) {
+  if (auraLevel > 0) {
     (state.powerUps || []).forEach(pu => {
       const dist = Math.hypot((pu.x || 0) - (gs.x || 0), (pu.y || 0) - (gs.y || 0));
-      if (dist < auraRadius && dist > 0) {
-        // Calculate pull strength based on distance and aura level
-        const pullStrength = auraLevel * 0.5 * (1 - dist / auraRadius);
+      if (dist > 0) {
+        // Calculate pull strength based on aura level (not limited by distance)
+        const basePullStrength = auraLevel * 0.3;
+        // Optional: add slight distance falloff for very far items
+        const distanceFactor = Math.min(1, 500 / Math.max(dist, 100));
+        const pullStrength = basePullStrength * distanceFactor;
+        
         const dx = (gs.x || 0) - (pu.x || 0);
         const dy = (gs.y || 0) - (pu.y || 0);
         const mag = dist || 1;
@@ -274,8 +276,8 @@ export function updateGoldStar() {
         pu.x += (dx / mag) * pullStrength;
         pu.y += (dy / mag) * pullStrength;
         
-        // Add visual particle trail showing magnetism
-        if (state.frameCount % 3 === 0) {
+        // Add visual particle trail showing magnetism (only for nearby items)
+        if (state.frameCount % 5 === 0 && dist < 400) {
           safeCall(state.pushExplosion, {
             x: pu.x + (Math.random() - 0.5) * 10,
             y: pu.y + (Math.random() - 0.5) * 10,
@@ -287,11 +289,9 @@ export function updateGoldStar() {
           });
         }
         
-        // Make power-up glow when being pulled (store state on power-up)
+        // Make power-up glow when being pulled
         pu.magneticPull = true;
         pu.magneticPullAlpha = Math.min(1, pullStrength * 0.5);
-      } else {
-        pu.magneticPull = false;
       }
     });
   }

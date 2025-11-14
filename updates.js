@@ -392,22 +392,17 @@ export function handleShooting() {
       
     } else if (auraActive && auraLevel >= 8) {
       // Level 8: Spiral Fire + Repulsor Fire
-      // Keep spiral, add repulsor
       
-      // Spiral Fire (rotating pattern with quad fire styling)
-      const spiralCount = 6;
-      for (let i = 0; i < spiralCount; i++) {
-        const spiralAngle = state.waveFireRotation + (i / spiralCount) * Math.PI * 2;
-        state.pushBullet({
-          x: state.player.x, 
-          y: state.player.y, 
-          dx: Math.cos(spiralAngle) * 10, 
-          dy: Math.sin(spiralAngle) * 10, 
-          size: 6, 
-          owner: "player",
-          damage: 12
-        });
-      }
+      // Spiral Fire (SINGLE rotating stream)
+      state.pushBullet({
+        x: state.player.x, 
+        y: state.player.y, 
+        dx: Math.cos(state.waveFireRotation) * 10, 
+        dy: Math.sin(state.waveFireRotation) * 10, 
+        size: 6, 
+        owner: "player",
+        damage: 12
+      });
       state.waveFireRotation += 0.15; // Rotate for next shot
       
       // Repulsor blasts (short range knockback)
@@ -428,22 +423,17 @@ export function handleShooting() {
       }
       
     } else if (auraActive && auraLevel >= 6) {
-      // Level 6: Spiral Fire (rotating circular pattern with quad fire styling)
-      const spiralCount = 6;
-      for (let i = 0; i < spiralCount; i++) {
-        const spiralAngle = state.waveFireRotation + (i / spiralCount) * Math.PI * 2;
-        state.pushBullet({
-          x: state.player.x, 
-          y: state.player.y, 
-          dx: Math.cos(spiralAngle) * 10, 
-          dy: Math.sin(spiralAngle) * 10, 
-          size: 6, 
-          owner: "player",
-          damage: 12
-        });
-      }
-      // Increment rotation for spiral/rotating effect
-      state.waveFireRotation += 0.15;
+      // Level 6: Spiral Fire (SINGLE rotating stream)
+      state.pushBullet({
+        x: state.player.x, 
+        y: state.player.y, 
+        dx: Math.cos(state.waveFireRotation) * 10, 
+        dy: Math.sin(state.waveFireRotation) * 10, 
+        size: 6, 
+        owner: "player",
+        damage: 12
+      });
+      state.waveFireRotation += 0.15; // Increment rotation
       
     } else if (auraActive && auraLevel >= 4) {
       // Quad shot at level 4+

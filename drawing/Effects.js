@@ -58,6 +58,12 @@ export function drawReentryEffects() {
   const { width, height, wave, frameCount } = state;
   if (wave < 12) return;
 
+  // Add validation to prevent non-finite values
+  if (!isFinite(width) || !isFinite(height) || width <= 0 || height <= 0) {
+    console.warn('[drawReentryEffects] Invalid canvas dimensions:', { width, height });
+    return;
+  }
+
   const intensity = Math.min((wave - 11) / 2, 1);
   const gradient = ctx.createLinearGradient(0, 0, 0, height);
   gradient.addColorStop(0, `rgba(255, 100, 0, ${0.1 * intensity})`);
