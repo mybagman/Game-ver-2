@@ -55,7 +55,9 @@ export function drawRedPunchEffects() {
 
 export function drawReentryEffects() {
   const ctx = state.ctx;
-  const { width, height, wave, frameCount } = state;
+  const { wave, frameCount } = state;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
   if (wave < 12) return;
 
   // Add validation to prevent non-finite values

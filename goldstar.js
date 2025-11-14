@@ -102,6 +102,47 @@ export function updateGoldStar() {
     return;
   }
 
+  // Magnetic pull effect for power-ups - ALWAYS ACTIVE (even during collecting)
+  const auraLevel = state.goldStarAura ? state.goldStarAura.level : 0;
+  
+  if (auraLevel > 0) {
+    (state.powerUps || []).forEach(pu => {
+      const dist = Math.hypot((pu.x || 0) - (gs.x || 0), (pu.y || 0) - (gs.y || 0));
+      if (dist > 0) {
+        // Calculate pull strength based on aura level (not limited by distance)
+        const basePullStrength = auraLevel * 0.3;
+        // Optional: add slight distance falloff for very far items
+        const distanceFactor = Math.min(1, 500 / Math.max(dist, 100));
+        const pullStrength = basePullStrength * distanceFactor;
+        
+        const dx = (gs.x || 0) - (pu.x || 0);
+        const dy = (gs.y || 0) - (pu.y || 0);
+        const mag = dist || 1;
+        
+        // Apply magnetic pull velocity to power-up
+        pu.x += (dx / mag) * pullStrength;
+        pu.y += (dy / mag) * pullStrength;
+        
+        // Add visual particle trail showing magnetism (only for nearby items)
+        if (state.frameCount % 5 === 0 && dist < 400) {
+          safeCall(state.pushExplosion, {
+            x: pu.x + (Math.random() - 0.5) * 10,
+            y: pu.y + (Math.random() - 0.5) * 10,
+            dx: (dx / mag) * 0.5,
+            dy: (dy / mag) * 0.5,
+            radius: 2,
+            color: "rgba(255, 220, 100, 0.6)",
+            life: 15
+          });
+        }
+        
+        // Make power-up glow when being pulled
+        pu.magneticPull = true;
+        pu.magneticPullAlpha = Math.min(1, pullStrength * 0.5);
+      }
+    });
+  }
+
   // collecting power-up handling
   if (gs.collecting) {
     gs.collectTimer = (gs.collectTimer || 0) + 1;
@@ -254,47 +295,6 @@ export function updateGoldStar() {
       dangerCount++;
     }
   });
-
-  // Magnetic pull effect for power-ups - ALWAYS ACTIVE
-  const auraLevel = state.goldStarAura ? state.goldStarAura.level : 0;
-  
-  if (auraLevel > 0) {
-    (state.powerUps || []).forEach(pu => {
-      const dist = Math.hypot((pu.x || 0) - (gs.x || 0), (pu.y || 0) - (gs.y || 0));
-      if (dist > 0) {
-        // Calculate pull strength based on aura level (not limited by distance)
-        const basePullStrength = auraLevel * 0.3;
-        // Optional: add slight distance falloff for very far items
-        const distanceFactor = Math.min(1, 500 / Math.max(dist, 100));
-        const pullStrength = basePullStrength * distanceFactor;
-        
-        const dx = (gs.x || 0) - (pu.x || 0);
-        const dy = (gs.y || 0) - (pu.y || 0);
-        const mag = dist || 1;
-        
-        // Apply magnetic pull velocity to power-up
-        pu.x += (dx / mag) * pullStrength;
-        pu.y += (dy / mag) * pullStrength;
-        
-        // Add visual particle trail showing magnetism (only for nearby items)
-        if (state.frameCount % 5 === 0 && dist < 400) {
-          safeCall(state.pushExplosion, {
-            x: pu.x + (Math.random() - 0.5) * 10,
-            y: pu.y + (Math.random() - 0.5) * 10,
-            dx: (dx / mag) * 0.5,
-            dy: (dy / mag) * 0.5,
-            radius: 2,
-            color: "rgba(255, 220, 100, 0.6)",
-            life: 15
-          });
-        }
-        
-        // Make power-up glow when being pulled
-        pu.magneticPull = true;
-        pu.magneticPullAlpha = Math.min(1, pullStrength * 0.5);
-      }
-    });
-  }
 
   let nearest = null, minDist = Infinity;
   for (const pu of (state.powerUps || [])) {
