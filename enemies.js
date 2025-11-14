@@ -462,9 +462,15 @@ export function updateTanks() {
     const distToPlayer = Math.hypot(tank.x - state.player.x, tank.y - state.player.y);
     const collisionDist = (tank.width / 2 || 25) + (state.player.size / 2);
     if (distToPlayer < collisionDist) {
-      applyPlayerDamage(20);
-      createExplosion(tank.x, tank.y, "orange");
-      tank.health -= 50; // Tank takes damage from collision too
+      if (state.player.ramMode) {
+        // Ram Mode: Player damages tank heavily
+        tank.health -= 80;
+        createExplosion(tank.x, tank.y, "yellow");
+      } else {
+        applyPlayerDamage(20);
+        createExplosion(tank.x, tank.y, "orange");
+        tank.health -= 50; // Tank takes damage from collision too
+      }
     }
 
     // Collision with gold star
@@ -539,9 +545,15 @@ export function updateWalkers() {
     const distToPlayer = Math.hypot(walker.x - state.player.x, walker.y - state.player.y);
     const collisionDist = (walker.width / 2 || 20) + (state.player.size / 2);
     if (distToPlayer < collisionDist) {
-      applyPlayerDamage(25);
-      createExplosion(walker.x, walker.y, "cyan");
-      walker.health -= 60; // Walker takes damage from collision too
+      if (state.player.ramMode) {
+        // Ram Mode: Player damages walker heavily
+        walker.health -= 90;
+        createExplosion(walker.x, walker.y, "yellow");
+      } else {
+        applyPlayerDamage(25);
+        createExplosion(walker.x, walker.y, "cyan");
+        walker.health -= 60; // Walker takes damage from collision too
+      }
     }
 
     // Collision with gold star
@@ -766,9 +778,22 @@ export function updateMechs() {
     const distToPlayer = Math.hypot(mech.x - state.player.x, mech.y - state.player.y);
     const collisionDist = (mech.size / 2) + (state.player.size / 2);
     if (distToPlayer < collisionDist) {
-      applyPlayerDamage(35);
-      createExplosion(mech.x, mech.y, "yellow");
-      mech.health -= 80; // Mech takes damage from collision too
+      if (state.player.ramMode) {
+        // Ram Mode: Player damages mech heavily
+        if (mech.shieldActive && mech.shieldHealth > 0) {
+          mech.shieldHealth -= 100;
+          if (mech.shieldHealth <= 0) {
+            mech.shieldActive = false;
+          }
+        } else {
+          mech.health -= 100;
+        }
+        createExplosion(mech.x, mech.y, "yellow");
+      } else {
+        applyPlayerDamage(35);
+        createExplosion(mech.x, mech.y, "yellow");
+        mech.health -= 80; // Mech takes damage from collision too
+      }
     }
 
     // Collision with gold star
@@ -855,6 +880,7 @@ export function updateEnemies() {
 
   state.filterEnemies(e => {
     if (!e) return false;
+    
     if (e.type === "boss") { updateBoss(e); return e.health > 0; }
     if (e.type === "mini-boss") { updateMiniBoss(e); return e.health > 0; }
     if (e.type === "mother-core") { updateMotherCore(e); return e.health > 0; }
@@ -975,9 +1001,27 @@ export function updateEnemies() {
 
       const distToPlayer = Math.hypot(e.x-state.player.x, e.y-state.player.y);
       if (distToPlayer < (e.size/2 + state.player.size/2)) {
-        applyPlayerDamage(e.type === "triangle" ? 25 : 15);
-        createExplosion(e.x, e.y, "red");
-        e.health -= 100;
+        if (state.player.ramMode) {
+          // Ram Mode: Player damages enemy instead of taking damage
+          e.health -= 60; // Ram damage
+          createExplosion(e.x, e.y, "yellow");
+          // Add smoke particles on ram
+          for (let i = 0; i < 4; i++) {
+            state.pushExplosion({
+              x: e.x + (Math.random() - 0.5) * 20,
+              y: e.y + (Math.random() - 0.5) * 20,
+              dx: (Math.random() - 0.5) * 3,
+              dy: (Math.random() - 0.5) * 3,
+              radius: 7 + Math.random() * 5,
+              color: "rgba(255, 150, 50, 0.8)",
+              life: 20 + Math.random() * 15
+            });
+          }
+        } else {
+          applyPlayerDamage(e.type === "triangle" ? 25 : 15);
+          createExplosion(e.x, e.y, "red");
+          e.health -= 100;
+        }
       }
       const distToGoldStar = Math.hypot(e.x-state.goldStar.x, e.y-state.goldStar.y);
       if (state.goldStar.alive && distToGoldStar < (e.size/2 + state.goldStar.size/2)) {
