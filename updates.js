@@ -13,6 +13,35 @@ export function updatePlayerMovement() {
   if (state.player.dashCooldown > 0) {
     state.player.dashCooldown--;
   }
+  
+  // Update Ram Mode timers
+  if (state.player.ramMode) {
+    state.player.ramModeTimer--;
+    state.player.boostMeter -= 2.0; // Deplete boost meter while in ram mode
+    if (state.player.ramModeTimer <= 0 || state.player.boostMeter <= 0) {
+      state.player.ramMode = false;
+      state.player.invulnerable = false;
+      state.player.ramModeCooldown = 180; // 3 seconds at 60fps
+      state.player.boostMeter = Math.max(0, state.player.boostMeter);
+    }
+  }
+  if (state.player.ramModeCooldown > 0) {
+    state.player.ramModeCooldown--;
+  }
+  
+  // Update Mega Shot cooldown
+  if (state.player.megaShotCooldown > 0) {
+    state.player.megaShotCooldown--;
+  }
+  
+  // Clear mega shot sequence if too old
+  if (state.player.megaShotSequence.length > 0) {
+    const now = Date.now();
+    const lastTime = state.player.megaShotSequence[state.player.megaShotSequence.length - 1].time;
+    if (now - lastTime > 500) {
+      state.player.megaShotSequence = [];
+    }
+  }
 
   // Update boost meter
   if (state.player.boosting) {
@@ -23,8 +52,8 @@ export function updatePlayerMovement() {
       state.player.boosting = false;
       state.player.boostKey = null;
     }
-  } else {
-    // Regenerate boost meter when not boosting
+  } else if (!state.player.ramMode) {
+    // Regenerate boost meter when not boosting or in ram mode
     if (state.player.boostMeter < state.player.maxBoostMeter) {
       state.player.boostMeter = Math.min(state.player.maxBoostMeter, state.player.boostMeter + BOOST_REGENERATION_RATE);
     }
@@ -64,9 +93,11 @@ export function updatePlayerMovement() {
     const normalizedDirX = dirX / mag;
     const normalizedDirY = dirY / mag;
     
-    // Apply dash/boost speed multiplier, and slow multiplier from EMP
+    // Apply dash/boost/ram speed multiplier, and slow multiplier from EMP
     let speedMultiplier = 1;
-    if (state.player.dashing) {
+    if (state.player.ramMode) {
+      speedMultiplier = 3.0; // RAM_MODE_SPEED_MULTIPLIER
+    } else if (state.player.dashing) {
       speedMultiplier = DASH_SPEED_MULTIPLIER;
     } else if (state.player.boosting) {
       speedMultiplier = BOOST_SPEED_MULTIPLIER;
@@ -391,12 +422,14 @@ export function handleShooting() {
       }
       
     } else if (auraActive && auraLevel >= 8) {
-      // Level 8: Spiral Fire + Repulsor Fire
+      // Level 8: Homing Shots + Repulsor Fire
       
-      // Spiral Fire (circular pattern rotating around player)
-      const spiralBulletCount = 8; // Number of bullets in the circle
-      for (let i = 0; i < spiralBulletCount; i++) {
-        const angle = state.waveFireRotation + (i * 2 * Math.PI / spiralBulletCount);
+      // Homing Shots (rapid fire normal shots that home in on enemies)
+      const homingBulletCount = 8; // Number of homing bullets
+      for (let i = 0; i < homingBulletCount; i++) {
+        // Spread bullets in a cone based on base angle
+        const spreadAngle = 0.4;
+        const angle = baseAngle + (i - homingBulletCount / 2) * (spreadAngle / homingBulletCount);
         state.pushBullet({
           x: state.player.x, 
           y: state.player.y, 
@@ -404,10 +437,12 @@ export function handleShooting() {
           dy: Math.sin(angle) * 10, 
           size: 6, 
           owner: "player",
-          damage: 12
+          damage: 12,
+          homing: true,
+          homingStrength: 0.06,
+          missedEnemies: [] // Track which enemies this bullet has missed
         });
       }
-      state.waveFireRotation += 0.15; // Rotate the pattern for next shot
       
       // Repulsor blasts (short range knockback)
       const repulsorSpread = 0.25;
@@ -427,10 +462,12 @@ export function handleShooting() {
       }
       
     } else if (auraActive && auraLevel >= 6) {
-      // Level 6: Spiral Fire (circular pattern rotating around player)
-      const spiralBulletCount = 6; // Number of bullets in the circle
-      for (let i = 0; i < spiralBulletCount; i++) {
-        const angle = state.waveFireRotation + (i * 2 * Math.PI / spiralBulletCount);
+      // Level 6: Homing Shots (rapid fire normal shots that home in on enemies)
+      const homingBulletCount = 6; // Number of homing bullets
+      for (let i = 0; i < homingBulletCount; i++) {
+        // Spread bullets in a cone based on base angle
+        const spreadAngle = 0.3;
+        const angle = baseAngle + (i - homingBulletCount / 2) * (spreadAngle / homingBulletCount);
         state.pushBullet({
           x: state.player.x, 
           y: state.player.y, 
@@ -438,10 +475,12 @@ export function handleShooting() {
           dy: Math.sin(angle) * 10, 
           size: 6, 
           owner: "player",
-          damage: 12
+          damage: 12,
+          homing: true,
+          homingStrength: 0.06,
+          missedEnemies: [] // Track which enemies this bullet has missed
         });
       }
-      state.waveFireRotation += 0.15; // Increment rotation
       
     } else if (auraActive && auraLevel >= 4) {
       // Quad shot at level 4+
@@ -482,6 +521,79 @@ export function handleShooting() {
 
 export function updateBullets() {
   state.filterBullets(b => {
+    // Apply homing behavior for homing bullets
+    if (b.homing && b.owner === "player") {
+      // Initialize missedEnemies array if not present
+      if (!b.missedEnemies) {
+        b.missedEnemies = [];
+      }
+      
+      // Find all valid enemies (not in missedEnemies list)
+      const allTargets = [
+        ...state.enemies,
+        ...state.diamonds,
+        ...state.tanks,
+        ...state.walkers,
+        ...state.mechs,
+        ...state.dropships
+      ];
+      
+      // Filter out enemies this bullet has already missed
+      const validTargets = allTargets.filter(e => 
+        e && e.health > 0 && !b.missedEnemies.includes(e)
+      );
+      
+      if (validTargets.length > 0) {
+        // Find nearest valid target
+        let closestTarget = null;
+        let closestDist = Infinity;
+        
+        for (const target of validTargets) {
+          const dist = Math.hypot(target.x - b.x, target.y - b.y);
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestTarget = target;
+          }
+        }
+        
+        if (closestTarget) {
+          // Check if bullet is moving away from target (has missed it)
+          const dx = closestTarget.x - b.x;
+          const dy = closestTarget.y - b.y;
+          const distToTarget = Math.hypot(dx, dy);
+          
+          // Calculate if bullet is moving toward or away from target
+          const bulletAngle = Math.atan2(b.dy, b.dx);
+          const targetAngle = Math.atan2(dy, dx);
+          let angleDiff = targetAngle - bulletAngle;
+          while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+          while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+          
+          // If bullet passed the target (angle diff > 90 degrees and close), mark as missed
+          if (Math.abs(angleDiff) > Math.PI / 2 && distToTarget < 80) {
+            b.missedEnemies.push(closestTarget);
+          } else {
+            // Apply homing behavior
+            const speed = Math.hypot(b.dx, b.dy);
+            const targetDx = (dx / distToTarget) * speed;
+            const targetDy = (dy / distToTarget) * speed;
+            
+            // Gradually turn toward target
+            const homingStrength = b.homingStrength || 0.06;
+            b.dx += (targetDx - b.dx) * homingStrength;
+            b.dy += (targetDy - b.dy) * homingStrength;
+            
+            // Normalize speed to maintain consistent velocity
+            const currentSpeed = Math.hypot(b.dx, b.dy);
+            if (currentSpeed > 0) {
+              b.dx = (b.dx / currentSpeed) * speed;
+              b.dy = (b.dy / currentSpeed) * speed;
+            }
+          }
+        }
+      }
+    }
+    
     b.x += b.dx; b.y += b.dy;
     
     // Track distance traveled for range-limited bullets

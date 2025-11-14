@@ -155,6 +155,18 @@ export function checkBulletCollisions() {
       const tank = state.tanks[ti];
       if (Math.hypot(b.x - tank.x, b.y - tank.y) < 30) {
         tank.health -= damage;
+        // Add smoke particles on damage
+        for (let i = 0; i < 3; i++) {
+          state.pushExplosion({
+            x: tank.x + (Math.random() - 0.5) * 20,
+            y: tank.y + (Math.random() - 0.5) * 20,
+            dx: (Math.random() - 0.5) * 2,
+            dy: -Math.random() * 3 - 1,
+            radius: 6 + Math.random() * 4,
+            color: "rgba(80, 80, 80, 0.6)",
+            life: 30 + Math.random() * 20
+          });
+        }
         applyKnockback(tank, b, 5);
         applyPlasmaAOE(b); // Apply AOE before removing bullet
         state.bullets.splice(bi, 1);
@@ -167,6 +179,18 @@ export function checkBulletCollisions() {
       const walker = state.walkers[wi];
       if (Math.hypot(b.x - walker.x, b.y - walker.y) < 25) {
         walker.health -= damage;
+        // Add smoke particles on damage
+        for (let i = 0; i < 3; i++) {
+          state.pushExplosion({
+            x: walker.x + (Math.random() - 0.5) * 20,
+            y: walker.y + (Math.random() - 0.5) * 20,
+            dx: (Math.random() - 0.5) * 2,
+            dy: -Math.random() * 3 - 1,
+            radius: 6 + Math.random() * 4,
+            color: "rgba(80, 80, 80, 0.6)",
+            life: 30 + Math.random() * 20
+          });
+        }
         applyKnockback(walker, b, 6);
         applyPlasmaAOE(b); // Apply AOE before removing bullet
         state.bullets.splice(bi, 1);
@@ -186,6 +210,18 @@ export function checkBulletCollisions() {
         } else {
           mech.health -= damage;
         }
+        // Add smoke particles on damage
+        for (let i = 0; i < 4; i++) {
+          state.pushExplosion({
+            x: mech.x + (Math.random() - 0.5) * 40,
+            y: mech.y + (Math.random() - 0.5) * 40,
+            dx: (Math.random() - 0.5) * 2,
+            dy: -Math.random() * 3 - 1,
+            radius: 7 + Math.random() * 5,
+            color: "rgba(80, 80, 80, 0.6)",
+            life: 30 + Math.random() * 20
+          });
+        }
         applyKnockback(mech, b, 4);
         applyPlasmaAOE(b); // Apply AOE before removing bullet
         state.bullets.splice(bi, 1);
@@ -198,6 +234,18 @@ export function checkBulletCollisions() {
       const dropship = state.dropships[di];
       if (Math.hypot(b.x - dropship.x, b.y - dropship.y) < 35) {
         dropship.health -= damage;
+        // Add smoke particles on damage
+        for (let i = 0; i < 3; i++) {
+          state.pushExplosion({
+            x: dropship.x + (Math.random() - 0.5) * 30,
+            y: dropship.y + (Math.random() - 0.5) * 30,
+            dx: (Math.random() - 0.5) * 2,
+            dy: -Math.random() * 3 - 1,
+            radius: 6 + Math.random() * 4,
+            color: "rgba(80, 80, 80, 0.6)",
+            life: 30 + Math.random() * 20
+          });
+        }
         applyKnockback(dropship, b, 3);
         applyPlasmaAOE(b); // Apply AOE before removing bullet
         state.bullets.splice(bi, 1);
@@ -260,6 +308,19 @@ export function checkBulletCollisions() {
         if (Math.hypot(b.x-e.x, b.y-e.y) < (e.size||20)/2) {
           const bulletDamage = getBulletDamage(b);
           e.health -= (b.owner === "player" ? bulletDamage : 6);
+          
+          // Add smoke particles on damage
+          for (let i = 0; i < 2; i++) {
+            state.pushExplosion({
+              x: e.x + (Math.random() - 0.5) * 15,
+              y: e.y + (Math.random() - 0.5) * 15,
+              dx: (Math.random() - 0.5) * 2,
+              dy: -Math.random() * 2 - 1,
+              radius: 5 + Math.random() * 3,
+              color: "rgba(80, 80, 80, 0.6)",
+              life: 25 + Math.random() * 15
+            });
+          }
           
           // Track damage for blue triangle enemies to reduce speed
           if (e.type === "triangle") {

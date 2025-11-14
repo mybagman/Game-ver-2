@@ -104,7 +104,14 @@ export let player = {
   lastFireKeyPress: { key: null, time: 0 }, // Track double-tap for fire buttons
   empCooldown: 0, // Cooldown timer for EMP (frames)
   empCooldownMax: 180, // 3 seconds at 60fps
-  firePlayerEMP: false // Flag to trigger EMP firing
+  firePlayerEMP: false, // Flag to trigger EMP firing
+  // Ram Mode system
+  ramMode: false,
+  ramModeTimer: 0,
+  ramModeCooldown: 0,
+  // Mega Shot system
+  megaShotCooldown: 0,
+  megaShotSequence: [] // Track key sequence for down + forward + shoot
 };
 
 export let goldStar = {
@@ -358,6 +365,11 @@ export function resetGame() {
   player.empCooldown = 0;
   player.empCooldownMax = 180;
   player.firePlayerEMP = false;
+  player.ramMode = false;
+  player.ramModeTimer = 0;
+  player.ramModeCooldown = 0;
+  player.megaShotCooldown = 0;
+  player.megaShotSequence = [];
 
   // reset gold star
   goldStar.x = 0;

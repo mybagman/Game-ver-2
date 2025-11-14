@@ -15,16 +15,21 @@ export const waves = [
   { theme: "desert-combat", enemies: [{ type: "red-square", count: 6 }, { type: "triangle", count: 6 }, { type: "mech", count: 1 }] },
   { theme: "desert-battle", enemies: [{ type: "tank", count: 4 }, { type: "walker", count: 3 }, { type: "mech", count: 1 }] },
   { theme: "siege-defense", enemies: [{ type: "tank", count: 4 }, { type: "walker", count: 2 }, { type: "mech", count: 1 }, { type: "triangle", count: 3 }] },
-  { theme: "calm", enemies: [{ type: "reflector", count: 1 }, { type: "triangle", count: 4 }] },
-  { theme: "counter-offensive", enemies: [{ type: "red-square", count: 5 }, { type: "triangle", count: 5 }, { type: "tank", count: 5 }, { type: "walker", count: 3 }] },
-  { theme: "full-assault", enemies: [{ type: "tank", count: 6 }, { type: "walker", count: 6 }, { type: "mech", count: 1 }, { type: "mini-boss", count: 1 }] },
-  { theme: "last-stand", enemies: [
-      { type: "red-square", count: 10 },
-      { type: "triangle", count: 6 },
+  // Taking Back Earth Arc - Waves 15-21
+  { theme: "reclamation-begins", enemies: [{ type: "red-square", count: 8 }, { type: "triangle", count: 6 }, { type: "reflector", count: 2 }] },
+  { theme: "forward-push", enemies: [{ type: "tank", count: 5 }, { type: "walker", count: 4 }, { type: "triangle", count: 8 }, { type: "reflector", count: 1 }] },
+  { theme: "enemy-stronghold", enemies: [{ type: "mech", count: 2 }, { type: "tank", count: 4 }, { type: "mini-boss", count: 1 }, { type: "triangle", count: 6 }] },
+  { theme: "breakthrough", enemies: [{ type: "red-square", count: 10 }, { type: "triangle", count: 10 }, { type: "reflector", count: 3 }, { type: "walker", count: 2 }] },
+  { theme: "reinforcements", enemies: [{ type: "tank", count: 6 }, { type: "walker", count: 5 }, { type: "mech", count: 2 }, { type: "triangle", count: 5 }] },
+  { theme: "final-assault", enemies: [{ type: "mech", count: 3 }, { type: "mini-boss", count: 2 }, { type: "tank", count: 4 }, { type: "walker", count: 4 }, { type: "reflector", count: 2 }] },
+  { theme: "earth-liberation", enemies: [
+      { type: "boss", count: 1 },
+      { type: "mini-boss", count: 2 },
+      { type: "mech", count: 2 },
       { type: "tank", count: 5 },
-      { type: "walker", count: 3 },
-      { type: "mech", count: 1 },
-      { type: "reflector", count: 2 },
+      { type: "walker", count: 4 },
+      { type: "triangle", count: 8 },
+      { type: "reflector", count: 3 },
       { type: "diamond", count: 1 }
     ]
   },
