@@ -393,17 +393,21 @@ export function handleShooting() {
     } else if (auraActive && auraLevel >= 8) {
       // Level 8: Spiral Fire + Repulsor Fire
       
-      // Spiral Fire (SINGLE rotating stream)
-      state.pushBullet({
-        x: state.player.x, 
-        y: state.player.y, 
-        dx: Math.cos(state.waveFireRotation) * 10, 
-        dy: Math.sin(state.waveFireRotation) * 10, 
-        size: 6, 
-        owner: "player",
-        damage: 12
-      });
-      state.waveFireRotation += 0.15; // Rotate for next shot
+      // Spiral Fire (circular pattern rotating around player)
+      const spiralBulletCount = 8; // Number of bullets in the circle
+      for (let i = 0; i < spiralBulletCount; i++) {
+        const angle = state.waveFireRotation + (i * 2 * Math.PI / spiralBulletCount);
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(angle) * 10, 
+          dy: Math.sin(angle) * 10, 
+          size: 6, 
+          owner: "player",
+          damage: 12
+        });
+      }
+      state.waveFireRotation += 0.15; // Rotate the pattern for next shot
       
       // Repulsor blasts (short range knockback)
       const repulsorSpread = 0.25;
@@ -423,16 +427,20 @@ export function handleShooting() {
       }
       
     } else if (auraActive && auraLevel >= 6) {
-      // Level 6: Spiral Fire (SINGLE rotating stream)
-      state.pushBullet({
-        x: state.player.x, 
-        y: state.player.y, 
-        dx: Math.cos(state.waveFireRotation) * 10, 
-        dy: Math.sin(state.waveFireRotation) * 10, 
-        size: 6, 
-        owner: "player",
-        damage: 12
-      });
+      // Level 6: Spiral Fire (circular pattern rotating around player)
+      const spiralBulletCount = 6; // Number of bullets in the circle
+      for (let i = 0; i < spiralBulletCount; i++) {
+        const angle = state.waveFireRotation + (i * 2 * Math.PI / spiralBulletCount);
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(angle) * 10, 
+          dy: Math.sin(angle) * 10, 
+          size: 6, 
+          owner: "player",
+          damage: 12
+        });
+      }
       state.waveFireRotation += 0.15; // Increment rotation
       
     } else if (auraActive && auraLevel >= 4) {
