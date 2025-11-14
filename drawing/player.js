@@ -137,6 +137,40 @@ export function drawPlayer() {
 
   // draw 8-bit sprite centered on player.x, player.y
   drawPlayer8Bit(state.ctx, state.player);
+  
+  // Ram Mode visual effect - energy aura around player
+  if (state.player.ramMode) {
+    const ramPulse = Math.sin(state.frameCount * 0.3) * 0.3 + 0.7;
+    const ramRadius = state.player.size + 10;
+    
+    state.ctx.save();
+    state.ctx.globalCompositeOperation = 'lighter';
+    state.ctx.translate(state.player.x, state.player.y);
+    
+    // Outer energy ring (yellow/orange)
+    const ramGrad = state.ctx.createRadialGradient(0, 0, 0, 0, 0, ramRadius);
+    ramGrad.addColorStop(0, 'rgba(255, 200, 0, 0)');
+    ramGrad.addColorStop(0.7, `rgba(255, 150, 0, ${0.4 * ramPulse})`);
+    ramGrad.addColorStop(1, 'rgba(255, 100, 0, 0)');
+    state.ctx.fillStyle = ramGrad;
+    state.ctx.beginPath();
+    state.ctx.arc(0, 0, ramRadius, 0, Math.PI * 2);
+    state.ctx.fill();
+    
+    // Energy sparks around player
+    for (let i = 0; i < 8; i++) {
+      const sparkAngle = (i / 8) * Math.PI * 2 + state.frameCount * 0.1;
+      const sparkDist = ramRadius * 0.8;
+      const sparkX = Math.cos(sparkAngle) * sparkDist;
+      const sparkY = Math.sin(sparkAngle) * sparkDist;
+      state.ctx.fillStyle = `rgba(255, 200, 50, ${0.8 * ramPulse})`;
+      state.ctx.beginPath();
+      state.ctx.arc(sparkX, sparkY, 2, 0, Math.PI * 2);
+      state.ctx.fill();
+    }
+    
+    state.ctx.restore();
+  }
 
   // firing indicator (small dot) when gold star aura active and either shooting or moving
   if (state.goldStarAura.active && (state.shootCooldown > 0 || (state.keys["arrowup"] || state.keys["arrowdown"] || state.keys["arrowleft"] || state.keys["arrowright"]))) {

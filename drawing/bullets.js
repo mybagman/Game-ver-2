@@ -218,6 +218,43 @@ export function drawBullets() {
       }
       
       state.ctx.restore();
+    } else if (b.color === "megashot") {
+      // Mega Shot - large powerful shot with golden energy
+      state.ctx.save();
+      state.ctx.globalCompositeOperation = 'lighter';
+      
+      const megaPulse = Math.sin(state.frameCount * 0.25) * 0.3 + 0.7;
+      const megaSize = b.size || 20;
+      
+      // Outer energy glow (orange/gold)
+      const megaGrad = state.ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, megaSize * 1.5);
+      megaGrad.addColorStop(0, `rgba(255, 200, 50, ${0.9 * megaPulse})`);
+      megaGrad.addColorStop(0.5, `rgba(255, 150, 0, ${0.6 * megaPulse})`);
+      megaGrad.addColorStop(1, 'rgba(200, 100, 0, 0)');
+      state.ctx.fillStyle = megaGrad;
+      state.ctx.beginPath();
+      state.ctx.arc(b.x, b.y, megaSize * 1.5, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Core (bright white/yellow)
+      state.ctx.fillStyle = `rgba(255, 255, 200, ${megaPulse})`;
+      state.ctx.beginPath();
+      state.ctx.arc(b.x, b.y, megaSize * 0.6, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Energy trails
+      for (let t = 0; t < 4; t++) {
+        const trailAngle = (t / 4) * Math.PI * 2 + state.frameCount * 0.1;
+        const trailDist = megaSize * 0.8;
+        const trailX = b.x + Math.cos(trailAngle) * trailDist;
+        const trailY = b.y + Math.sin(trailAngle) * trailDist;
+        state.ctx.fillStyle = `rgba(255, 180, 50, ${0.7 * megaPulse})`;
+        state.ctx.beginPath();
+        state.ctx.arc(trailX, trailY, 3, 0, Math.PI * 2);
+        state.ctx.fill();
+      }
+      
+      state.ctx.restore();
     } else if (b.repulsor) {
       // Repulsor Fire bullets - blue energy with knockback effect
       state.ctx.save();
