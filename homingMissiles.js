@@ -24,34 +24,27 @@ export function updateReflectorSystem() {
     const validTargets = state.enemies.filter(e => e.type !== "reflector");
     
     if (validTargets.length > 0) {
-      // Fire missiles equal to homing missile level (max 10)
-      const missileCount = Math.min(state.goldStar.homingMissileLevel, 10);
+      // Fire single homing missile (like normal fire pattern)
+      const target = findNearestEnemy(state.goldStar.x, state.goldStar.y, validTargets);
       
-      for (let i = 0; i < missileCount; i++) {
-        // Pick a random target or nearest for first missile
-        const target = i === 0 ? 
-          findNearestEnemy(state.goldStar.x, state.goldStar.y, validTargets) :
-          validTargets[Math.floor(Math.random() * validTargets.length)];
+      if (target) {
+        // Calculate initial direction towards target
+        const dx = target.x - state.goldStar.x;
+        const dy = target.y - state.goldStar.y;
+        const angle = Math.atan2(dy, dx);
         
-        if (target) {
-          // Calculate initial direction towards target
-          const dx = target.x - state.goldStar.x;
-          const dy = target.y - state.goldStar.y;
-          const angle = Math.atan2(dy, dx);
-          
-          state.pushHomingMissile({
-            x: state.goldStar.x,
-            y: state.goldStar.y,
-            vx: Math.cos(angle) * MISSILE_SPEED,
-            vy: Math.sin(angle) * MISSILE_SPEED,
-            targetId: target,
-            life: MISSILE_LIFETIME,
-            size: 8,
-            trail: [],
-            podDetached: false,  // For drone pod animation
-            podReturnTimer: 0
-          });
-        }
+        state.pushHomingMissile({
+          x: state.goldStar.x,
+          y: state.goldStar.y,
+          vx: Math.cos(angle) * MISSILE_SPEED,
+          vy: Math.sin(angle) * MISSILE_SPEED,
+          targetId: target,
+          life: MISSILE_LIFETIME,
+          size: 8,
+          trail: [],
+          podDetached: false,  // For drone pod animation
+          podReturnTimer: 0
+        });
       }
       
       state.goldStar.homingMissileCooldown = MISSILE_FIRE_INTERVAL;
