@@ -42,25 +42,8 @@ export function setupInputHandlers() {
                               e.key === 'ArrowRight' ? 'arrowright' : null;
     
     if (normalizedFireKey && fireKeys.includes(normalizedFireKey)) {
-      // Check if a movement key was just double-tapped
-      const movementKeys = ['w', 'a', 's', 'd'];
-      const wasMovementDoubleTapped = movementKeys.some(mk => 
-        state.player.lastKeyPress.key === mk && 
-        (now - state.player.lastKeyPress.time) < DOUBLE_TAP_WINDOW
-      );
-      
-      // Check for Ram Mode: double-tap movement + shoot button
-      if (wasMovementDoubleTapped &&
-          state.player.ramModeCooldown === 0 &&
-          state.player.boostMeter >= 20) {
-        // Trigger Ram Mode
-        state.player.ramMode = true;
-        state.player.ramModeTimer = 90; // 1.5 seconds at 60fps
-        state.player.invulnerable = true;
-        state.player.boostMeter = Math.max(0, state.player.boostMeter - 20);
-      }
-      // Check for double-tap to fire EMP (only if not activating ram mode)
-      else if (state.player.lastFireKeyPress.key === normalizedFireKey && 
+      // Check for double-tap to fire EMP
+      if (state.player.lastFireKeyPress.key === normalizedFireKey && 
           (now - state.player.lastFireKeyPress.time) < DOUBLE_TAP_WINDOW &&
           state.player.empCooldown === 0 &&
           state.player.boostMeter >= 30) { // Require at least 30% boost
@@ -70,53 +53,54 @@ export function setupInputHandlers() {
       state.player.lastFireKeyPress = { key: normalizedFireKey, time: now };
     }
     
-    if (e.key === "ArrowUp") state.keys["arrowup"] = true;
-    if (e.key === "ArrowDown") {
-      state.keys["arrowdown"] = true;
-      // Track sequence for Mega Shot (down + forward + shoot)
-      state.player.megaShotSequence.push({ key: 'down', time: now });
+    // Check for Ram Mode: Shift key
+    if (e.key === "Shift" &&
+        state.player.ramModeCooldown === 0 &&
+        state.player.boostMeter >= 20) {
+      // Trigger Ram Mode
+      state.player.ramMode = true;
+      state.player.ramModeTimer = 90; // 1.5 seconds at 60fps
+      state.player.invulnerable = true;
+      state.player.boostMeter = Math.max(0, state.player.boostMeter - 20);
     }
+    
+    if (e.key === "ArrowUp") state.keys["arrowup"] = true;
+    if (e.key === "ArrowDown") state.keys["arrowdown"] = true;
     if (e.key === "ArrowLeft") state.keys["arrowleft"] = true;
-    if (e.key === "ArrowRight") {
-      state.keys["arrowright"] = true;
-      // Check if this is part of Mega Shot sequence
-      if (state.player.megaShotSequence.length === 1 &&
-          state.player.megaShotSequence[0].key === 'down' &&
-          (now - state.player.megaShotSequence[0].time) < 500) {
-        state.player.megaShotSequence.push({ key: 'forward', time: now });
-        // Fire Mega Shot!
-        if (state.player.megaShotCooldown === 0 && state.player.boostMeter >= 25) {
-          // Calculate direction based on player's current direction
-          let dirX = 1; // Default forward (right)
-          let dirY = 0;
-          
-          // If player is moving, use that direction
-          if (state.keys["w"]) dirY = -1;
-          if (state.keys["s"]) dirY = 1;
-          if (state.keys["a"]) dirX = -1;
-          if (state.keys["d"]) dirX = 1;
-          
-          const mag = Math.hypot(dirX, dirY) || 1;
-          
-          // Create Mega Shot bullet
-          state.pushBullet({
-            x: state.player.x,
-            y: state.player.y,
-            dx: (dirX / mag) * 8,
-            dy: (dirY / mag) * 8,
-            size: 20,
-            owner: "player",
-            damage: 50,
-            color: "megashot",
-            piercing: true // Can hit multiple enemies
-          });
-          
-          // Drain boost and set cooldown
-          state.player.boostMeter = Math.max(0, state.player.boostMeter - 25);
-          state.player.megaShotCooldown = 120; // 2 seconds at 60fps
-          state.player.megaShotSequence = [];
-        }
-      }
+    if (e.key === "ArrowRight") state.keys["arrowright"] = true;
+    
+    // Check for Mega Shot: ? key
+    if (e.key === "?" &&
+        state.player.megaShotCooldown === 0 &&
+        state.player.boostMeter >= 25) {
+      // Calculate direction based on player's current direction
+      let dirX = 1; // Default forward (right)
+      let dirY = 0;
+      
+      // If player is moving, use that direction
+      if (state.keys["w"]) dirY = -1;
+      if (state.keys["s"]) dirY = 1;
+      if (state.keys["a"]) dirX = -1;
+      if (state.keys["d"]) dirX = 1;
+      
+      const mag = Math.hypot(dirX, dirY) || 1;
+      
+      // Create Mega Shot bullet
+      state.pushBullet({
+        x: state.player.x,
+        y: state.player.y,
+        dx: (dirX / mag) * 8,
+        dy: (dirY / mag) * 8,
+        size: 20,
+        owner: "player",
+        damage: 50,
+        color: "megashot",
+        piercing: true // Can hit multiple enemies
+      });
+      
+      // Drain boost and set cooldown
+      state.player.boostMeter = Math.max(0, state.player.boostMeter - 25);
+      state.player.megaShotCooldown = 120; // 2 seconds at 60fps
     }
 
     // Space bar for Megatonne Bomb

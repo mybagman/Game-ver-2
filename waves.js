@@ -14,7 +14,7 @@ export const waves = [
   { theme: "cloud-combat", clouds: true, enemies: [{ type: "triangle", count: 10 }, { type: "reflector", count: 2 }] },
   { theme: "desert-combat", enemies: [{ type: "red-square", count: 6 }, { type: "triangle", count: 6 }, { type: "mech", count: 1 }] },
   { theme: "desert-battle", enemies: [{ type: "tank", count: 4 }, { type: "walker", count: 3 }, { type: "mech", count: 1 }] },
-  { theme: "siege-defense", enemies: [{ type: "tank", count: 4 }, { type: "walker", count: 2 }, { type: "mech", count: 1 }, { type: "triangle", count: 3 }] },
+  { theme: "siege-defense", enemies: [] },
   // Taking Back Earth Arc - Waves 15-21
   { theme: "reclamation-begins", enemies: [{ type: "red-square", count: 8 }, { type: "triangle", count: 6 }, { type: "reflector", count: 2 }] },
   { theme: "forward-push", enemies: [{ type: "tank", count: 5 }, { type: "walker", count: 4 }, { type: "triangle", count: 8 }, { type: "reflector", count: 1 }] },

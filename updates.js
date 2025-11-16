@@ -373,6 +373,22 @@ export function handleShooting() {
         });
       }
       
+      // Add 2 plasma cannons to short range aura
+      for (let i = -0.5; i <= 0.5; i++) {
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(baseAngle + i * 0.3) * 7, 
+          dy: Math.sin(baseAngle + i * 0.3) * 7, 
+          size: 12, 
+          owner: "player",
+          damage: 25,
+          color: "plasma",
+          plasma: true,
+          aoeRadius: 120  // AOE explosion on impact
+        });
+      }
+      
       // Lightning strikes (continuous arcs that chain between enemies)
       // Create lightning strike targeting system
       state.lightningStrikeCooldown = (state.lightningStrikeCooldown || 0) + 1;
@@ -458,6 +474,22 @@ export function handleShooting() {
           color: "repulsor",
           repulsor: true,
           range: 180  // Short range
+        });
+      }
+      
+      // Add 2 plasma cannons to short range aura
+      for (let i = -0.5; i <= 0.5; i++) {
+        state.pushBullet({
+          x: state.player.x, 
+          y: state.player.y, 
+          dx: Math.cos(baseAngle + i * 0.3) * 7, 
+          dy: Math.sin(baseAngle + i * 0.3) * 7, 
+          size: 12, 
+          owner: "player",
+          damage: 25,
+          color: "plasma",
+          plasma: true,
+          aoeRadius: 120  // AOE explosion on impact
         });
       }
       
