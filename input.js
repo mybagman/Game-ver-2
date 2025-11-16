@@ -69,8 +69,8 @@ export function setupInputHandlers() {
     if (e.key === "ArrowLeft") state.keys["arrowleft"] = true;
     if (e.key === "ArrowRight") state.keys["arrowright"] = true;
     
-    // Check for Mega Shot: ? key
-    if (e.key === "?" &&
+    // Check for Mega Shot: x key
+    if (e.key === "x" &&
         state.player.megaShotCooldown === 0 &&
         state.player.boostMeter >= 25) {
       // Calculate direction based on player's current direction

@@ -552,51 +552,43 @@ export function drawLightningStrikes() {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     
-    // Draw arcs from player to each target
-    const sourceX = state.player.x;
-    const sourceY = state.player.y;
+    // Draw thin electric blue arcs
+    let sourceX = state.player.x;
+    let sourceY = state.player.y;
     
     for (let t = 0; t < strike.targets.length; t++) {
       const target = strike.targets[t];
       if (!target) continue;
       
-      // Wide outer glow for long-range visibility
-      ctx.strokeStyle = `rgba(80, 160, 255, ${0.3 * alpha})`;
-      ctx.lineWidth = 12;
+      // Thin outer glow
+      ctx.strokeStyle = `rgba(100, 180, 255, ${0.2 * alpha})`;
+      ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(sourceX, sourceY);
       ctx.lineTo(target.x, target.y);
       ctx.stroke();
       
-      // Medium glow
-      ctx.strokeStyle = `rgba(100, 180, 255, ${0.5 * alpha})`;
-      ctx.lineWidth = 8;
-      ctx.beginPath();
-      ctx.moveTo(sourceX, sourceY);
-      ctx.lineTo(target.x, target.y);
-      ctx.stroke();
-      
-      // Main lightning arc (thicker and brighter for single bolt)
-      ctx.strokeStyle = `rgba(150, 220, 255, ${0.95 * alpha})`;
-      ctx.lineWidth = 5;
+      // Main thin lightning arc (electric blue)
+      ctx.strokeStyle = `rgba(100, 200, 255, ${0.9 * alpha})`;
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(sourceX, sourceY);
       
-      // Create jagged lightning effect with multiple segments
-      const segments = 10;
+      // Create jagged lightning effect with fewer segments for performance
+      const segments = 5;
       const dx = target.x - sourceX;
       const dy = target.y - sourceY;
       
       for (let s = 1; s <= segments; s++) {
-        const t = s / segments;
-        const x = sourceX + dx * t;
-        const y = sourceY + dy * t;
+        const segT = s / segments;
+        const x = sourceX + dx * segT;
+        const y = sourceY + dy * segT;
         
-        // Add random offset perpendicular to the line
+        // Add smaller random offset perpendicular to the line
         const perpX = -dy;
         const perpY = dx;
         const perpLen = Math.sqrt(perpX * perpX + perpY * perpY) || 1;
-        const offset = (Math.random() - 0.5) * 25 * (1 - t * 0.5);
+        const offset = (Math.random() - 0.5) * 15 * (1 - segT * 0.5);
         
         ctx.lineTo(
           x + (perpX / perpLen) * offset,
@@ -606,17 +598,9 @@ export function drawLightningStrikes() {
       
       ctx.stroke();
       
-      // Electric sparks along the arc (more frequent for single bolt)
-      if (state.frameCount % 2 === 0) {
-        for (let s = 0; s < 8; s++) {
-          const t = Math.random();
-          const sparkX = sourceX + dx * t;
-          const sparkY = sourceY + dy * t;
-          
-          ctx.fillStyle = `rgba(200, 240, 255, ${0.9 * alpha})`;
-          ctx.fillRect(sparkX - 2.5, sparkY - 2.5, 5, 5);
-        }
-      }
+      // Update source for next target (forking effect)
+      sourceX = target.x;
+      sourceY = target.y;
       
       // Chain arcs between targets if multiple targets
       if (t > 0 && strike.targets[t - 1]) {

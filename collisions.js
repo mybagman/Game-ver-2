@@ -443,9 +443,6 @@ function createLightningStrike(level) {
   
   if (allTargets.length === 0) return;
   
-  // Always target only ONE enemy (single bolt)
-  const chainCount = 1;
-  
   // Find closest target to player
   const sorted = allTargets
     .map(t => ({
@@ -454,18 +451,38 @@ function createLightningStrike(level) {
     }))
     .sort((a, b) => a.dist - b.dist);
   
-  const targets = sorted.slice(0, Math.min(chainCount, sorted.length)).map(t => t.target);
+  if (sorted.length === 0) return;
+  
+  // Start with the nearest enemy
+  const firstTarget = sorted[0].target;
+  const targets = [firstTarget];
+  
+  // Chain to another nearby enemy if one exists
+  if (sorted.length > 1) {
+    // Find nearest enemy to the first target (for chaining)
+    const chainTargets = allTargets
+      .filter(t => t !== firstTarget)
+      .map(t => ({
+        target: t,
+        dist: Math.hypot(t.x - firstTarget.x, t.y - firstTarget.y)
+      }))
+      .sort((a, b) => a.dist - b.dist);
+    
+    if (chainTargets.length > 0 && chainTargets[0].dist < 200) {
+      targets.push(chainTargets[0].target);
+    }
+  }
   
   if (targets.length > 0) {
-    // Create single lightning strike bolt (long duration for better visibility)
+    // Create single lightning strike bolt (short duration for performance)
     state.pushLightningStrike({
       targets: targets,
-      life: 20, // Shorter duration for single bolt
-      maxLife: 20,
-      color: "rgba(150, 220, 255, 0.9)"
+      life: 12, // Shorter duration for better performance
+      maxLife: 12,
+      color: "rgba(100, 180, 255, 0.8)"
     });
     
-    // Visual feedback
+    // Minimal visual feedback (reduced for performance)
     targets.forEach(target => {
       createExplosion(target.x, target.y, "cyan");
     });

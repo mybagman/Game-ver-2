@@ -915,7 +915,10 @@ export function drawMechs() {
       const thrusterPulse = 0.5 + Math.sin(state.frameCount * 0.15) * 0.5;
       state.ctx.fillStyle = `rgba(100, 200, 255, ${thrusterPulse * 0.7})`;
       state.ctx.fillRect(blockSize * 2.5, blockSize * 2, blockSize * 2, blockSize);
-    } else if (mech.shieldActive) {
+    }
+    
+    // Draw shield if active (works for both side and top-down views)
+    if (mech.shieldActive) {
       const shieldHealthRatio = (mech.shieldHealth || 150) / 150;
       const pulse = Math.sin(state.frameCount * 0.1) * 5;
       const shieldRadius = mech.size/2 + 15 + pulse;
