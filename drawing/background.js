@@ -86,16 +86,7 @@ export function drawClouds() {
   });
 }
 
-// City background removed - no longer used in game
-// export function drawCityBackground() {
-//   state.ctx.fillStyle = "rgba(20,20,30,0.8)";
-//   // Reduced from 20 to 10 buildings for better performance
-//   for (let i = 0; i < 10; i++) {
-//     const x = i * (state.canvas.width / 10);
-//     const height = 100 + Math.sin(i) * 50;
-//     state.ctx.fillRect(x, state.canvas.height - height, state.canvas.width / 10 - 5, height);
-//   }
-// }
+
 
 // NEW: Desert landscape that persists across all waves
 export function drawDesertGround() {
@@ -1105,95 +1096,7 @@ function drawPixelArtEarth() {
   }
 }
 
-// OLD Desert function kept for reference but no longer used
-function drawDesertPlanetSurface_UNUSED() {
-  const ctx = state.ctx;
-  const width = state.canvas.width;
-  const height = state.canvas.height;
-  
-  // Desert sky gradient (warm, hazy atmosphere)
-  const skyGradient = ctx.createLinearGradient(0, 0, 0, height * 0.6);
-  skyGradient.addColorStop(0, "#d4a574"); // Dusty sky
-  skyGradient.addColorStop(0.4, "#e8d4a0"); // Light sandy haze
-  skyGradient.addColorStop(1, "#f5e6d3"); // Bright sandy horizon
-  ctx.fillStyle = skyGradient;
-  ctx.fillRect(0, 0, width, height * 0.6);
-  
-  // Distant sand dunes (background layer - 16-bit pixel art) - STATIC
-  ctx.fillStyle = "rgba(180, 140, 90, 0.4)";
-  for (let i = 0; i < 8; i++) {
-    const x = (i * width / 8);
-    const duneHeight = 60 + Math.sin(i * 0.7) * 30;
-    const duneY = height * 0.45;
-    
-    // Dune shape (simple triangular)
-    ctx.beginPath();
-    ctx.moveTo(x, duneY);
-    ctx.lineTo(x + width / 16, duneY - duneHeight);
-    ctx.lineTo(x + width / 8, duneY);
-    ctx.closePath();
-    ctx.fill();
-  }
-  
-  // Mid-ground dunes (16-bit style) - STATIC
-  ctx.fillStyle = "rgba(200, 160, 110, 0.6)";
-  for (let i = 0; i < 12; i++) {
-    const x = (i * width / 12);
-    const duneHeight = 40 + Math.sin(i * 1.2) * 20;
-    const duneY = height * 0.55;
-    
-    ctx.beginPath();
-    ctx.moveTo(x, duneY);
-    ctx.lineTo(x + width / 24, duneY - duneHeight);
-    ctx.lineTo(x + width / 12, duneY);
-    ctx.closePath();
-    ctx.fill();
-  }
-  
-  // Desert floor (main ground)
-  const groundY = height * 0.6;
-  const groundGradient = ctx.createLinearGradient(0, groundY, 0, height);
-  groundGradient.addColorStop(0, "#d4a574");
-  groundGradient.addColorStop(0.5, "#c9984a");
-  groundGradient.addColorStop(1, "#b8873a");
-  
-  ctx.fillStyle = groundGradient;
-  ctx.fillRect(0, groundY, width, height - groundY);
-  
-  // Sand ripples and texture (16-bit pixel detail) - Reduced from 15 to 8 for performance
-  ctx.fillStyle = "rgba(200, 160, 110, 0.3)";
-  for (let i = 0; i < 8; i++) {
-    const x = ((i * 173.5) % width);
-    const y = groundY + ((i * 67) % (height - groundY));
-    const rippleWidth = ((i * 31) % 80) + 40;
-    ctx.fillRect(x, y, rippleWidth, 2);
-  }
-  
-  // Sand particles/dust (pixel detail) - Reduced from 80 to 40 for performance
-  ctx.fillStyle = "rgba(220, 180, 130, 0.2)";
-  for (let i = 0; i < 40; i++) {
-    const x = ((i * 137.5) % width);
-    const y = groundY + ((i * 89) % (height - groundY));
-    ctx.fillRect(x, y, 2, 2);
-  }
-  
-  // Floating dust particles in air - Reduced from 30 to 15 and optimized animation
-  ctx.fillStyle = "rgba(240, 200, 150, 0.4)";
-  const frameOffset = (state.frameCount || 0) * 0.5;
-  for (let i = 0; i < 15; i++) {
-    const x = ((i * 127.5 + frameOffset) % (width + 50)) - 25;
-    const y = ((i * 73.3) % (height * 0.5)) + height * 0.2;
-    const size = ((i * 3) % 3) + 1;
-    ctx.fillRect(x, y, size, size);
-  }
-  
-  // Heat shimmer effect - Made static to prevent performance issues
-  ctx.fillStyle = "rgba(255, 220, 180, 0.15)";
-  for (let i = 0; i < 5; i++) {
-    const y = groundY + (i * 20);
-    ctx.fillRect(0, y, width, 1);
-  }
-}
+
 
 export function drawBackground(waveNum) {
   // Arc One: Space backgrounds for waves 1-6 (Approaching Death Star)

@@ -42,9 +42,6 @@ import {
   triggerTunnelCollision
 } from './drawing/Effects.js';
 
-// import { drawDiamonds } from './drawing/Enemies.js';
-// import { drawDiamonds } from './drawing/diamonds.js';
-
 import { respawnPlayer, respawnGoldStar, resetGoldStar } from './utils.js';
 
 // --- Game loop and integration with high-score UI ---
