@@ -37,7 +37,8 @@ export function spawnWave(waveIndex) {
   const waveData = waves[waveIndex];
   console.log('[spawnWave] spawning wave', waveIndex, waveData);
 
-  if (waveData.theme === "cloud-combat" || waveData.clouds) {
+  // Don't spawn clouds for waves 15-21 (Taking Back Earth Arc)
+  if ((waveData.theme === "cloud-combat" || waveData.clouds) && (waveIndex < 15 || waveIndex > 21)) {
     spawns.spawnCloudParticles(50);
   }
 
