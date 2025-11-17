@@ -24,6 +24,13 @@ const spawnHandlers = {
   "mother-core": (g) => {
     const c = g.count || 1;
     for (let i = 0; i < c; i++) spawns.spawnMotherCore();
+  },
+  // NEW: Centre of the Earth enemies
+  "worm": (g) => spawns.spawnWorm(g.count || 1),
+  "dinosaur": (g) => spawns.spawnDinosaur(g.count || 1),
+  "molten-diamond": (g) => {
+    const c = g.count || 1;
+    for (let i = 0; i < c; i++) spawns.spawnMoltenDiamond();
   }
 };
 
@@ -37,7 +44,8 @@ export function spawnWave(waveIndex) {
   const waveData = waves[waveIndex];
   console.log('[spawnWave] spawning wave', waveIndex, waveData);
 
-  if (waveData.theme === "cloud-combat" || waveData.clouds) {
+  // Don't spawn clouds for waves 15-21 (Taking Back Earth Arc)
+  if ((waveData.theme === "cloud-combat" || waveData.clouds) && (waveIndex < 15 || waveIndex > 21)) {
     spawns.spawnCloudParticles(50);
   }
 

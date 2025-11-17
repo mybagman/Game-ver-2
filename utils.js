@@ -256,6 +256,71 @@ export function spawnGroundObjects() {
   }
 }
 
+// NEW: Journey to the Centre of the Earth Arc - Enemy spawners
+export function spawnWorm(count = 1) {
+  for (let i = 0; i < count; i++) {
+    const pos = getSafeSpawnPosition();
+    state.pushEnemy({
+      x: pos.x,
+      y: pos.y,
+      size: 40,
+      speed: 2.2,
+      health: 80,
+      type: "worm",
+      shootTimer: 0,
+      // Worm-specific properties
+      segmentCount: 5,
+      segments: [], // Will be populated in updateEnemies
+      tunnelCooldown: 0,
+      underground: false,
+      underwaterTimer: 0
+    });
+  }
+}
+
+export function spawnDinosaur(count = 1) {
+  for (let i = 0; i < count; i++) {
+    const pos = getSafeSpawnPosition();
+    state.pushEnemy({
+      x: pos.x,
+      y: pos.y,
+      size: 50,
+      speed: 1.8,
+      health: 150,
+      type: "dinosaur",
+      shootTimer: 0,
+      // Dinosaur-specific properties
+      chargeTimer: 0,
+      isCharging: false,
+      roarTimer: 0
+    });
+  }
+}
+
+export function spawnMoltenDiamond() {
+  // Boss at centre of the earth
+  const centerX = state.canvas.width / 2;
+  const centerY = state.canvas.height / 3;
+  
+  state.pushDiamond({
+    x: centerX,
+    y: centerY,
+    size: 100,
+    speed: 1.0,
+    health: 800, // Very high health
+    maxHealth: 800,
+    type: "molten-diamond",
+    // Boss-specific properties
+    phaseTimer: 0,
+    currentPhase: 1,
+    heatWaveTimer: 0,
+    crystalTimer: 0,
+    lavaPoolTimer: 0,
+    attachments: [], // Can spawn minions
+    gravitonTimer: 0
+  });
+}
+
 // Respawn Gold Star while preserving levels/upgrades (used for continue after death)
 export function respawnGoldStar() {
   state.goldStar.x = state.canvas.width/4; 

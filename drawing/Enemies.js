@@ -131,6 +131,17 @@ export function drawEnemies() {
         state.ctx.fillRect(-size/5, size/4 - size/12, size/20, size/12);
       }
       
+      // Add bright outline for visibility against all backgrounds
+      state.ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+      state.ctx.lineWidth = 2;
+      state.ctx.beginPath();
+      if (isSideView) {
+        state.ctx.rect(-size/2, -size/2.5, size*0.8, size);
+      } else {
+        state.ctx.rect(-size/3, -size/3, size*0.66, size*0.66);
+      }
+      state.ctx.stroke();
+      
       state.ctx.restore();
     }
     else if (e.type === "triangle") { 
@@ -233,6 +244,17 @@ export function drawEnemies() {
         state.ctx.fillStyle = "#2a4a6a";
         state.ctx.fillRect(-size/4, -size/3, size/20, size/8);
       }
+      
+      // Add bright outline for visibility against all backgrounds
+      state.ctx.strokeStyle = "rgba(200, 220, 255, 0.5)";
+      state.ctx.lineWidth = 2;
+      state.ctx.beginPath();
+      if (isSideView) {
+        state.ctx.rect(-size/3, -size/2.5, size*0.75, size);
+      } else {
+        state.ctx.rect(-size/3, -size/3, size*0.66, size*0.66);
+      }
+      state.ctx.stroke();
       
       state.ctx.restore();
 
@@ -564,6 +586,164 @@ export function drawEnemies() {
       state.ctx.fillRect(e.x - barWidth/2, e.y - e.size/2 - 30, barWidth, barHeight);
       state.ctx.fillStyle = "red";
       state.ctx.fillRect(e.x - barWidth/2, e.y - e.size/2 - 30, barWidth * (e.health / e.maxHealth), barHeight);
+    }
+    // NEW: Draw worm enemies
+    else if (e.type === "worm") {
+      if (e.underground) {
+        // Draw underground indicator (shadow with pulsing effect)
+        const pulse = Math.sin(state.frameCount * 0.15) * 0.3 + 0.5;
+        state.ctx.save();
+        state.ctx.globalAlpha = pulse * 0.4;
+        state.ctx.fillStyle = "#8B4513";
+        state.ctx.beginPath();
+        state.ctx.arc(e.x, e.y, e.size/2 + 10, 0, Math.PI * 2);
+        state.ctx.fill();
+        state.ctx.restore();
+      } else {
+        // Draw segmented worm body
+        state.ctx.save();
+        
+        // Draw segments (body parts following the head)
+        for (let i = e.segments.length - 1; i >= 0; i--) {
+          const seg = e.segments[i];
+          const segSize = e.size * (0.5 + (i / e.segments.length) * 0.5);
+          
+          // Worm segment body (brown/earthy color)
+          state.ctx.fillStyle = i === 0 ? "#A0522D" : "#8B4513";
+          state.ctx.beginPath();
+          state.ctx.arc(seg.x, seg.y, segSize/2, 0, Math.PI * 2);
+          state.ctx.fill();
+          
+          // Segment detail (rings)
+          state.ctx.strokeStyle = "#654321";
+          state.ctx.lineWidth = 2;
+          state.ctx.beginPath();
+          state.ctx.arc(seg.x, seg.y, segSize/2, 0, Math.PI * 2);
+          state.ctx.stroke();
+          
+          // Head features (only on first segment)
+          if (i === 0) {
+            // Eyes
+            state.ctx.fillStyle = "rgba(255, 50, 50, 0.9)";
+            state.ctx.beginPath();
+            state.ctx.arc(seg.x - segSize/6, seg.y - segSize/6, 3, 0, Math.PI * 2);
+            state.ctx.arc(seg.x + segSize/6, seg.y - segSize/6, 3, 0, Math.PI * 2);
+            state.ctx.fill();
+            
+            // Mouth
+            state.ctx.strokeStyle = "#3a1a0a";
+            state.ctx.lineWidth = 2;
+            state.ctx.beginPath();
+            state.ctx.arc(seg.x, seg.y + segSize/6, segSize/4, 0, Math.PI);
+            state.ctx.stroke();
+          }
+        }
+        
+        // Outline for visibility
+        state.ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+        state.ctx.lineWidth = 2;
+        state.ctx.beginPath();
+        state.ctx.arc(e.x, e.y, e.size/2 + 2, 0, Math.PI * 2);
+        state.ctx.stroke();
+        
+        state.ctx.restore();
+        
+        // Health bar
+        const barWidth = e.size;
+        const barHeight = 8;
+        state.ctx.fillStyle = "rgba(50,50,50,0.8)";
+        state.ctx.fillRect(e.x - barWidth/2, e.y - e.size/2 - 20, barWidth, barHeight);
+        state.ctx.fillStyle = "#A0522D";
+        state.ctx.fillRect(e.x - barWidth/2, e.y - e.size/2 - 20, barWidth * (e.health / 80), barHeight);
+      }
+    }
+    // NEW: Draw dinosaur enemies
+    else if (e.type === "dinosaur") {
+      state.ctx.save();
+      state.ctx.translate(e.x, e.y);
+      
+      const size = e.size;
+      const pulse = Math.sin(state.frameCount * 0.08) * 0.2 + 0.8;
+      
+      // Charge effect
+      if (e.isCharging) {
+        state.ctx.fillStyle = "rgba(255, 150, 50, 0.4)";
+        state.ctx.beginPath();
+        state.ctx.arc(0, 0, size/2 + 15, 0, Math.PI * 2);
+        state.ctx.fill();
+      }
+      
+      // Body (prehistoric green/brown)
+      state.ctx.fillStyle = "#4a7c4a";
+      state.ctx.beginPath();
+      state.ctx.ellipse(0, 0, size/2, size/2.5, 0, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Head
+      state.ctx.fillStyle = "#3a6c3a";
+      state.ctx.beginPath();
+      state.ctx.ellipse(size/3, -size/6, size/4, size/3.5, 0, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Eye
+      state.ctx.fillStyle = e.isCharging ? "rgba(255, 0, 0, 0.9)" : "rgba(255, 200, 50, 0.9)";
+      state.ctx.beginPath();
+      state.ctx.arc(size/2.5, -size/5, 4, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Spikes/scales on back
+      for (let i = 0; i < 5; i++) {
+        const spikeX = -size/3 + i * (size/6);
+        const spikeY = -size/3;
+        
+        state.ctx.fillStyle = "#2a5c2a";
+        state.ctx.beginPath();
+        state.ctx.moveTo(spikeX, spikeY);
+        state.ctx.lineTo(spikeX - size/15, spikeY - size/8);
+        state.ctx.lineTo(spikeX + size/15, spikeY - size/8);
+        state.ctx.closePath();
+        state.ctx.fill();
+      }
+      
+      // Tail
+      state.ctx.fillStyle = "#3a6c3a";
+      state.ctx.beginPath();
+      state.ctx.ellipse(-size/2.5, size/8, size/3, size/6, 0, 0, Math.PI * 2);
+      state.ctx.fill();
+      
+      // Legs (simple rectangles)
+      state.ctx.fillStyle = "#3a6c3a";
+      state.ctx.fillRect(-size/8, size/3, size/10, size/5);
+      state.ctx.fillRect(size/12, size/3, size/10, size/5);
+      
+      // Roar effect
+      if (e.roarTimer > 300 && e.roarTimer < 320) {
+        const roarPulse = (320 - e.roarTimer) / 20;
+        state.ctx.strokeStyle = `rgba(255, 200, 100, ${1 - roarPulse})`;
+        state.ctx.lineWidth = 3;
+        for (let r = 0; r < 3; r++) {
+          state.ctx.beginPath();
+          state.ctx.arc(size/2, -size/5, size/2 + r * 15 * roarPulse, 0, Math.PI * 2);
+          state.ctx.stroke();
+        }
+      }
+      
+      // Outline for visibility
+      state.ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+      state.ctx.lineWidth = 2;
+      state.ctx.beginPath();
+      state.ctx.arc(0, 0, size/2 + 4, 0, Math.PI * 2);
+      state.ctx.stroke();
+      
+      state.ctx.restore();
+      
+      // Health bar
+      const barWidth = size;
+      const barHeight = 10;
+      state.ctx.fillStyle = "rgba(50,50,50,0.8)";
+      state.ctx.fillRect(e.x - barWidth/2, e.y - size/2 - 25, barWidth, barHeight);
+      state.ctx.fillStyle = "#4a7c4a";
+      state.ctx.fillRect(e.x - barWidth/2, e.y - size/2 - 25, barWidth * (e.health / 150), barHeight);
     }
   });
 }
@@ -1551,6 +1731,89 @@ export function drawDiamonds() {
       }
       
       state.ctx.restore();
+    }
+    
+    // NEW: Molten Diamond Boss - special rendering overlay
+    if (d.type === "molten-diamond") {
+      // Add molten lava effects on top of standard diamond
+      state.ctx.save();
+      state.ctx.translate(d.x, d.y);
+      
+      // Molten lava glow effect
+      const lavaGlow = Math.sin(state.frameCount * 0.12) * 0.4 + 0.6;
+      const glowRadius = (d.size * 1.5) * 1.3;
+      const lavaGradient = state.ctx.createRadialGradient(0, 0, 0, 0, 0, glowRadius);
+      lavaGradient.addColorStop(0, `rgba(255, 150, 0, ${0.6 * lavaGlow})`);
+      lavaGradient.addColorStop(0.5, `rgba(255, 80, 0, ${0.3 * lavaGlow})`);
+      lavaGradient.addColorStop(1, 'rgba(255, 50, 0, 0)');
+      
+      state.ctx.globalCompositeOperation = 'lighter';
+      state.ctx.fillStyle = lavaGradient;
+      state.ctx.beginPath();
+      state.ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
+      state.ctx.fill();
+      state.ctx.globalCompositeOperation = 'source-over';
+      
+      state.ctx.restore();
+      
+      // Boss health bar (molten variant)
+      const barWidth = 300;
+      const barHeight = 20;
+      const barX = d.x - barWidth/2;
+      const barY = d.y - (d.size * 1.5) - 60;
+      
+      // Background
+      state.ctx.fillStyle = "rgba(20, 10, 0, 0.95)";
+      state.ctx.fillRect(barX - 3, barY - 3, barWidth + 6, barHeight + 6);
+      
+      // Border with lava glow
+      state.ctx.strokeStyle = `rgba(255, 100, 0, ${lavaGlow})`;
+      state.ctx.lineWidth = 3;
+      state.ctx.strokeRect(barX - 3, barY - 3, barWidth + 6, barHeight + 6);
+      
+      // Health fill
+      const healthPercent = d.health / (d.maxHealth || 800);
+      const phase = d.currentPhase || 1;
+      const healthGrad = state.ctx.createLinearGradient(barX, barY, barX + barWidth * healthPercent, barY);
+      
+      if (phase === 1) {
+        healthGrad.addColorStop(0, "rgba(255, 150, 0, 0.95)");
+        healthGrad.addColorStop(1, "rgba(200, 100, 0, 0.95)");
+      } else if (phase === 2) {
+        healthGrad.addColorStop(0, "rgba(255, 100, 0, 0.95)");
+        healthGrad.addColorStop(1, "rgba(200, 50, 0, 0.95)");
+      } else {
+        healthGrad.addColorStop(0, "rgba(255, 50, 0, 0.95)");
+        healthGrad.addColorStop(1, "rgba(150, 20, 0, 0.95)");
+      }
+      
+      state.ctx.fillStyle = healthGrad;
+      state.ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+      
+      // Phase markers
+      for (let i = 1; i < 3; i++) {
+        const phaseX = barX + (barWidth * i / 3);
+        state.ctx.strokeStyle = "rgba(0, 0, 0, 0.7)";
+        state.ctx.lineWidth = 2;
+        state.ctx.beginPath();
+        state.ctx.moveTo(phaseX, barY);
+        state.ctx.lineTo(phaseX, barY + barHeight);
+        state.ctx.stroke();
+      }
+      
+      // Boss title
+      state.ctx.font = "bold 18px Orbitron, monospace";
+      state.ctx.textAlign = "center";
+      state.ctx.fillStyle = "rgba(255, 200, 100, 0.98)";
+      state.ctx.strokeStyle = "rgba(100, 20, 0, 0.95)";
+      state.ctx.lineWidth = 5;
+      state.ctx.strokeText("◆ MOLTEN DIAMOND ◆", d.x, barY - 12);
+      state.ctx.fillText("◆ MOLTEN DIAMOND ◆", d.x, barY - 12);
+      
+      // Phase text
+      state.ctx.font = "12px Orbitron, monospace";
+      state.ctx.fillStyle = "rgba(255, 150, 50, 0.9)";
+      state.ctx.fillText(`PHASE ${phase}/3`, d.x, barY + barHeight + 18);
     }
   });
 }

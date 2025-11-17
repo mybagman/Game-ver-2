@@ -380,13 +380,21 @@ export function checkBulletCollisions() {
           
           state.bullets.splice(bi,1);
           if (e.health <= 0) {
-            createExplosion(e.x, e.y, e.type === "triangle" ? "cyan" : e.type === "boss" ? "yellow" : e.type === "mini-boss" ? "orange" : "red");
+            createExplosion(e.x, e.y, e.type === "triangle" ? "cyan" : e.type === "boss" ? "yellow" : e.type === "mini-boss" ? "orange" : e.type === "worm" ? "brown" : e.type === "dinosaur" ? "green" : "red");
             state.enemies.splice(ei,1);
+            
+            // Track kill for weapon progression (simple state-based tracking)
+            if ((b.owner === "player" || b.drone) && state.goldStar && state.goldStar.alive) {
+              state.goldStar.totalKills = (state.goldStar.totalKills || 0) + 1;
+            }
+            
             if (!e.fromBoss) {
               if (e.type === "boss") state.addScore(100);
               else if (e.type === "mini-boss") state.addScore(50);
               else if (e.type === "triangle") { state.addScore(10); spawnRandomPowerUp(e.x, e.y); }
               else if (e.type === "red-square") { state.addScore(10); spawnRandomPowerUp(e.x, e.y); }
+              else if (e.type === "worm") { state.addScore(15); spawnRandomPowerUp(e.x, e.y); }
+              else if (e.type === "dinosaur") { state.addScore(25); spawnRandomPowerUp(e.x, e.y); }
             }
           }
           break;

@@ -841,6 +841,221 @@ export function updateMechs() {
   }
 }
 
+// NEW: Molten Diamond Boss - Centre of the Earth final boss
+export function updateMoltenDiamond(d) {
+  // Shared diamond behavior (graviton, spawning)
+  updateDiamond(d);
+  
+  // Boss-specific timers
+  d.heatWaveTimer = (d.heatWaveTimer || 0) + 1;
+  d.crystalTimer = (d.crystalTimer || 0) + 1;
+  d.lavaPoolTimer = (d.lavaPoolTimer || 0) + 1;
+  d.phaseTimer = (d.phaseTimer || 0) + 1;
+  
+  // Phase progression based on health
+  const healthPercent = d.health / d.maxHealth;
+  if (healthPercent > 0.66) {
+    d.currentPhase = 1;
+  } else if (healthPercent > 0.33) {
+    d.currentPhase = 2;
+  } else {
+    d.currentPhase = 3;
+  }
+  
+  // Heat Wave attack - circular expanding waves of fire
+  if (d.heatWaveTimer > (d.currentPhase === 3 ? 180 : 240)) {
+    d.heatWaveTimer = 0;
+    const waveCount = d.currentPhase + 2; // 3, 4, or 5 waves
+    for (let i = 0; i < waveCount; i++) {
+      const angle = (i / waveCount) * Math.PI * 2;
+      state.pushLightning({
+        x: d.x,
+        y: d.y,
+        dx: Math.cos(angle) * 5,
+        dy: Math.sin(angle) * 5,
+        size: 12,
+        damage: 30 + (d.currentPhase * 5),
+        color: "rgba(255, 100, 0, 0.9)"
+      });
+    }
+  }
+  
+  // Crystal Projectile attack - homing crystals
+  if (d.crystalTimer > (d.currentPhase === 3 ? 120 : 180)) {
+    d.crystalTimer = 0;
+    const crystalCount = d.currentPhase;
+    for (let i = 0; i < crystalCount; i++) {
+      const angle = Math.atan2(state.player.y - d.y, state.player.x - d.x) + (Math.random() - 0.5) * 0.5;
+      state.pushLightning({
+        x: d.x,
+        y: d.y,
+        dx: Math.cos(angle) * 7,
+        dy: Math.sin(angle) * 7,
+        size: 10,
+        damage: 25,
+        color: "rgba(255, 50, 200, 0.9)"
+      });
+    }
+  }
+  
+  // Lava Pool attack (Phase 2+) - area denial
+  if (d.currentPhase >= 2 && d.lavaPoolTimer > 300) {
+    d.lavaPoolTimer = 0;
+    // Spawn lava pool near player
+    const offsetAngle = Math.random() * Math.PI * 2;
+    const offsetDist = 100 + Math.random() * 50;
+    state.pushExplosion({
+      x: state.player.x + Math.cos(offsetAngle) * offsetDist,
+      y: state.player.y + Math.sin(offsetAngle) * offsetDist,
+      dx: 0,
+      dy: 0,
+      radius: 60,
+      color: "rgba(255, 80, 0, 0.8)",
+      life: 180, // Lasts 3 seconds
+      damage: 10 // Continuous damage
+    });
+  }
+  
+  // Spawn minions more aggressively in Phase 3
+  if (d.currentPhase === 3 && d.spawnTimer > 250) {
+    d.spawnTimer = 0;
+    // Spawn worms or dinosaurs
+    const enemyType = Math.random() < 0.5 ? "worm" : "dinosaur";
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 100;
+    
+    if (enemyType === "worm") {
+      state.pushEnemy({
+        x: d.x + Math.cos(angle) * dist,
+        y: d.y + Math.sin(angle) * dist,
+        size: 35,
+        speed: 2.0,
+        health: 60,
+        type: "worm",
+        shootTimer: 0,
+        fromBoss: true,
+        segmentCount: 4,
+        segments: []
+      });
+    } else {
+      state.pushEnemy({
+        x: d.x + Math.cos(angle) * dist,
+        y: d.y + Math.sin(angle) * dist,
+        size: 45,
+        speed: 1.6,
+        health: 120,
+        type: "dinosaur",
+        shootTimer: 0,
+        fromBoss: true
+      });
+    }
+  }
+}
+
+// NEW: Worm enemy - underground creature with tunneling behavior
+export function updateWorm(worm) {
+  // Initialize segments if not present
+  if (!worm.segments || worm.segments.length === 0) {
+    worm.segments = [];
+    for (let i = 0; i < worm.segmentCount; i++) {
+      worm.segments.push({ x: worm.x, y: worm.y });
+    }
+  }
+  
+  // Tunneling behavior - periodically go underground and reappear
+  worm.tunnelCooldown = (worm.tunnelCooldown || 0) - 1;
+  worm.underwaterTimer = (worm.underwaterTimer || 0) - 1;
+  
+  if (!worm.underground && worm.tunnelCooldown <= 0) {
+    // Go underground
+    worm.underground = true;
+    worm.underwaterTimer = 90; // 1.5 seconds underground
+    worm.tunnelCooldown = 300; // 5 seconds before next tunnel
+  }
+  
+  if (worm.underground && worm.underwaterTimer <= 0) {
+    // Resurface near player
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 150 + Math.random() * 100;
+    worm.x = state.player.x + Math.cos(angle) * dist;
+    worm.y = state.player.y + Math.sin(angle) * dist;
+    worm.underground = false;
+  }
+  
+  if (!worm.underground) {
+    // Serpentine movement toward player
+    const dx = state.player.x - worm.x;
+    const dy = state.player.y - worm.y;
+    const dist = Math.hypot(dx, dy);
+    
+    if (dist > 0) {
+      const speed = worm.speed;
+      // Add sinusoidal movement for snake-like motion
+      const time = Date.now() * 0.005;
+      const perpX = -dy / dist;
+      const perpY = dx / dist;
+      const wiggle = Math.sin(time + worm.x * 0.01) * 30;
+      
+      worm.x += (dx / dist) * speed + perpX * wiggle * 0.05;
+      worm.y += (dy / dist) * speed + perpY * wiggle * 0.05;
+    }
+    
+    // Update segment positions (follow the head)
+    for (let i = worm.segments.length - 1; i > 0; i--) {
+      worm.segments[i].x = worm.segments[i - 1].x;
+      worm.segments[i].y = worm.segments[i - 1].y;
+    }
+    if (worm.segments.length > 0) {
+      worm.segments[0].x = worm.x;
+      worm.segments[0].y = worm.y;
+    }
+  }
+}
+
+// NEW: Dinosaur enemy - prehistoric beast with charge attacks
+export function updateDinosaur(dino) {
+  dino.chargeTimer = (dino.chargeTimer || 0) - 1;
+  dino.roarTimer = (dino.roarTimer || 0) - 1;
+  
+  // Roar attack - stuns player briefly (visual effect only for now)
+  if (dino.roarTimer <= 0) {
+    dino.roarTimer = 360; // Roar every 6 seconds
+    // Visual effect added in drawing
+  }
+  
+  if (!dino.isCharging) {
+    // Normal movement - slow approach
+    const dx = state.player.x - dino.x;
+    const dy = state.player.y - dino.y;
+    const dist = Math.hypot(dx, dy);
+    
+    if (dist > 0) {
+      const speed = dino.speed * 0.6; // Slower when not charging
+      dino.x += (dx / dist) * speed;
+      dino.y += (dy / dist) * speed;
+    }
+    
+    // Start charge when close enough
+    if (dist < 300 && dino.chargeTimer <= 0) {
+      dino.isCharging = true;
+      dino.chargeDuration = 60; // 1 second charge
+      dino.chargeTimer = 240; // 4 seconds cooldown
+      dino.chargeDx = dx / dist;
+      dino.chargeDy = dy / dist;
+    }
+  } else {
+    // Charging attack - fast linear movement
+    const chargeSpeed = dino.speed * 3;
+    dino.x += dino.chargeDx * chargeSpeed;
+    dino.y += dino.chargeDy * chargeSpeed;
+    
+    dino.chargeDuration--;
+    if (dino.chargeDuration <= 0) {
+      dino.isCharging = false;
+    }
+  }
+}
+
 export function updateEnemies() {
   if (state.player.invulnerable) { 
     state.player.invulnerableTimer--; 
@@ -862,9 +1077,16 @@ export function updateEnemies() {
 
   for (let di = state.diamonds.length-1; di >= 0; di--) {
     const d = state.diamonds[di];
-    updateDiamond(d);
+    
+    // Use special boss update for molten-diamond
+    if (d.type === "molten-diamond") {
+      updateMoltenDiamond(d);
+    } else {
+      updateDiamond(d);
+    }
+    
     if (d.health <= 0) {
-      createExplosion(d.x, d.y, "white");
+      createExplosion(d.x, d.y, d.type === "molten-diamond" ? "orange" : "white");
       // When diamond dies, detach attachments but give them a reattach cooldown so they can't immediately reattach to any diamond.
       d.attachments.forEach(a => {
         a.attachedTo = null;
@@ -874,7 +1096,7 @@ export function updateEnemies() {
         state.pushEnemy(a);
       });
       state.diamonds.splice(di,1);
-      state.addScore(200);
+      state.addScore(d.type === "molten-diamond" ? 500 : 200); // Higher score for boss
     }
   }
 
@@ -884,6 +1106,10 @@ export function updateEnemies() {
     if (e.type === "boss") { updateBoss(e); return e.health > 0; }
     if (e.type === "mini-boss") { updateMiniBoss(e); return e.health > 0; }
     if (e.type === "mother-core") { updateMotherCore(e); return e.health > 0; }
+    
+    // NEW: Centre of the Earth enemies
+    if (e.type === "worm") { updateWorm(e); return e.health > 0; }
+    if (e.type === "dinosaur") { updateDinosaur(e); return e.health > 0; }
 
     if (e.vx !== undefined || e.vy !== undefined) {
       e.x += (e.vx || 0);

@@ -1164,8 +1164,22 @@ export function drawBackground(waveNum) {
     return;
   }
   
-  // Waves 16+ (waveNum >= 15): Pixel art Earth scene with planet view, green ground, blue sky
-  if (waveNum >= 15) {
+  // Waves 16-22 (waveNum 15-21): Pixel art Earth scene with planet view, green ground, blue sky
+  if (waveNum >= 15 && waveNum <= 21) {
+    drawPixelArtEarth();
+    state.incrementBackgroundOffset(0.5);
+    return;
+  }
+  
+  // NEW: Waves 23-32 (waveNum 22-31): Cave / Centre of the Earth backgrounds
+  if (waveNum >= 22 && waveNum <= 31) {
+    drawCaveBackground(waveNum);
+    state.incrementBackgroundOffset(0.5);
+    return;
+  }
+  
+  // Fallback for any future waves
+  if (waveNum >= 32) {
     drawPixelArtEarth();
     state.incrementBackgroundOffset(0.5);
     return;
@@ -1502,3 +1516,138 @@ export function drawPlanetBackground(wave) {
 // ----------------------
 // Re-entry visual effects have been moved to Effects.js
 // ----------------------
+
+// =====================================================
+// NEW: CAVE BACKGROUNDS FOR JOURNEY TO THE CENTRE OF THE EARTH (Waves 23-32)
+// =====================================================
+
+function drawCaveBackground(waveNum) {
+  const ctx = state.ctx;
+  const width = state.canvas.width;
+  const height = state.canvas.height;
+  
+  // Calculate depth progression (wave 22 = shallow, wave 31 = deepest)
+  const depthProgress = (waveNum - 22) / 9; // 0.0 to 1.0
+  
+  // Cave color gradient - gets darker and more orange/red as we descend
+  const topColor = interpolateColor("#3a2a1a", "#1a0a00", depthProgress);
+  const midColor = interpolateColor("#2a1a0a", "#200800", depthProgress);
+  const bottomColor = interpolateColor("#1a0a00", "#300a00", depthProgress);
+  
+  const gradient = ctx.createLinearGradient(0, 0, 0, height);
+  gradient.addColorStop(0, topColor);
+  gradient.addColorStop(0.5, midColor);
+  gradient.addColorStop(1, bottomColor);
+  
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+  
+  // Add glowing molten veins (more intense as we go deeper)
+  if (depthProgress > 0.3) {
+    const veinCount = Math.floor(5 + depthProgress * 10);
+    ctx.strokeStyle = `rgba(255, ${100 - depthProgress * 50}, 0, ${0.3 + depthProgress * 0.4})`;
+    ctx.lineWidth = 2;
+    
+    for (let i = 0; i < veinCount; i++) {
+      const startX = ((i * 137) % width);
+      const startY = ((i * 211) % height);
+      const endX = startX + (Math.sin(i * 1.7) * 150);
+      const endY = startY + (Math.cos(i * 2.3) * 150);
+      
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.quadraticCurveTo(
+        (startX + endX) / 2 + Math.sin(i) * 50,
+        (startY + endY) / 2 + Math.cos(i) * 50,
+        endX,
+        endY
+      );
+      ctx.stroke();
+      
+      // Glow points along veins
+      if (depthProgress > 0.6) {
+        ctx.fillStyle = `rgba(255, 150, 0, ${0.4 + Math.sin(state.frameCount * 0.05 + i) * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(startX, startY, 3 + Math.sin(state.frameCount * 0.1 + i) * 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+  
+  // Rock formations / stalactites
+  const rockCount = 15 - Math.floor(depthProgress * 5); // Fewer rocks deeper
+  ctx.fillStyle = `rgba(60, 40, 20, ${0.6 - depthProgress * 0.2})`;
+  
+  for (let i = 0; i < rockCount; i++) {
+    const x = ((i * 173) % width);
+    const y = ((i * 97) % (height * 0.8));
+    const rockWidth = 40 + ((i * 53) % 60);
+    const rockHeight = 80 + ((i * 71) % 100);
+    
+    // Irregular rock shape
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + rockWidth * 0.3, y + rockHeight * 0.5);
+    ctx.lineTo(x + rockWidth * 0.6, y + rockHeight * 0.7);
+    ctx.lineTo(x + rockWidth * 0.8, y + rockHeight);
+    ctx.lineTo(x + rockWidth * 0.2, y + rockHeight);
+    ctx.closePath();
+    ctx.fill();
+  }
+  
+  // Molten core effect (final wave)
+  if (waveNum === 31) {
+    // Intense orange glow from bottom
+    const coreGradient = ctx.createRadialGradient(width / 2, height * 1.2, 0, width / 2, height * 1.2, height);
+    coreGradient.addColorStop(0, "rgba(255, 150, 0, 0.5)");
+    coreGradient.addColorStop(0.5, "rgba(255, 80, 0, 0.3)");
+    coreGradient.addColorStop(1, "rgba(255, 50, 0, 0)");
+    
+    ctx.fillStyle = coreGradient;
+    ctx.fillRect(0, 0, width, height);
+    
+    // Heat distortion particles
+    for (let i = 0; i < 20; i++) {
+      const px = (i * 77 + state.frameCount * 2) % width;
+      const py = height * 0.7 + ((i * 53) % (height * 0.3));
+      const size = 2 + ((i * 11) % 4);
+      const alpha = 0.3 + Math.sin(state.frameCount * 0.1 + i) * 0.2;
+      
+      ctx.fillStyle = `rgba(255, 200, 100, ${alpha})`;
+      ctx.fillRect(px, py, size, size);
+    }
+  }
+  
+  // Cave crystals (sparkle effect)
+  const crystalCount = Math.floor(10 + depthProgress * 20);
+  for (let i = 0; i < crystalCount; i++) {
+    const cx = ((i * 211) % width);
+    const cy = ((i * 137) % height);
+    const twinkle = Math.sin(state.frameCount * 0.05 + i * 0.7) * 0.5 + 0.5;
+    const crystalSize = 2 + ((i * 7) % 3);
+    
+    ctx.fillStyle = `rgba(${150 + depthProgress * 100}, ${100 + depthProgress * 100}, 200, ${0.4 + twinkle * 0.4})`;
+    ctx.fillRect(cx, cy, crystalSize, crystalSize);
+  }
+}
+
+// Helper function to interpolate between two hex colors
+function interpolateColor(color1, color2, factor) {
+  const c1 = hexToRgb(color1);
+  const c2 = hexToRgb(color2);
+  
+  const r = Math.round(c1.r + (c2.r - c1.r) * factor);
+  const g = Math.round(c1.g + (c2.g - c1.g) * factor);
+  const b = Math.round(c1.b + (c2.b - c1.b) * factor);
+  
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : { r: 0, g: 0, b: 0 };
+}

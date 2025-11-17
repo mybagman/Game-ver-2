@@ -8,6 +8,108 @@ function safeCall(fn, ...args) {
   return undefined;
 }
 
+// Weapon level-up notification system
+let weaponLevelUpNotifications = [];
+
+function showWeaponLevelUp(weaponName, level) {
+  weaponLevelUpNotifications.push({
+    weaponName: weaponName,
+    level: level,
+    life: 180, // 3 seconds at 60fps
+    maxLife: 180,
+    y: state.canvas.height / 2 - 100
+  });
+}
+
+export function updateWeaponLevelUpNotifications() {
+  weaponLevelUpNotifications = weaponLevelUpNotifications.filter(notif => {
+    notif.life--;
+    notif.y -= 0.5; // Float upward
+    return notif.life > 0;
+  });
+}
+
+export function drawWeaponLevelUpNotifications(ctx) {
+  weaponLevelUpNotifications.forEach(notif => {
+    const alpha = notif.life / notif.maxLife;
+    const scale = 1 + (1 - alpha) * 0.5; // Grow slightly as it fades
+    
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(state.canvas.width / 2, notif.y);
+    ctx.scale(scale, scale);
+    
+    // Background
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(-150, -30, 300, 60);
+    
+    // Border
+    const borderColor = notif.weaponName.includes("RED") ? "rgba(255, 100, 100, 1)" : 
+                       notif.weaponName.includes("BLUE") ? "rgba(100, 200, 255, 1)" :
+                       "rgba(255, 200, 100, 1)";
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(-150, -30, 300, 60);
+    
+    // Text
+    ctx.fillStyle = "rgba(255, 255, 255, 1)";
+    ctx.font = "bold 20px Orbitron, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(`${notif.weaponName}`, 0, -5);
+    
+    ctx.fillStyle = borderColor;
+    ctx.font = "bold 24px Orbitron, monospace";
+    ctx.fillText(`LEVEL ${notif.level}`, 0, 20);
+    
+    ctx.restore();
+  });
+}
+
+// Track kills for weapon progression
+export function trackKillForWeaponProgression() {
+  const gs = state.goldStar;
+  if (!gs || !gs.alive) return;
+  
+  // Increment kill counters for all active weapons
+  gs.totalKills = (gs.totalKills || 0) + 1;
+  
+  // Every 10 kills, add experience to all weapons
+  if (gs.totalKills % 10 === 0) {
+    // Red Punch progression
+    if (gs.redPunchLevel > 0 && gs.redPunchLevel < 5) {
+      gs.redPunchXP = (gs.redPunchXP || 0) + 1;
+      if (gs.redPunchXP >= (gs.redPunchLevel * 2)) { // Increasing XP requirement
+        gs.redPunchLevel++;
+        gs.redPunchXP = 0;
+        showWeaponLevelUp("RED PUNCH", gs.redPunchLevel);
+        safeCall(levelUpGoldStar, state);
+      }
+    }
+    
+    // Blue Cannon progression
+    if (gs.blueCannonLevel > 0 && gs.blueCannonLevel < 5) {
+      gs.blueCannonXP = (gs.blueCannonXP || 0) + 1;
+      if (gs.blueCannonXP >= (gs.blueCannonLevel * 2)) {
+        gs.blueCannonLevel++;
+        gs.blueCannonXP = 0;
+        showWeaponLevelUp("BLUE CANNON", gs.blueCannonLevel);
+        safeCall(levelUpGoldStar, state);
+      }
+    }
+    
+    // Homing Missile progression
+    if (gs.homingMissileLevel > 0 && gs.homingMissileLevel < 3) {
+      gs.homingMissileXP = (gs.homingMissileXP || 0) + 1;
+      if (gs.homingMissileXP >= (gs.homingMissileLevel * 3)) {
+        gs.homingMissileLevel++;
+        gs.homingMissileXP = 0;
+        showWeaponLevelUp("HOMING MISSILE", gs.homingMissileLevel);
+        safeCall(levelUpGoldStar, state);
+      }
+    }
+  }
+}
+
 export function performRedPunch() {
   // Read the goldStar object from state. Do NOT reassign state.goldStar (exports are read-only).
   const gs = state.goldStar;
@@ -156,18 +258,24 @@ export function updateGoldStar() {
 
           if (pu.type === "red-punch") {
             gs.redKills = (gs.redKills || 0) + 1;
-            if (gs.redKills % 3 === 0 && (gs.redPunchLevel || 0) < 5) {
-              gs.redPunchLevel = (gs.redPunchLevel || 0) + 1;
+            const oldLevel = gs.redPunchLevel || 0;
+            if (gs.redKills % 3 === 0 && oldLevel < 5) {
+              gs.redPunchLevel = oldLevel + 1;
               safeCall(levelUpGoldStar, state);
+              // Visual level-up notification
+              showWeaponLevelUp("RED PUNCH", gs.redPunchLevel);
             }
             safeCall(createExplosion, pu.x, pu.y, "orange");
             safeCall(state.addScore, 8);
           }
           else if (pu.type === "blue-cannon") {
             gs.blueKills = (gs.blueKills || 0) + 1;
-            if (gs.blueKills % 3 === 0 && (gs.blueCannonLevel || 0) < 5) {
-              gs.blueCannonLevel = (gs.blueCannonLevel || 0) + 1;
+            const oldLevel = gs.blueCannonLevel || 0;
+            if (gs.blueKills % 3 === 0 && oldLevel < 5) {
+              gs.blueCannonLevel = oldLevel + 1;
               safeCall(levelUpGoldStar, state);
+              // Visual level-up notification
+              showWeaponLevelUp("BLUE CANNON", gs.blueCannonLevel);
             }
             safeCall(createExplosion, pu.x, pu.y, "cyan");
             safeCall(state.addScore, 8);

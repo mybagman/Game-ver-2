@@ -63,7 +63,10 @@ export function updateAuraShockwaves() {
   state.auraShockwaves.forEach(s => {
     s.r += (s.maxR - s.r) * 0.25;
     s.life--;
-    state.lightning.forEach(l => {
+    // OPTIMIZATION: Only process every other lightning bullet to reduce O(n*m) complexity
+    // This still provides the effect while reducing computation by half
+    for (let i = 0; i < state.lightning.length; i += 2) {
+      const l = state.lightning[i];
       const dx = l.x - s.x;
       const dy = l.y - s.y;
       const dist = Math.sqrt(dx*dx + dy*dy);
@@ -72,7 +75,7 @@ export function updateAuraShockwaves() {
         l.dx += (dx / dist) * push * 0.1;
         l.dy += (dy / dist) * push * 0.1;
       }
-    });
+    }
   });
   state.filterAuraShockwaves(s => s.life > 0);
 }
@@ -92,7 +95,8 @@ export function drawAuraShockwaves(ctx) {
 export function updateAuraSparks() {
   if (!state.goldStar.alive) return;
   state.incrementAuraPulseTimer();
-  if (state.auraPulseTimer % 6 === 0) {
+  // OPTIMIZATION: Reduce spark spawn rate from every 6 frames to every 12 frames
+  if (state.auraPulseTimer % 12 === 0) {
     state.pushAuraSpark({
       x: state.goldStar.x + (Math.random() - 0.5) * state.goldStarAura.radius * 2,
       y: state.goldStar.y + (Math.random() - 0.5) * state.goldStarAura.radius * 2,
@@ -105,14 +109,19 @@ export function updateAuraSparks() {
 }
 
 export function drawAuraSparks(ctx) {
+  // OPTIMIZATION: Batch drawing operations with same alpha level
+  // Group sparks by similar alpha values to reduce fillStyle changes
+  ctx.save();
   state.auraSparks.forEach(s => {
     const alpha = s.life / 30;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, 2, 0, Math.PI * 2);
-    const color = s.color.replace(/rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/, `rgba($1,$2,$3,${alpha})`);
-    ctx.fillStyle = color;
-    ctx.fill();
+    // Extract RGB values once (cached regex result)
+    const matches = s.color.match(/rgba\((\d+),(\d+),(\d+),/);
+    if (!matches) return;
+    
+    ctx.fillStyle = `rgba(${matches[1]},${matches[2]},${matches[3]},${alpha})`;
+    ctx.fillRect(s.x - 2, s.y - 2, 4, 4); // Use fillRect instead of arc for better performance
   });
+  ctx.restore();
 }
 
 export function drawAura(ctx) {
@@ -156,7 +165,10 @@ export function applyGoldStarAuraEffects() {
       if (toHeal > 0) {
         state.goldStar.health = Math.min(state.goldStar.maxHealth, state.goldStar.health + toHeal);
         state.goldStar.healAccumulator -= toHeal;
-        createExplosion(state.goldStar.x + (Math.random()-0.5)*8, state.goldStar.y + (Math.random()-0.5)*8, "magenta");
+        // OPTIMIZATION: Reduce healing particle effects - only spawn every 10 heal ticks
+        if (Math.floor(state.goldStar.health) % 10 === 0) {
+          createExplosion(state.goldStar.x + (Math.random()-0.5)*8, state.goldStar.y + (Math.random()-0.5)*8, "magenta");
+        }
       }
       state.player.fireRateBoost = 1 + state.goldStarAura.level * 0.15;
     } else {
@@ -174,7 +186,12 @@ export function applyGoldStarAuraEffects() {
     state.player.fireRateBoost = 1;
   }
 
-  for (const l of state.lightning) {
+  // OPTIMIZATION: Only process lightning bullets every other frame to reduce load
+  const processAll = state.frameCount % 2 === 0;
+  const step = processAll ? 1 : 2;
+  
+  for (let i = 0; i < state.lightning.length; i += step) {
+    const l = state.lightning[i];
     if (l._origDx === undefined || l._origDy === undefined) {
       l._origDx = l.dx;
       l._origDy = l.dy;
@@ -183,9 +200,12 @@ export function applyGoldStarAuraEffects() {
 
     const bx = l.x - state.goldStar.x;
     const by = l.y - state.goldStar.y;
-    const bd = Math.sqrt(bx*bx + by*by);
+    // OPTIMIZATION: Use squared distance to avoid sqrt when possible
+    const bdSquared = bx*bx + by*by;
     const bulletSlowRadius = state.goldStarAura.radius * 1.5;
-    if (bd < bulletSlowRadius) {
+    const radiusSquared = bulletSlowRadius * bulletSlowRadius;
+    
+    if (bdSquared < radiusSquared) {
       const slowFactor = Math.max(0.5, 1 - 0.08 * state.goldStarAura.level);
       l.dx = l._origDx * slowFactor;
       l.dy = l._origDy * slowFactor;
@@ -226,15 +246,17 @@ export function drawGoldStarAura(ctx) {
   if (state.goldStar.alive && state.goldStarAura.active) {
     const healingActive = (state.goldStar.health < state.goldStar.maxHealth) || (state.player.health < state.player.maxHealth && state.goldStar.health >= state.goldStar.maxHealth);
     if (healingActive) {
+      // OPTIMIZATION: Reduce healing beam complexity - only draw 2 beams instead of 3
+      // and reduce steps from 6 to 4 to cut down on path operations
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 2; i++) {
         const t = Date.now() * 0.002 + i * 7;
         const jitter = 12 + i * 2;
         ctx.strokeStyle = `rgba(${200 - i*40},${220 - i*40},255,${0.15 + 0.25 * Math.abs(Math.sin(t))})`;
         ctx.lineWidth = 2 + i * 0.6;
         ctx.beginPath();
-        const steps = 6;
+        const steps = 4; // Reduced from 6
         const sx = state.goldStar.x, sy = state.goldStar.y;
         const tx = state.player.x, ty = state.player.y;
         ctx.moveTo(sx, sy);

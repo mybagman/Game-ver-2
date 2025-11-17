@@ -80,6 +80,13 @@ function drawPlayer8Bit(ctx, player) {
   ctx.fillStyle = "#ff3333";
   ctx.fillRect(-size/20, -size/2.5, size/10, size/20);
 
+  // Add bright outline for visibility against all backgrounds
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.rect(-size/2, -size/2, size, size);
+  ctx.stroke();
+
   // invulnerability flicker overlay
   if (player.invulnerable) {
     ctx.globalAlpha = 0.6;
