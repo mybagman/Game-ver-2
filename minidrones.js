@@ -64,58 +64,102 @@ export function updateMiniDrones() {
   state.miniDrones = state.miniDrones.filter(drone => {
     if (!drone.alive) return false;
     
-    // Orbit around gold star
-    drone.orbitAngle += drone.orbitSpeed;
-    const targetX = state.goldStar.x + Math.cos(drone.orbitAngle) * drone.orbitRadius;
-    const targetY = state.goldStar.y + Math.sin(drone.orbitAngle) * drone.orbitRadius;
+    // Find nearest enemy for autonomous behavior
+    let closestEnemy = null;
+    let closestDist = Infinity;
     
-    // Move toward orbit position
-    const dx = targetX - drone.x;
-    const dy = targetY - drone.y;
-    const dist = Math.hypot(dx, dy);
-    
-    if (dist > 5) {
-      const moveSpeed = Math.min(drone.speed, dist);
-      drone.x += (dx / dist) * moveSpeed;
-      drone.y += (dy / dist) * moveSpeed;
+    // Search all enemy types
+    for (const enemy of state.enemies) {
+      if (!enemy || enemy.type === "reflector") continue;
+      const enemyDist = Math.hypot(enemy.x - drone.x, enemy.y - drone.y);
+      if (enemyDist < closestDist) {
+        closestDist = enemyDist;
+        closestEnemy = enemy;
+      }
     }
     
-    // Shooting logic - similar to gold star but weaker
+    for (const tank of state.tanks) {
+      const tankDist = Math.hypot(tank.x - drone.x, tank.y - drone.y);
+      if (tankDist < closestDist) {
+        closestDist = tankDist;
+        closestEnemy = tank;
+      }
+    }
+    
+    for (const walker of state.walkers) {
+      const walkerDist = Math.hypot(walker.x - drone.x, walker.y - drone.y);
+      if (walkerDist < closestDist) {
+        closestDist = walkerDist;
+        closestEnemy = walker;
+      }
+    }
+    
+    for (const mech of state.mechs) {
+      const mechDist = Math.hypot(mech.x - drone.x, mech.y - drone.y);
+      if (mechDist < closestDist) {
+        closestDist = mechDist;
+        closestEnemy = mech;
+      }
+    }
+    
+    // AI Enhancement: Independent behavior based on enemy presence
+    let targetX, targetY;
+    const detectionRange = 500; // Range for enemy detection
+    
+    if (closestEnemy && closestDist < detectionRange) {
+      // ENGAGE MODE: Move independently toward enemy to attack
+      drone.mode = "engage";
+      
+      // Move toward enemy (intercept position)
+      targetX = closestEnemy.x;
+      targetY = closestEnemy.y;
+      
+      // Maintain combat distance (not too close, not too far)
+      const combatDistance = 150;
+      const dx = targetX - drone.x;
+      const dy = targetY - drone.y;
+      const dist = Math.hypot(dx, dy);
+      
+      if (dist > combatDistance + 20) {
+        // Move closer
+        const moveSpeed = drone.speed;
+        drone.x += (dx / dist) * moveSpeed;
+        drone.y += (dy / dist) * moveSpeed;
+      } else if (dist < combatDistance - 20) {
+        // Move away (maintain distance)
+        const moveSpeed = drone.speed * 0.8;
+        drone.x -= (dx / dist) * moveSpeed;
+        drone.y -= (dy / dist) * moveSpeed;
+      }
+      // else: maintain current position (in optimal range)
+    } else {
+      // RETURN MODE: No enemies detected, return to gold star orbit
+      drone.mode = "return";
+      
+      // Update orbit position around gold star
+      drone.orbitAngle += drone.orbitSpeed;
+      targetX = state.goldStar.x + Math.cos(drone.orbitAngle) * drone.orbitRadius;
+      targetY = state.goldStar.y + Math.sin(drone.orbitAngle) * drone.orbitRadius;
+      
+      // Move toward orbit position
+      const dx = targetX - drone.x;
+      const dy = targetY - drone.y;
+      const dist = Math.hypot(dx, dy);
+      
+      if (dist > 5) {
+        const moveSpeed = Math.min(drone.speed, dist);
+        drone.x += (dx / dist) * moveSpeed;
+        drone.y += (dy / dist) * moveSpeed;
+      }
+    }
+    
+    // Shooting logic - fire at closest enemy in range
     if (drone.shootCooldown > 0) {
       drone.shootCooldown--;
     } else {
-      // Find nearest enemy
-      let closestEnemy = null;
-      let closestDist = Infinity;
-      
-      for (const enemy of state.enemies) {
-        if (!enemy || enemy.type === "reflector") continue;
-        const enemyDist = Math.hypot(enemy.x - drone.x, enemy.y - drone.y);
-        if (enemyDist < closestDist) {
-          closestDist = enemyDist;
-          closestEnemy = enemy;
-        }
-      }
-      
-      // Also check tanks, walkers, mechs
-      for (const tank of state.tanks) {
-        const tankDist = Math.hypot(tank.x - drone.x, tank.y - drone.y);
-        if (tankDist < closestDist) {
-          closestDist = tankDist;
-          closestEnemy = tank;
-        }
-      }
-      
-      for (const walker of state.walkers) {
-        const walkerDist = Math.hypot(walker.x - drone.x, walker.y - drone.y);
-        if (walkerDist < closestDist) {
-          closestDist = walkerDist;
-          closestEnemy = walker;
-        }
-      }
-      
-      // Shoot at nearest enemy if in range
-      if (closestEnemy && closestDist < 400) {
+      // Shoot at nearest enemy if in range (increased range when in engage mode)
+      const shootRange = drone.mode === "engage" ? 500 : 400;
+      if (closestEnemy && closestDist < shootRange) {
         const shootDx = closestEnemy.x - drone.x;
         const shootDy = closestEnemy.y - drone.y;
         const shootMag = Math.hypot(shootDx, shootDy) || 1;
@@ -197,6 +241,30 @@ export function drawMiniDrones(ctx) {
     ctx.beginPath();
     ctx.arc(0, 0, size / 6, 0, Math.PI * 2);
     ctx.fill();
+    
+    // Mode indicator - visual cue for engage vs return
+    if (drone.mode === "engage") {
+      // Red targeting reticle when engaging enemies
+      ctx.strokeStyle = 'rgba(255, 100, 100, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, size / 2 + 4, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Targeting lines
+      for (let i = 0; i < 4; i++) {
+        const angle = (i / 4) * Math.PI * 2 + state.frameCount * 0.05;
+        const x1 = Math.cos(angle) * (size / 2 + 2);
+        const y1 = Math.sin(angle) * (size / 2 + 2);
+        const x2 = Math.cos(angle) * (size / 2 + 8);
+        const y2 = Math.sin(angle) * (size / 2 + 8);
+        
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+    }
     
     // Health bar (mini)
     const healthRatio = drone.health / drone.maxHealth;
