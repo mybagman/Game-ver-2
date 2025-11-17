@@ -14,7 +14,7 @@ import {
 } from './updates.js';
 import { updateEnemies } from './enemies.js';
 import { updateLightning, checkBulletCollisions, updateLightningStrikes, checkRamModeCollisions } from './collisions.js';
-import { updateGoldStar } from './goldstar.js';
+import { updateGoldStar, updateWeaponLevelUpNotifications, trackKillForWeaponProgression, drawWeaponLevelUpNotifications } from './goldstar.js';
 import { updateGoldStarAura, resetAuraOnDeath } from './aura.js';
 import { updateMiniDrones, drawMiniDrones } from './minidrones.js';
 import { tryAdvanceWave, spawnWave, renderCinematic } from './waveManager.js';
@@ -103,6 +103,15 @@ export function gameLoop(now) {
   try { updateGoldStar(); } catch (e) { console.error('[gameLoop] updateGoldStar error:', e); }
   try { updateMiniDrones(); } catch (e) { console.error('[gameLoop] updateMiniDrones error:', e); }
   try { updateEnemies(); } catch (e) { console.error('[gameLoop] updateEnemies error:', e); }
+  
+  // Update weapon progression system
+  try { 
+    updateWeaponLevelUpNotifications();
+    // Check for kill-based progression
+    if (state.goldStar && state.goldStar.alive && state.goldStar.totalKills) {
+      trackKillForWeaponProgression();
+    }
+  } catch (e) { console.error('[gameLoop] weapon progression error:', e); }
   try { updateDebris(); } catch (e) { console.error('[gameLoop] updateDebris error:', e); }
   try { updateCloudParticles(); } catch (e) { console.error('[gameLoop] updateCloudParticles error:', e); }
   try { updateReflectorSystem(); } catch (e) { console.error('[gameLoop] updateReflectorSystem error:', e); }
@@ -310,6 +319,13 @@ export function renderFrame() {
   // 9) UI last (HUD)
   if (typeof drawUI === 'function') {
     try { drawUI(); } catch (e) {}
+  }
+  
+  // 10) Weapon level-up notifications (on top of everything)
+  try {
+    drawWeaponLevelUpNotifications(state.ctx);
+  } catch (e) {
+    console.error('[renderFrame] weapon notification draw error:', e);
   }
 }
 
