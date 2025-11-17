@@ -5,13 +5,23 @@ import { skipOpeningCinematic } from './openingCinematic.js';
 const DOUBLE_TAP_WINDOW = 300; // milliseconds
 const DASH_DURATION = 15; // frames (~250ms at 60fps)
 const DASH_COOLDOWN = 30; // frames (~500ms at 60fps)
-const DASH_SPEED_MULTIPLIER = 2.5; // 2.5x normal speed
+const DASH_SPEED_BASE = 2.5; // Base dash speed multiplier
 export const BOOST_SPEED_MULTIPLIER = 2.0; // 2x normal speed for boost
 export const BOOST_DEPLETION_RATE = 1.5; // Boost meter depletion per frame
 export const BOOST_REGENERATION_RATE = 0.3; // Boost meter regeneration per frame
 const RAM_MODE_DURATION = 90; // frames (~1.5 seconds at 60fps)
 const RAM_MODE_BOOST_COST = 2.0; // Boost depletion per frame while in ram mode
-const RAM_MODE_SPEED_MULTIPLIER = 3.0; // 3x normal speed for ram mode
+const RAM_MODE_BASE_SPEED = 3.0; // Base ram mode speed multiplier
+
+// Helper function to get dash speed multiplier based on level
+export function getDashSpeedMultiplier(level) {
+  return DASH_SPEED_BASE + (level - 1) * 0.5; // 2.5x, 3.0x, 3.5x for levels 1-3
+}
+
+// Helper function to get ram speed multiplier based on level
+export function getRamSpeedMultiplier(level) {
+  return RAM_MODE_BASE_SPEED + (level - 1) * 0.5; // 3.0x, 3.5x, 4.0x for levels 1-3
+}
 
 export function setupInputHandlers() {
   window.addEventListener("keydown", (e) => {

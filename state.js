@@ -89,6 +89,14 @@ export let player = {
   boostMeter: 100,
   maxBoostMeter: 100,
   boostKey: null, // Track which key activated boost
+  // Ability levels (1-3)
+  dashLevel: 1,
+  ramLevel: 1,
+  megaCannonLevel: 1,
+  // Mega cannon charging system
+  megaCannonCharging: false,
+  megaCannonChargeTime: 0,
+  megaCannonMaxCharge: 60, // frames (~1 second at 60fps)
   // Reflector power-up system (now creates shield instead of missiles)
   reflectorLevel: 0,
   reflectorCooldown: 0,

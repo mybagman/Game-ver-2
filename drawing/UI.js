@@ -407,7 +407,7 @@ export function drawUI() {
     ctx.fillText('SHIELD', shbX + 3, shbY - 8);
   }
   
-  // Boost meter (horizontal, below health) - Added for boost system
+  // Boost meter (horizontal, below health) - 3-level system
   const boostX = leftPanelX + 15;
   const boostY = leftPanelY + 130;
   const boostW = leftPanelW - 30;
@@ -422,9 +422,24 @@ export function drawUI() {
   ctx.lineWidth = 2;
   ctx.strokeRect(boostX, boostY, boostW, boostH);
   
-  // Boost fill
+  // 3-level divisions (33%, 66%, 100%)
+  ctx.strokeStyle = `rgba(100, 200, 255, ${0.3 * leftPanelTransparency})`;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(boostX + boostW / 3, boostY);
+  ctx.lineTo(boostX + boostW / 3, boostY + boostH);
+  ctx.moveTo(boostX + boostW * 2 / 3, boostY);
+  ctx.lineTo(boostX + boostW * 2 / 3, boostY + boostH);
+  ctx.stroke();
+  
+  // Boost fill with level-based color
   const boostRatio = Math.max(0, state.player.boostMeter / state.player.maxBoostMeter);
   const boostWidth = boostW * boostRatio;
+  
+  // Determine current boost level (1-3) based on meter
+  let boostLevel = 1;
+  if (boostRatio >= 0.66) boostLevel = 3;
+  else if (boostRatio >= 0.33) boostLevel = 2;
   
   // Gradient based on boost level (with transparency)
   const boostGrad = ctx.createLinearGradient(boostX, boostY, boostX + boostW, boostY);
@@ -434,17 +449,26 @@ export function drawUI() {
     boostGrad.addColorStop(0, `rgba(255, 200, 50, ${pulseIntensity * leftPanelTransparency})`);
     boostGrad.addColorStop(1, `rgba(255, 150, 0, ${pulseIntensity * leftPanelTransparency})`);
   } else {
-    boostGrad.addColorStop(0, `rgba(100, 200, 255, ${0.9 * leftPanelTransparency})`);
-    boostGrad.addColorStop(1, `rgba(50, 150, 255, ${0.9 * leftPanelTransparency})`);
+    // Color changes based on level
+    if (boostLevel === 3) {
+      boostGrad.addColorStop(0, `rgba(50, 255, 150, ${0.9 * leftPanelTransparency})`);
+      boostGrad.addColorStop(1, `rgba(50, 200, 255, ${0.9 * leftPanelTransparency})`);
+    } else if (boostLevel === 2) {
+      boostGrad.addColorStop(0, `rgba(100, 200, 255, ${0.9 * leftPanelTransparency})`);
+      boostGrad.addColorStop(1, `rgba(50, 150, 255, ${0.9 * leftPanelTransparency})`);
+    } else {
+      boostGrad.addColorStop(0, `rgba(150, 150, 200, ${0.9 * leftPanelTransparency})`);
+      boostGrad.addColorStop(1, `rgba(100, 100, 180, ${0.9 * leftPanelTransparency})`);
+    }
   }
   
   ctx.fillStyle = boostGrad;
   ctx.fillRect(boostX + 2, boostY + 2, boostWidth - 4, boostH - 4);
   
-  // Boost label
+  // Boost label with level indicator
   ctx.fillStyle = `rgba(100, 200, 255, ${0.9 * leftPanelTransparency})`;
   ctx.font = '9px Orbitron, monospace';
-  ctx.fillText('BOOST', boostX, boostY - 4);
+  ctx.fillText(`BOOST LV${boostLevel}`, boostX, boostY - 4);
   
   // Lives indicator - Made smaller
   ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * leftPanelTransparency})`;
@@ -539,6 +563,63 @@ export function drawUI() {
     ctx.fillText(`EMP`, weaponPanelX + 10, weaponY);
     ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * weaponPanelTransparency})`;
     ctx.fillText(`LV ${state.player.reflectorLevel}`, weaponPanelX + 140, weaponY);
+  }
+  
+  // === BOTTOM-RIGHT: PLAYER ABILITIES PANEL ===
+  const abilitiesPanelX = width - 190;
+  const abilitiesPanelY = height - 130;
+  const abilitiesPanelW = 160;
+  const abilitiesPanelH = 100;
+  const abilitiesPanelTransparency = calculateRegionTransparency(abilitiesPanelX, abilitiesPanelY, abilitiesPanelW, abilitiesPanelH);
+  
+  drawAngularPanel(ctx, abilitiesPanelX, abilitiesPanelY, abilitiesPanelW, abilitiesPanelH);
+  
+  // Panel title
+  ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * abilitiesPanelTransparency})`;
+  ctx.font = '11px Orbitron, monospace';
+  ctx.fillText('ABILITIES', abilitiesPanelX + 10, abilitiesPanelY + 18);
+  
+  // Ability readouts
+  let abilityY = abilitiesPanelY + 38;
+  const abilitySpacing = 18;
+  
+  // Dash
+  ctx.fillStyle = `rgba(100, 255, 200, ${0.9 * abilitiesPanelTransparency})`;
+  ctx.font = '9px Orbitron, monospace';
+  ctx.fillText('DASH', abilitiesPanelX + 10, abilityY);
+  ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * abilitiesPanelTransparency})`;
+  ctx.fillText(`LV ${state.player.dashLevel}`, abilitiesPanelX + 130, abilityY);
+  abilityY += abilitySpacing;
+  
+  // Ram Attack
+  ctx.fillStyle = `rgba(255, 150, 100, ${0.9 * abilitiesPanelTransparency})`;
+  ctx.fillText('RAM', abilitiesPanelX + 10, abilityY);
+  ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * abilitiesPanelTransparency})`;
+  ctx.fillText(`LV ${state.player.ramLevel}`, abilitiesPanelX + 130, abilityY);
+  abilityY += abilitySpacing;
+  
+  // Mega Cannon
+  ctx.fillStyle = `rgba(255, 200, 50, ${0.9 * abilitiesPanelTransparency})`;
+  ctx.fillText('M.CANNON', abilitiesPanelX + 10, abilityY);
+  ctx.fillStyle = `rgba(0, 255, 136, ${0.9 * abilitiesPanelTransparency})`;
+  ctx.fillText(`LV ${state.player.megaCannonLevel}`, abilitiesPanelX + 130, abilityY);
+  
+  // Charging indicator for mega cannon
+  if (state.player.megaCannonCharging) {
+    const chargeRatio = state.player.megaCannonChargeTime / state.player.megaCannonMaxCharge;
+    const chargeBarW = 100;
+    const chargeBarH = 4;
+    const chargeBarX = abilitiesPanelX + 30;
+    const chargeBarY = abilityY + 5;
+    
+    // Charge bar background
+    ctx.fillStyle = `rgba(100, 100, 50, ${0.5 * abilitiesPanelTransparency})`;
+    ctx.fillRect(chargeBarX, chargeBarY, chargeBarW, chargeBarH);
+    
+    // Charge fill
+    const chargePulse = Math.sin(state.frameCount * 0.5) * 0.3 + 0.7;
+    ctx.fillStyle = `rgba(255, 200, 50, ${chargePulse * abilitiesPanelTransparency})`;
+    ctx.fillRect(chargeBarX, chargeBarY, chargeBarW * chargeRatio, chargeBarH);
   }
   
   // === TOP-CENTER: SCORE/WAVE DISPLAY - Made smaller ===
