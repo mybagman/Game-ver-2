@@ -1,5 +1,6 @@
 import * as state from './state.js';
 import { createExplosion } from './utils.js';
+import { spawnMiniDrone } from './minidrones.js';
 
 export function getAuraSparkColor() {
   switch (state.goldStarAura.level) {
@@ -203,6 +204,11 @@ export function levelUpGoldStar() {
   state.goldStarAura.level++;
   updateAuraStats();
   triggerAuraShockwave();
+  
+  // Spawn a mini-drone for each level up
+  if (state.goldStar.alive) {
+    spawnMiniDrone(state.goldStar.x, state.goldStar.y);
+  }
 }
 
 export function updateGoldStarAura() {

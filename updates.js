@@ -1,5 +1,5 @@
 import * as state from './state.js';
-import { DASH_SPEED_MULTIPLIER, BOOST_SPEED_MULTIPLIER, BOOST_DEPLETION_RATE, BOOST_REGENERATION_RATE } from './input.js';
+import { getDashSpeedMultiplier, getRamSpeedMultiplier, BOOST_SPEED_MULTIPLIER, BOOST_DEPLETION_RATE, BOOST_REGENERATION_RATE } from './input.js';
 import { triggerTunnelCollision } from './drawing/Effects.js';
 
 export function updatePlayerMovement() {
@@ -32,6 +32,14 @@ export function updatePlayerMovement() {
   // Update Mega Shot cooldown
   if (state.player.megaShotCooldown > 0) {
     state.player.megaShotCooldown--;
+  }
+  
+  // Update Mega Cannon charging
+  if (state.player.megaCannonCharging) {
+    state.player.megaCannonChargeTime++;
+    if (state.player.megaCannonChargeTime > state.player.megaCannonMaxCharge) {
+      state.player.megaCannonChargeTime = state.player.megaCannonMaxCharge;
+    }
   }
   
   // Clear mega shot sequence if too old
@@ -96,9 +104,9 @@ export function updatePlayerMovement() {
     // Apply dash/boost/ram speed multiplier, and slow multiplier from EMP
     let speedMultiplier = 1;
     if (state.player.ramMode) {
-      speedMultiplier = 3.0; // RAM_MODE_SPEED_MULTIPLIER
+      speedMultiplier = getRamSpeedMultiplier(state.player.ramLevel || 1);
     } else if (state.player.dashing) {
-      speedMultiplier = DASH_SPEED_MULTIPLIER;
+      speedMultiplier = getDashSpeedMultiplier(state.player.dashLevel || 1);
     } else if (state.player.boosting) {
       speedMultiplier = BOOST_SPEED_MULTIPLIER;
     }

@@ -2,10 +2,10 @@
 import * as state from './state.js';
 import { createExplosion } from './utils.js';
 
-const MISSILE_FIRE_INTERVAL = 180; // frames (~3 seconds at 60fps) - Reduced fire rate
-const MISSILE_SPEED = 6;
-const MISSILE_TURN_RATE = 0.08;
-const MISSILE_LIFETIME = 180; // frames (~3 seconds)
+const MISSILE_FIRE_INTERVAL = 30; // frames (~0.5 seconds at 60fps) - Much faster fire rate
+const MISSILE_SPEED = 8;
+const MISSILE_TURN_RATE = 0.12;
+const MISSILE_LIFETIME = 120; // frames (~2 seconds) - Shorter lifetime for better performance
 const AOE_RADIUS = 50;  // Reduced from 70 for better balance
 const AOE_DAMAGE = 12;  // Reduced to 60% of original (20 -> 12) for better balance
 
@@ -97,13 +97,13 @@ export function updateHomingMissiles() {
     missile.x += missile.vx;
     missile.y += missile.vy;
     
-    // Add trail point
+    // Add trail point (reduced trail length for performance)
     if (!missile.trail) missile.trail = [];
-    missile.trail.push({ x: missile.x, y: missile.y, life: 10 });
-    missile.trail = missile.trail.filter(p => {
-      p.life--;
-      return p.life > 0;
-    });
+    if (state.frameCount % 2 === 0) { // Only add trail every other frame for performance
+      missile.trail.push({ x: missile.x, y: missile.y, life: 6 }); // Shorter trail life
+      if (missile.trail.length > 5) missile.trail.shift(); // Limit trail length
+    }
+    missile.trail.forEach(p => p.life--);
     
     // Check bounds
     if (missile.x < -50 || missile.x > state.canvas.width + 50 ||

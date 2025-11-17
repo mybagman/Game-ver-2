@@ -24,6 +24,7 @@ export let homingMissiles = [];
 export let empProjectiles = [];
 export let groundObjects = []; // Ground collision objects for building waves
 export let megatonneBombs = []; // Megatonne bomb projectiles
+export let miniDrones = []; // Mini-drones spawned by gold star level ups
 
 export let keys = {};
 export let shootCooldown = 0;
@@ -89,6 +90,14 @@ export let player = {
   boostMeter: 100,
   maxBoostMeter: 100,
   boostKey: null, // Track which key activated boost
+  // Ability levels (1-3)
+  dashLevel: 1,
+  ramLevel: 1,
+  megaCannonLevel: 1,
+  // Mega cannon charging system
+  megaCannonCharging: false,
+  megaCannonChargeTime: 0,
+  megaCannonMaxCharge: 60, // frames (~1 second at 60fps)
   // Reflector power-up system (now creates shield instead of missiles)
   reflectorLevel: 0,
   reflectorCooldown: 0,
@@ -311,6 +320,7 @@ export function resetGame() {
   groundObjects.length = 0;
   megatonneBombs.length = 0;
   lightningStrikes.length = 0;
+  miniDrones.length = 0;
 
   // reset simple state
   keys = {};
