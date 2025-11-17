@@ -252,5 +252,3 @@ export function setupInputHandlers() {
     state.canvas.height = window.innerHeight;
   });
 }
-
-export { DASH_SPEED_MULTIPLIER };
