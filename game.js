@@ -13,7 +13,7 @@ import {
   updateCloudParticles
 } from './updates.js';
 import { updateEnemies } from './enemies.js';
-import { updateLightning, checkBulletCollisions, updateLightningStrikes } from './collisions.js';
+import { updateLightning, checkBulletCollisions, updateLightningStrikes, checkRamModeCollisions } from './collisions.js';
 import { updateGoldStar } from './goldstar.js';
 import { updateGoldStarAura, resetAuraOnDeath } from './aura.js';
 import { tryAdvanceWave, spawnWave, renderCinematic } from './waveManager.js';
@@ -106,6 +106,7 @@ export function gameLoop(now) {
   try { updateReflectorSystem(); } catch (e) { console.error('[gameLoop] updateReflectorSystem error:', e); }
   try { updateHomingMissiles(); } catch (e) { console.error('[gameLoop] updateHomingMissiles error:', e); }
   try { checkBulletCollisions(); } catch (e) { console.error('[gameLoop] checkBulletCollisions error:', e); }
+  try { checkRamModeCollisions(); } catch (e) { console.error('[gameLoop] checkRamModeCollisions error:', e); }
   try { tryAdvanceWave(); } catch (e) { console.error('[gameLoop] tryAdvanceWave error:', e); }
 
   // Player death handling

@@ -79,74 +79,13 @@ export function setupInputHandlers() {
     if (e.key === "ArrowLeft") state.keys["arrowleft"] = true;
     if (e.key === "ArrowRight") state.keys["arrowright"] = true;
     
-    // Check for Mega Shot: x key
+    // Check for Mega Cannon: x key - now with charging mechanic
     if (e.key === "x" &&
         state.player.megaShotCooldown === 0 &&
         state.player.boostMeter >= 25) {
-      // Find closest enemy to target
-      const allTargets = [
-        ...state.enemies,
-        ...state.diamonds,
-        ...state.tanks,
-        ...state.walkers,
-        ...state.mechs,
-        ...state.dropships
-      ];
-      
-      let dirX = 1; // Default forward (right)
-      let dirY = 0;
-      
-      if (allTargets.length > 0) {
-        // Find closest enemy
-        let closestTarget = null;
-        let closestDist = Infinity;
-        
-        for (const target of allTargets) {
-          if (!target || target.health <= 0) continue;
-          const dist = Math.hypot(target.x - state.player.x, target.y - state.player.y);
-          if (dist < closestDist) {
-            closestDist = dist;
-            closestTarget = target;
-          }
-        }
-        
-        if (closestTarget) {
-          // Aim at closest enemy
-          dirX = closestTarget.x - state.player.x;
-          dirY = closestTarget.y - state.player.y;
-        } else {
-          // No valid target, use player's current direction
-          if (state.keys["w"]) dirY = -1;
-          if (state.keys["s"]) dirY = 1;
-          if (state.keys["a"]) dirX = -1;
-          if (state.keys["d"]) dirX = 1;
-        }
-      } else {
-        // No enemies, use player's current direction
-        if (state.keys["w"]) dirY = -1;
-        if (state.keys["s"]) dirY = 1;
-        if (state.keys["a"]) dirX = -1;
-        if (state.keys["d"]) dirX = 1;
-      }
-      
-      const mag = Math.hypot(dirX, dirY) || 1;
-      
-      // Create Mega Shot bullet
-      state.pushBullet({
-        x: state.player.x,
-        y: state.player.y,
-        dx: (dirX / mag) * 8,
-        dy: (dirY / mag) * 8,
-        size: 20,
-        owner: "player",
-        damage: 50,
-        color: "megashot",
-        piercing: true // Can hit multiple enemies
-      });
-      
-      // Drain boost and set cooldown
-      state.player.boostMeter = Math.max(0, state.player.boostMeter - 25);
-      state.player.megaShotCooldown = 120; // 2 seconds at 60fps
+      // Start charging
+      state.player.megaCannonCharging = true;
+      state.player.megaCannonChargeTime = 0;
     }
 
     // Space bar for Megatonne Bomb
@@ -196,6 +135,102 @@ export function setupInputHandlers() {
     if (e.key === "ArrowDown") state.keys["arrowdown"] = false;
     if (e.key === "ArrowLeft") state.keys["arrowleft"] = false;
     if (e.key === "ArrowRight") state.keys["arrowright"] = false;
+    
+    // X key release - fire mega cannon
+    if (e.key === "x" && state.player.megaCannonCharging) {
+      // Fire mega cannon based on charge time
+      const chargeRatio = Math.min(1, state.player.megaCannonChargeTime / state.player.megaCannonMaxCharge);
+      const megaCannonLevel = state.player.megaCannonLevel || 1;
+      
+      // Find closest enemy to target
+      const allTargets = [
+        ...state.enemies,
+        ...state.diamonds,
+        ...state.tanks,
+        ...state.walkers,
+        ...state.mechs,
+        ...state.dropships
+      ];
+      
+      let dirX = 1; // Default forward (right)
+      let dirY = 0;
+      
+      if (allTargets.length > 0) {
+        // Find closest enemy
+        let closestTarget = null;
+        let closestDist = Infinity;
+        
+        for (const target of allTargets) {
+          if (!target || target.health <= 0) continue;
+          const dist = Math.hypot(target.x - state.player.x, target.y - state.player.y);
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestTarget = target;
+          }
+        }
+        
+        if (closestTarget) {
+          dirX = closestTarget.x - state.player.x;
+          dirY = closestTarget.y - state.player.y;
+        } else {
+          if (state.keys["w"]) dirY = -1;
+          if (state.keys["s"]) dirY = 1;
+          if (state.keys["a"]) dirX = -1;
+          if (state.keys["d"]) dirX = 1;
+        }
+      } else {
+        if (state.keys["w"]) dirY = -1;
+        if (state.keys["s"]) dirY = 1;
+        if (state.keys["a"]) dirX = -1;
+        if (state.keys["d"]) dirX = 1;
+      }
+      
+      const mag = Math.hypot(dirX, dirY) || 1;
+      
+      // Base damage scales with level, charge multiplies it
+      const baseDamage = 40 + (megaCannonLevel - 1) * 20; // 40, 60, 80
+      const chargeDamageMultiplier = 1 + chargeRatio; // 1x to 2x
+      const damage = baseDamage * chargeDamageMultiplier;
+      
+      // Size scales with charge
+      const size = 20 + chargeRatio * 10; // 20 to 30
+      
+      // AOE radius scales with level and charge
+      const baseAOE = 60 + (megaCannonLevel - 1) * 20; // 60, 80, 100
+      const aoeRadius = baseAOE * (1 + chargeRatio * 0.5); // Up to 1.5x
+      
+      // EMP effect scales with level and charge
+      const empDuration = 60 + (megaCannonLevel - 1) * 30 + chargeRatio * 60; // 60-180 frames
+      const empStrength = 0.3 + (megaCannonLevel - 1) * 0.1 + chargeRatio * 0.2; // 0.3-0.8
+      
+      // Create Mega Cannon bullet
+      state.pushBullet({
+        x: state.player.x,
+        y: state.player.y,
+        dx: (dirX / mag) * 8,
+        dy: (dirY / mag) * 8,
+        size: size,
+        owner: "player",
+        damage: damage,
+        color: "megashot",
+        piercing: true,
+        megaCannon: true,
+        aoeRadius: aoeRadius,
+        empDuration: empDuration,
+        empStrength: empStrength,
+        chargeLevel: chargeRatio
+      });
+      
+      // Drain boost and set cooldown (reduced cooldown at higher levels)
+      const boostCost = 25 * (1 + chargeRatio * 0.5);
+      state.player.boostMeter = Math.max(0, state.player.boostMeter - boostCost);
+      const baseCooldown = 120 - (megaCannonLevel - 1) * 20; // 120, 100, 80 frames
+      state.player.megaShotCooldown = baseCooldown;
+      
+      // Reset charging state
+      state.player.megaCannonCharging = false;
+      state.player.megaCannonChargeTime = 0;
+    }
     
     // Space bar release
     if (e.key === " " || key === "space") {

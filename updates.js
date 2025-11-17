@@ -34,6 +34,14 @@ export function updatePlayerMovement() {
     state.player.megaShotCooldown--;
   }
   
+  // Update Mega Cannon charging
+  if (state.player.megaCannonCharging) {
+    state.player.megaCannonChargeTime++;
+    if (state.player.megaCannonChargeTime > state.player.megaCannonMaxCharge) {
+      state.player.megaCannonChargeTime = state.player.megaCannonMaxCharge;
+    }
+  }
+  
   // Clear mega shot sequence if too old
   if (state.player.megaShotSequence.length > 0) {
     const now = Date.now();

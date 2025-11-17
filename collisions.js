@@ -89,15 +89,19 @@ function applyKnockback(entity, bullet, force = 8) {
   entity.y += (dy / dist) * force;
 }
 
-// Helper function to apply plasma AOE damage
+// Helper function to apply plasma AOE damage and mega cannon effects
 function applyPlasmaAOE(bullet) {
-  if (!bullet.plasma || !bullet.aoeRadius) return;
+  if ((!bullet.plasma && !bullet.megaCannon) || !bullet.aoeRadius) return;
   
   const aoeRadius = bullet.aoeRadius;
-  const aoeDamage = (bullet.damage || 25) * 0.6; // 60% damage in AOE
+  const aoeDamage = bullet.megaCannon ? (bullet.damage || 50) * 0.5 : (bullet.damage || 25) * 0.6;
   
   // Create explosion visual
-  createExplosion(bullet.x, bullet.y, "plasma");
+  const explosionColor = bullet.megaCannon ? "megashot" : "plasma";
+  createExplosion(bullet.x, bullet.y, explosionColor);
+  
+  // Mega cannon specific EMP effect
+  const hasEMP = bullet.megaCannon && bullet.empDuration > 0;
   
   // Create shockwave particles
   for (let i = 0; i < 20; i++) {
@@ -113,13 +117,17 @@ function applyPlasmaAOE(bullet) {
     });
   }
   
-  // Damage all enemies in AOE radius
+  // Damage all enemies in AOE radius (and apply EMP for mega cannon)
   state.enemies.forEach(e => {
     if (!e) return;
     const dist = Math.hypot(e.x - bullet.x, e.y - bullet.y);
     if (dist <= aoeRadius) {
       e.health -= aoeDamage;
-      // Visual feedback for AOE damage
+      // Apply EMP slow effect from mega cannon
+      if (hasEMP) {
+        e.slowTimer = bullet.empDuration;
+        e.slowedBy = bullet.empStrength;
+      }
       createExplosion(e.x, e.y, "purple");
     }
   });
@@ -128,6 +136,10 @@ function applyPlasmaAOE(bullet) {
     const dist = Math.hypot(tank.x - bullet.x, tank.y - bullet.y);
     if (dist <= aoeRadius) {
       tank.health -= aoeDamage;
+      if (hasEMP) {
+        tank.slowTimer = bullet.empDuration;
+        tank.slowedBy = bullet.empStrength;
+      }
       createExplosion(tank.x, tank.y, "purple");
     }
   });
@@ -136,6 +148,10 @@ function applyPlasmaAOE(bullet) {
     const dist = Math.hypot(walker.x - bullet.x, walker.y - bullet.y);
     if (dist <= aoeRadius) {
       walker.health -= aoeDamage;
+      if (hasEMP) {
+        walker.slowTimer = bullet.empDuration;
+        walker.slowedBy = bullet.empStrength;
+      }
       createExplosion(walker.x, walker.y, "purple");
     }
   });
@@ -151,6 +167,10 @@ function applyPlasmaAOE(bullet) {
       } else {
         mech.health -= aoeDamage;
       }
+      if (hasEMP) {
+        mech.slowTimer = bullet.empDuration;
+        mech.slowedBy = bullet.empStrength;
+      }
       createExplosion(mech.x, mech.y, "purple");
     }
   });
@@ -159,6 +179,10 @@ function applyPlasmaAOE(bullet) {
     const dist = Math.hypot(dropship.x - bullet.x, dropship.y - bullet.y);
     if (dist <= aoeRadius) {
       dropship.health -= aoeDamage;
+      if (hasEMP) {
+        dropship.slowTimer = bullet.empDuration;
+        dropship.slowedBy = bullet.empStrength;
+      }
       createExplosion(dropship.x, dropship.y, "purple");
     }
   });
@@ -510,5 +534,183 @@ function createLightningStrike(level) {
     targets.forEach(target => {
       createExplosion(target.x, target.y, "cyan");
     });
+  }
+}
+
+// Ram mode collision system - player rams through enemies with shockwave
+export function checkRamModeCollisions() {
+  if (!state.player.ramMode) return;
+  
+  const ramLevel = state.player.ramLevel || 1;
+  const baseDamage = 40;
+  const damagePerLevel = 20; // 40, 60, 80 damage for levels 1-3
+  const ramDamage = baseDamage + (ramLevel - 1) * damagePerLevel;
+  
+  // Base shockwave radius scales with level
+  const baseShockwaveRadius = 40;
+  const shockwavePerLevel = 20; // 40, 60, 80 radius for levels 1-3
+  const shockwaveRadius = baseShockwaveRadius + (ramLevel - 1) * shockwavePerLevel;
+  
+  const hitEnemies = [];
+  
+  // Check collision with regular enemies
+  for (let ei = state.enemies.length - 1; ei >= 0; ei--) {
+    const enemy = state.enemies[ei];
+    const dist = Math.hypot(enemy.x - state.player.x, enemy.y - state.player.y);
+    
+    if (dist < state.player.size + (enemy.size || 30) / 2) {
+      enemy.health -= ramDamage;
+      hitEnemies.push(enemy);
+      
+      // Knockback
+      const dx = enemy.x - state.player.x;
+      const dy = enemy.y - state.player.y;
+      const mag = dist || 1;
+      enemy.x += (dx / mag) * 30;
+      enemy.y += (dy / mag) * 30;
+      
+      if (enemy.health <= 0) {
+        if (!enemy.fromBoss) {
+          if (enemy.type === "triangle") { state.addScore(10); spawnRandomPowerUp(enemy.x, enemy.y); }
+          else if (enemy.type === "red-square") { state.addScore(10); spawnRandomPowerUp(enemy.x, enemy.y); }
+        }
+        state.enemies.splice(ei, 1);
+      }
+    }
+  }
+  
+  // Check collision with tanks
+  for (let ti = state.tanks.length - 1; ti >= 0; ti--) {
+    const tank = state.tanks[ti];
+    const dist = Math.hypot(tank.x - state.player.x, tank.y - state.player.y);
+    
+    if (dist < state.player.size + 30) {
+      tank.health -= ramDamage;
+      hitEnemies.push(tank);
+      
+      // Knockback
+      const dx = tank.x - state.player.x;
+      const dy = tank.y - state.player.y;
+      const mag = dist || 1;
+      tank.x += (dx / mag) * 25;
+      tank.y += (dy / mag) * 25;
+    }
+  }
+  
+  // Check collision with walkers
+  for (let wi = state.walkers.length - 1; wi >= 0; wi--) {
+    const walker = state.walkers[wi];
+    const dist = Math.hypot(walker.x - state.player.x, walker.y - state.player.y);
+    
+    if (dist < state.player.size + 25) {
+      walker.health -= ramDamage;
+      hitEnemies.push(walker);
+      
+      // Knockback
+      const dx = walker.x - state.player.x;
+      const dy = walker.y - state.player.y;
+      const mag = dist || 1;
+      walker.x += (dx / mag) * 28;
+      walker.y += (dy / mag) * 28;
+    }
+  }
+  
+  // Check collision with mechs
+  for (let mi = state.mechs.length - 1; mi >= 0; mi--) {
+    const mech = state.mechs[mi];
+    const dist = Math.hypot(mech.x - state.player.x, mech.y - state.player.y);
+    
+    if (dist < state.player.size + 40) {
+      if (mech.shieldActive && mech.shieldHealth > 0) {
+        mech.shieldHealth -= ramDamage;
+        if (mech.shieldHealth <= 0) {
+          mech.shieldActive = false;
+        }
+      } else {
+        mech.health -= ramDamage;
+      }
+      hitEnemies.push(mech);
+      
+      // Knockback
+      const dx = mech.x - state.player.x;
+      const dy = mech.y - state.player.y;
+      const mag = dist || 1;
+      mech.x += (dx / mag) * 20;
+      mech.y += (dy / mag) * 20;
+    }
+  }
+  
+  // If we hit anything, create shockwave effect with level-based radius
+  if (hitEnemies.length > 0 && state.frameCount % 3 === 0) {
+    // Visual shockwave ring
+    state.pushRedPunchEffect({
+      x: state.player.x,
+      y: state.player.y,
+      maxR: shockwaveRadius,
+      r: 0,
+      life: 12,
+      maxLife: 12,
+      color: ramLevel === 3 ? "rgba(255, 100, 255, 0.9)" : ramLevel === 2 ? "rgba(255, 150, 100, 0.8)" : "rgba(255, 200, 100, 0.7)",
+      fill: false,
+      ring: true
+    });
+    
+    // Shockwave particles
+    const particleCount = 6 + ramLevel * 4; // More particles at higher levels
+    for (let i = 0; i < particleCount; i++) {
+      const angle = (i / particleCount) * Math.PI * 2;
+      state.pushExplosion({
+        x: state.player.x,
+        y: state.player.y,
+        dx: Math.cos(angle) * 5,
+        dy: Math.sin(angle) * 5,
+        radius: 4 + ramLevel,
+        color: ramLevel === 3 ? "rgba(255, 100, 255, 0.9)" : ramLevel === 2 ? "rgba(255, 150, 100, 0.8)" : "rgba(255, 200, 100, 0.7)",
+        life: 15
+      });
+    }
+    
+    // Apply shockwave AOE damage to nearby enemies
+    const shockwaveAOEDamage = ramDamage * 0.4; // 40% of direct hit damage
+    
+    // AOE damage to enemies
+    for (const enemy of state.enemies) {
+      const dist = Math.hypot(enemy.x - state.player.x, enemy.y - state.player.y);
+      if (dist < shockwaveRadius && dist > state.player.size + (enemy.size || 30) / 2) {
+        enemy.health -= shockwaveAOEDamage;
+        createExplosion(enemy.x, enemy.y, "orange");
+      }
+    }
+    
+    // AOE damage to tanks
+    for (const tank of state.tanks) {
+      const dist = Math.hypot(tank.x - state.player.x, tank.y - state.player.y);
+      if (dist < shockwaveRadius && dist > state.player.size + 30) {
+        tank.health -= shockwaveAOEDamage;
+        createExplosion(tank.x, tank.y, "orange");
+      }
+    }
+    
+    // AOE damage to walkers
+    for (const walker of state.walkers) {
+      const dist = Math.hypot(walker.x - state.player.x, walker.y - state.player.y);
+      if (dist < shockwaveRadius && dist > state.player.size + 25) {
+        walker.health -= shockwaveAOEDamage;
+        createExplosion(walker.x, walker.y, "orange");
+      }
+    }
+    
+    // AOE damage to mechs
+    for (const mech of state.mechs) {
+      const dist = Math.hypot(mech.x - state.player.x, mech.y - state.player.y);
+      if (dist < shockwaveRadius && dist > state.player.size + 40) {
+        if (mech.shieldActive && mech.shieldHealth > 0) {
+          mech.shieldHealth -= shockwaveAOEDamage;
+        } else {
+          mech.health -= shockwaveAOEDamage;
+        }
+        createExplosion(mech.x, mech.y, "orange");
+      }
+    }
   }
 }
