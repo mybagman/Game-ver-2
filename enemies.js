@@ -912,57 +912,68 @@ export function updateEnemies() {
       }
       
       if (e.type === "triangle") {
-        // Blue triangles: Support units that hang back and provide fire support
+        // Blue triangles: Support units using gold star dodge logic but slower
         if (e.vx === undefined && e.vy === undefined) {
-          // Calculate speed multiplier based on damage taken (reduces speed when damaged)
-          // Assumes triangle has 40 health initially
-          const initialHealth = 40;
-          const healthPercent = e.health / initialHealth;
-          const damageSpeedMultiplier = 0.5 + (healthPercent * 0.5); // Ranges from 0.5 (at 0 health) to 1.0 (at full health)
-          const finalSpeedMultiplier = damageSpeedMultiplier * slowMultiplier;
-          
-          const optimalDistance = 200; // Maintain distance from player
-          
-          if (dist < optimalDistance - 50) {
-            // Too close - back away
-            e.x -= (dx/dist)*e.speed * 1.2 * finalSpeedMultiplier;
-            e.y -= (dy/dist)*e.speed * 1.2 * finalSpeedMultiplier;
-          } else if (dist > optimalDistance + 50) {
-            // Too far - move closer
-            e.x += (dx/dist)*e.speed * 0.8 * finalSpeedMultiplier;
-            e.y += (dy/dist)*e.speed * 0.8 * finalSpeedMultiplier;
-          } else {
-            // At optimal range - strafe perpendicular to player
-            const perpX = -dy/dist;
-            const perpY = dx/dist;
-            e.strafeDirection = e.strafeDirection || (Math.random() < 0.5 ? 1 : -1);
-            // Change strafe direction occasionally
-            if (Math.random() < 0.02) e.strafeDirection *= -1;
-            e.x += perpX * e.speed * 0.6 * e.strafeDirection * finalSpeedMultiplier;
-            e.y += perpY * e.speed * 0.6 * e.strafeDirection * finalSpeedMultiplier;
-          }
-          
-          // Sophisticated danger avoidance for incoming player bullets
-          // Speed reduced when damaged and slow to make dodge less effective
-          let dangerX = 0, dangerY = 0;
+          // Gold star-style danger avoidance (slower than gold star)
+          let dangerX = 0, dangerY = 0, dangerCount = 0;
           const DANGER_RADIUS = 120;
           
+          // Avoid player bullets
           for (let bi = state.bullets.length - 1; bi >= 0; bi--) {
             const b = state.bullets[bi];
             if (b.owner === "player") {
               const bulletDist = Math.hypot(b.x - e.x, b.y - e.y);
               if (bulletDist < DANGER_RADIUS && bulletDist > 0) {
                 const weight = (DANGER_RADIUS - bulletDist) / DANGER_RADIUS;
-                dangerX += ((e.x || 0) - b.x) / bulletDist * weight;
-                dangerY += ((e.y || 0) - b.y) / bulletDist * weight;
+                dangerX += (e.x - b.x) / bulletDist * weight;
+                dangerY += (e.y - b.y) / bulletDist * weight;
+                dangerCount++;
               }
             }
           }
           
-          // Apply danger avoidance movement with reduced effectiveness when damaged and slowed
-          if (dangerX !== 0 || dangerY !== 0) {
-            e.x += dangerX * e.speed * 1.5 * finalSpeedMultiplier;
-            e.y += dangerY * e.speed * 1.5 * finalSpeedMultiplier;
+          // Avoid getting too close to player
+          if (dist < 150) {
+            const weight = (150 - dist) / 150;
+            dangerX += (e.x - state.player.x) / dist * weight * 0.5;
+            dangerY += (e.y - state.player.y) / dist * weight * 0.5;
+            dangerCount++;
+          }
+          
+          let moveX = 0, moveY = 0;
+          
+          if (dangerCount > 0) {
+            // Dodge away from danger (like gold star)
+            moveX = dangerX;
+            moveY = dangerY;
+          } else {
+            // Maintain optimal distance from player (200 units)
+            const optimalDistance = 200;
+            if (dist > optimalDistance + 50) {
+              // Too far - move closer
+              moveX = dx / dist * 0.5;
+              moveY = dy / dist * 0.5;
+            } else if (dist < optimalDistance - 50) {
+              // Too close - back away
+              moveX = -dx / dist * 0.5;
+              moveY = -dy / dist * 0.5;
+            } else {
+              // At optimal range - strafe perpendicular to player
+              const perpX = -dy/dist;
+              const perpY = dx/dist;
+              e.strafeDirection = e.strafeDirection || (Math.random() < 0.5 ? 1 : -1);
+              if (Math.random() < 0.02) e.strafeDirection *= -1;
+              moveX = perpX * 0.4 * e.strafeDirection;
+              moveY = perpY * 0.4 * e.strafeDirection;
+            }
+          }
+          
+          // Apply movement (60% slower than gold star speed of 2)
+          const triangleSpeed = 0.8; // Slower than gold star's 2.0
+          const moveMag = Math.hypot(moveX, moveY);
+          if (moveMag > 0) {
+            e.x += (moveX / moveMag) * triangleSpeed * slowMultiplier;
+            e.y += (moveY / moveMag) * triangleSpeed * slowMultiplier;
           }
         }
         

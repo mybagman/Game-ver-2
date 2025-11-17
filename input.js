@@ -73,15 +73,51 @@ export function setupInputHandlers() {
     if (e.key === "x" &&
         state.player.megaShotCooldown === 0 &&
         state.player.boostMeter >= 25) {
-      // Calculate direction based on player's current direction
+      // Find closest enemy to target
+      const allTargets = [
+        ...state.enemies,
+        ...state.diamonds,
+        ...state.tanks,
+        ...state.walkers,
+        ...state.mechs,
+        ...state.dropships
+      ];
+      
       let dirX = 1; // Default forward (right)
       let dirY = 0;
       
-      // If player is moving, use that direction
-      if (state.keys["w"]) dirY = -1;
-      if (state.keys["s"]) dirY = 1;
-      if (state.keys["a"]) dirX = -1;
-      if (state.keys["d"]) dirX = 1;
+      if (allTargets.length > 0) {
+        // Find closest enemy
+        let closestTarget = null;
+        let closestDist = Infinity;
+        
+        for (const target of allTargets) {
+          if (!target || target.health <= 0) continue;
+          const dist = Math.hypot(target.x - state.player.x, target.y - state.player.y);
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestTarget = target;
+          }
+        }
+        
+        if (closestTarget) {
+          // Aim at closest enemy
+          dirX = closestTarget.x - state.player.x;
+          dirY = closestTarget.y - state.player.y;
+        } else {
+          // No valid target, use player's current direction
+          if (state.keys["w"]) dirY = -1;
+          if (state.keys["s"]) dirY = 1;
+          if (state.keys["a"]) dirX = -1;
+          if (state.keys["d"]) dirX = 1;
+        }
+      } else {
+        // No enemies, use player's current direction
+        if (state.keys["w"]) dirY = -1;
+        if (state.keys["s"]) dirY = 1;
+        if (state.keys["a"]) dirX = -1;
+        if (state.keys["d"]) dirX = 1;
+      }
       
       const mag = Math.hypot(dirX, dirY) || 1;
       
