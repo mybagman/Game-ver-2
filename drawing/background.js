@@ -1254,8 +1254,15 @@ export function drawBackground(waveNum) {
     return;
   }
   
-  // Waves 14+ (waveNum >= 13): Pixel art Earth scene with planet view, green ground, blue sky
-  if (waveNum >= 13) {
+  // Wave 14-15 (indices 13-14, desert-combat theme): Terminator-style post-war Earth
+  if (waveNum === 13 || waveNum === 14) {
+    drawTerminatorEarth();
+    state.incrementBackgroundOffset(0.5);
+    return;
+  }
+  
+  // Waves 16+ (waveNum >= 15): Pixel art Earth scene with planet view, green ground, blue sky
+  if (waveNum >= 15) {
     drawPixelArtEarth();
     state.incrementBackgroundOffset(0.5);
     return;

@@ -59,6 +59,24 @@ function getBulletDamage(bullet) {
   return bullet.damage || 10;
 }
 
+// Helper function to create spark effects when bullets hit
+function createSparkEffect(x, y, count = 6) {
+  const sparkColors = ["rgba(255, 200, 100, 0.9)", "rgba(255, 150, 50, 0.8)", "rgba(255, 255, 200, 0.9)"];
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2;
+    const speed = 2 + Math.random() * 3;
+    state.pushExplosion({
+      x: x,
+      y: y,
+      dx: Math.cos(angle) * speed,
+      dy: Math.sin(angle) * speed,
+      radius: 2 + Math.random() * 3,
+      color: sparkColors[i % sparkColors.length],
+      life: 10 + Math.random() * 10
+    });
+  }
+}
+
 // Helper function to apply knockback from repulsor bullets
 function applyKnockback(entity, bullet, force = 8) {
   if (!bullet.repulsor) return;
@@ -155,6 +173,7 @@ export function checkBulletCollisions() {
       const tank = state.tanks[ti];
       if (Math.hypot(b.x - tank.x, b.y - tank.y) < 30) {
         tank.health -= damage;
+        createSparkEffect(b.x, b.y, 8); // Add spark effects on impact
         // Add smoke particles on damage
         for (let i = 0; i < 3; i++) {
           state.pushExplosion({
@@ -179,6 +198,7 @@ export function checkBulletCollisions() {
       const walker = state.walkers[wi];
       if (Math.hypot(b.x - walker.x, b.y - walker.y) < 25) {
         walker.health -= damage;
+        createSparkEffect(b.x, b.y, 8); // Add spark effects on impact
         // Add smoke particles on damage
         for (let i = 0; i < 3; i++) {
           state.pushExplosion({
@@ -210,6 +230,7 @@ export function checkBulletCollisions() {
         } else {
           mech.health -= damage;
         }
+        createSparkEffect(b.x, b.y, 10); // Add spark effects on impact
         // Add smoke particles on damage
         for (let i = 0; i < 4; i++) {
           state.pushExplosion({
@@ -234,6 +255,7 @@ export function checkBulletCollisions() {
       const dropship = state.dropships[di];
       if (Math.hypot(b.x - dropship.x, b.y - dropship.y) < 35) {
         dropship.health -= damage;
+        createSparkEffect(b.x, b.y, 8); // Add spark effects on impact
         // Add smoke particles on damage
         for (let i = 0; i < 3; i++) {
           state.pushExplosion({
@@ -308,6 +330,8 @@ export function checkBulletCollisions() {
         if (Math.hypot(b.x-e.x, b.y-e.y) < (e.size||20)/2) {
           const bulletDamage = getBulletDamage(b);
           e.health -= (b.owner === "player" ? bulletDamage : 6);
+          
+          createSparkEffect(b.x, b.y, 6); // Add spark effects on impact
           
           // Add smoke particles on damage
           for (let i = 0; i < 2; i++) {
