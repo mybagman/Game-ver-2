@@ -16,6 +16,7 @@ import { updateEnemies } from './enemies.js';
 import { updateLightning, checkBulletCollisions, updateLightningStrikes, checkRamModeCollisions } from './collisions.js';
 import { updateGoldStar } from './goldstar.js';
 import { updateGoldStarAura, resetAuraOnDeath } from './aura.js';
+import { updateMiniDrones, drawMiniDrones } from './minidrones.js';
 import { tryAdvanceWave, spawnWave, renderCinematic } from './waveManager.js';
 import { updateReflectorSystem, updateHomingMissiles, drawHomingMissiles } from './homingMissiles.js';
 import { renderOpeningCinematic, isOpeningCinematicComplete } from './openingCinematic.js';
@@ -100,6 +101,7 @@ export function gameLoop(now) {
   try { updateRedPunchEffects(); } catch (e) { console.error('[gameLoop] updateRedPunchEffects error:', e); }
   try { updateGoldStarAura(); } catch (e) { console.error('[gameLoop] updateGoldStarAura error:', e); }
   try { updateGoldStar(); } catch (e) { console.error('[gameLoop] updateGoldStar error:', e); }
+  try { updateMiniDrones(); } catch (e) { console.error('[gameLoop] updateMiniDrones error:', e); }
   try { updateEnemies(); } catch (e) { console.error('[gameLoop] updateEnemies error:', e); }
   try { updateDebris(); } catch (e) { console.error('[gameLoop] updateDebris error:', e); }
   try { updateCloudParticles(); } catch (e) { console.error('[gameLoop] updateCloudParticles error:', e); }
@@ -298,6 +300,11 @@ export function renderFrame() {
   }
   if (typeof drawGoldStar === 'function') {
     try { drawGoldStar(); } catch (e) { console.error('[renderFrame] drawGoldStar error:', e); }
+  }
+  
+  // 8b) Mini-drones (between gold star and UI)
+  if (typeof drawMiniDrones === 'function') {
+    try { drawMiniDrones(state.ctx); } catch (e) { console.error('[renderFrame] drawMiniDrones error:', e); }
   }
 
   // 9) UI last (HUD)

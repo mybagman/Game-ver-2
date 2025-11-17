@@ -24,6 +24,7 @@ export let homingMissiles = [];
 export let empProjectiles = [];
 export let groundObjects = []; // Ground collision objects for building waves
 export let megatonneBombs = []; // Megatonne bomb projectiles
+export let miniDrones = []; // Mini-drones spawned by gold star level ups
 
 export let keys = {};
 export let shootCooldown = 0;
@@ -319,6 +320,7 @@ export function resetGame() {
   groundObjects.length = 0;
   megatonneBombs.length = 0;
   lightningStrikes.length = 0;
+  miniDrones.length = 0;
 
   // reset simple state
   keys = {};
