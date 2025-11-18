@@ -2,6 +2,32 @@ import * as state from './state.js';
 import { createExplosion, spawnPowerUp, spawnRandomPowerUp, spawnDebris, handleTunnelCollisionForEntity, diamondReleaseAttachedEnemies } from './utils.js';
 import { applyPlayerDamage } from './collisions.js';
 
+// Helper function to constrain enemies to screen boundaries in the last stage
+function applyScreenBoundaryConstraints(enemy) {
+  // Only apply on the last stage (wave 31 in 0-indexed array, displayed as wave 32)
+  if (state.wave !== 31) return;
+  
+  const margin = enemy.size / 2 + 10; // Keep some margin from edge
+  const minX = margin;
+  const maxX = state.canvas.width - margin;
+  const minY = margin;
+  const maxY = state.canvas.height - margin;
+  
+  // Constrain position to screen bounds
+  if (enemy.x < minX) enemy.x = minX;
+  if (enemy.x > maxX) enemy.x = maxX;
+  if (enemy.y < minY) enemy.y = minY;
+  if (enemy.y > maxY) enemy.y = maxY;
+  
+  // Also constrain velocity to push enemies back toward screen
+  if (enemy.vx !== undefined && enemy.vy !== undefined) {
+    if (enemy.x <= minX && enemy.vx < 0) enemy.vx = 0;
+    if (enemy.x >= maxX && enemy.vx > 0) enemy.vx = 0;
+    if (enemy.y <= minY && enemy.vy < 0) enemy.vy = 0;
+    if (enemy.y >= maxY && enemy.vy > 0) enemy.vy = 0;
+  }
+}
+
 export function updateBoss(boss) {
   boss.angle = boss.angle||0; boss.angle += 0.01;
   boss.x = state.canvas.width/2 + Math.cos(boss.angle)*150;
@@ -1343,6 +1369,9 @@ export function updateEnemies() {
       updateDiamond(d);
     }
     
+    // Apply screen boundary constraints for last stage (prevents off-screen bug)
+    applyScreenBoundaryConstraints(d);
+    
     if (d.health <= 0) {
       createExplosion(d.x, d.y, d.type === "molten-diamond" ? "orange" : "white");
       // When diamond dies, detach attachments but give them a reattach cooldown so they can't immediately reattach to any diamond.
@@ -1609,6 +1638,9 @@ export function updateEnemies() {
       return true;
     }
 
+    // Apply screen boundary constraints for last stage (prevents off-screen bug)
+    applyScreenBoundaryConstraints(e);
+    
     return true;
   });
 
