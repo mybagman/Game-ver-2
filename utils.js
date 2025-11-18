@@ -297,6 +297,51 @@ export function spawnDinosaur(count = 1) {
   }
 }
 
+export function spawnDragon(count = 1) {
+  for (let i = 0; i < count; i++) {
+    const pos = getSafeSpawnPosition();
+    state.pushEnemy({
+      x: pos.x,
+      y: pos.y,
+      size: 60,
+      speed: 2.5,
+      health: 200,
+      type: "dragon",
+      shootTimer: 0,
+      // Dragon-specific properties
+      flyingHeight: 0, // Oscillates for flying effect
+      fireBreathTimer: 0,
+      fireBreathCooldown: 0,
+      swoopTimer: 0,
+      swooping: false,
+      swoopTargetX: 0,
+      swoopTargetY: 0
+    });
+  }
+}
+
+export function spawnDrill(count = 1) {
+  for (let i = 0; i < count; i++) {
+    const pos = getSafeSpawnPosition();
+    state.pushEnemy({
+      x: pos.x,
+      y: pos.y,
+      size: 45,
+      speed: 1.5,
+      health: 120,
+      type: "drill",
+      shootTimer: 0,
+      // Drill-specific properties
+      drillRotation: 0,
+      drilling: false,
+      drillTimer: 0,
+      burrowTimer: 0,
+      burrowed: false,
+      debrisTimer: 0
+    });
+  }
+}
+
 export function spawnMoltenDiamond() {
   // Multi-part boss at centre of the earth
   const centerX = state.canvas.width / 2;

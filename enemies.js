@@ -1156,6 +1156,164 @@ export function updateDinosaur(dino) {
   }
 }
 
+// NEW: Dragon enemy - flying prehistoric beast with fire breath
+export function updateDragon(dragon) {
+  dragon.fireBreathTimer = (dragon.fireBreathTimer || 0) + 1;
+  dragon.fireBreathCooldown = Math.max(0, (dragon.fireBreathCooldown || 0) - 1);
+  dragon.swoopTimer = (dragon.swoopTimer || 0) + 1;
+  
+  // Flying oscillation effect
+  dragon.flyingHeight = Math.sin(Date.now() * 0.003) * 15;
+  
+  // Swooping attack behavior
+  if (!dragon.swooping && dragon.swoopTimer > 180) {
+    // Start swoop attack toward player
+    dragon.swooping = true;
+    dragon.swoopTargetX = state.player.x;
+    dragon.swoopTargetY = state.player.y;
+    dragon.swoopTimer = 0;
+  }
+  
+  if (dragon.swooping) {
+    // Swoop toward target
+    const dx = dragon.swoopTargetX - dragon.x;
+    const dy = dragon.swoopTargetY - dragon.y;
+    const dist = Math.hypot(dx, dy);
+    
+    if (dist > 10) {
+      const swoopSpeed = dragon.speed * 2; // Faster during swoop
+      dragon.x += (dx / dist) * swoopSpeed;
+      dragon.y += (dy / dist) * swoopSpeed;
+    } else {
+      // Reached target, end swoop
+      dragon.swooping = false;
+    }
+  } else {
+    // Normal flying movement (circle around player)
+    const angleToPlayer = Math.atan2(state.player.y - dragon.y, state.player.x - dragon.x);
+    const orbitAngle = angleToPlayer + Math.PI / 2; // Perpendicular to player
+    dragon.x += Math.cos(orbitAngle) * dragon.speed * 0.7;
+    dragon.y += Math.sin(orbitAngle) * dragon.speed * 0.7;
+  }
+  
+  // Fire breath attack
+  if (dragon.fireBreathTimer > 150 && dragon.fireBreathCooldown === 0) {
+    dragon.fireBreathTimer = 0;
+    dragon.fireBreathCooldown = 200;
+    
+    // Spray fire projectiles in a cone toward player
+    const angleToPlayer = Math.atan2(state.player.y - dragon.y, state.player.x - dragon.x);
+    const fireCount = 5;
+    for (let i = 0; i < fireCount; i++) {
+      const spread = 0.4; // Cone spread
+      const angle = angleToPlayer + (i - fireCount / 2) * (spread / fireCount);
+      state.pushLightning({
+        x: dragon.x,
+        y: dragon.y,
+        dx: Math.cos(angle) * 6,
+        dy: Math.sin(angle) * 6,
+        size: 10,
+        damage: 25,
+        color: "rgba(255, 150, 0, 0.9)"
+      });
+    }
+  }
+}
+
+// NEW: Drill enemy - burrowing mechanical unit
+export function updateDrill(drill) {
+  drill.drillRotation = (drill.drillRotation || 0) + 0.3; // Constant drill rotation
+  drill.drillTimer = (drill.drillTimer || 0) + 1;
+  drill.burrowTimer = (drill.burrowTimer || 0) + 1;
+  drill.debrisTimer = (drill.debrisTimer || 0) + 1;
+  
+  // Burrow and emerge behavior
+  if (!drill.burrowed && drill.burrowTimer > 240) {
+    // Burrow underground
+    drill.burrowed = true;
+    drill.burrowTimer = 0;
+    drill.drilling = true;
+    
+    // Spawn debris effect
+    for (let i = 0; i < 10; i++) {
+      state.pushExplosion({
+        x: drill.x,
+        y: drill.y,
+        dx: (Math.random() - 0.5) * 4,
+        dy: (Math.random() - 0.5) * 4,
+        radius: 4 + Math.random() * 3,
+        color: "rgba(139, 69, 19, 0.9)",
+        life: 30
+      });
+    }
+  }
+  
+  if (drill.burrowed && drill.burrowTimer > 120) {
+    // Emerge near player
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 100 + Math.random() * 80;
+    drill.x = state.player.x + Math.cos(angle) * dist;
+    drill.y = state.player.y + Math.sin(angle) * dist;
+    drill.burrowed = false;
+    drill.drilling = false;
+    drill.burrowTimer = 0;
+    
+    // Spawn emergence debris
+    for (let i = 0; i < 15; i++) {
+      state.pushExplosion({
+        x: drill.x,
+        y: drill.y,
+        dx: (Math.random() - 0.5) * 6,
+        dy: (Math.random() - 0.5) * 6,
+        radius: 5 + Math.random() * 4,
+        color: "rgba(139, 69, 19, 0.9)",
+        life: 40
+      });
+    }
+  }
+  
+  if (!drill.burrowed) {
+    // Move toward player when above ground
+    const dx = state.player.x - drill.x;
+    const dy = state.player.y - drill.y;
+    const dist = Math.hypot(dx, dy);
+    
+    if (dist > 0) {
+      drill.x += (dx / dist) * drill.speed;
+      drill.y += (dy / dist) * drill.speed;
+    }
+    
+    // Spawn debris particles while moving
+    if (drill.debrisTimer % 10 === 0) {
+      state.pushExplosion({
+        x: drill.x + (Math.random() - 0.5) * 20,
+        y: drill.y + (Math.random() - 0.5) * 20,
+        dx: (Math.random() - 0.5) * 2,
+        dy: (Math.random() - 0.5) * 2,
+        radius: 3,
+        color: "rgba(100, 100, 100, 0.7)",
+        life: 20
+      });
+    }
+    
+    // Drill projectile attack
+    if (drill.drillTimer > 100) {
+      drill.drillTimer = 0;
+      // Fire spinning drill projectile
+      const angleToPlayer = Math.atan2(state.player.y - drill.y, state.player.x - drill.x);
+      state.pushLightning({
+        x: drill.x,
+        y: drill.y,
+        dx: Math.cos(angleToPlayer) * 7,
+        dy: Math.sin(angleToPlayer) * 7,
+        size: 12,
+        damage: 30,
+        color: "rgba(150, 150, 150, 0.95)"
+      });
+    }
+  }
+}
+
 export function updateEnemies() {
   if (state.player.invulnerable) { 
     state.player.invulnerableTimer--; 
@@ -1210,6 +1368,8 @@ export function updateEnemies() {
     // NEW: Centre of the Earth enemies
     if (e.type === "worm") { updateWorm(e); return e.health > 0; }
     if (e.type === "dinosaur") { updateDinosaur(e); return e.health > 0; }
+    if (e.type === "dragon") { updateDragon(e); return e.health > 0; }
+    if (e.type === "drill") { updateDrill(e); return e.health > 0; }
 
     if (e.vx !== undefined || e.vy !== undefined) {
       e.x += (e.vx || 0);

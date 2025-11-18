@@ -28,6 +28,8 @@ const spawnHandlers = {
   // NEW: Centre of the Earth enemies
   "worm": (g) => spawns.spawnWorm(g.count || 1),
   "dinosaur": (g) => spawns.spawnDinosaur(g.count || 1),
+  "dragon": (g) => spawns.spawnDragon(g.count || 1),
+  "drill": (g) => spawns.spawnDrill(g.count || 1),
   "molten-diamond": (g) => {
     const c = g.count || 1;
     for (let i = 0; i < c; i++) spawns.spawnMoltenDiamond();
