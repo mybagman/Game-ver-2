@@ -10,7 +10,7 @@ export function spawnPowerUp(x, y, type) {
 
 export function spawnRandomPowerUp(x, y) {
   // Spawn random power-up from available types
-  const powerUpTypes = ["health", "reflect", "red-punch", "blue-cannon", "reflector-level", "homing-missile"];
+  const powerUpTypes = ["health", "reflect", "red-punch", "blue-cannon", "reflector-level", "rail-gun"];
   const randomType = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
   spawnPowerUp(x, y, randomType);
 }
@@ -335,8 +335,8 @@ export function respawnGoldStar() {
   state.goldStar.cannonCooldown = 0;
   state.goldStar.reflectAvailable = false;
   state.goldStar.healAccumulator = 0;
-  state.goldStar.homingMissileCooldown = 0;
-  // NOTE: Preserve redPunchLevel, blueCannonLevel, homingMissileLevel, redKills, blueKills, homingMissilePowerUpCount
+  state.goldStar.railGunCooldown = 0;
+  // NOTE: Preserve redPunchLevel, blueCannonLevel, railGunLevel, redKills, blueKills, railGunPowerUpCount
 }
 
 // Full reset of Gold Star (used for new game start)
@@ -357,9 +357,9 @@ export function resetGoldStar() {
   state.goldStar.cannonCooldown = 0;
   state.goldStar.reflectAvailable = false;
   state.goldStar.healAccumulator = 0;
-  state.goldStar.homingMissileLevel = 0;
-  state.goldStar.homingMissileCooldown = 0;
-  state.goldStar.homingMissilePowerUpCount = 0;
+  state.goldStar.railGunLevel = 0;
+  state.goldStar.railGunCooldown = 0;
+  state.goldStar.railGunPowerUpCount = 0;
   // Reset player reflector level when gold star is fully reset
   state.player.reflectorLevel = 0;
 }

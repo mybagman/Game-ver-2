@@ -21,6 +21,7 @@ export let reflectionEffects = [];
 export let redPunchEffects = [];
 export let minionsToAdd = [];
 export let homingMissiles = [];
+export let railGunShots = []; // Rail gun projectiles for Gold Star
 export let empProjectiles = [];
 export let groundObjects = []; // Ground collision objects for building waves
 export let megatonneBombs = []; // Megatonne bomb projectiles
@@ -143,10 +144,10 @@ export let goldStar = {
   respawnTimer: 0,
   healAccumulator: 0,
   targetPowerUp: null,
-  // New homing missile system (moved from player)
-  homingMissileLevel: 0,
-  homingMissileCooldown: 0,
-  homingMissilePowerUpCount: 0, // Track power-ups collected before leveling
+  // Rail gun system (replaces homing missile)
+  railGunLevel: 0,
+  railGunCooldown: 0,
+  railGunPowerUpCount: 0, // Track power-ups collected before leveling
   // Animation states for visual upgrades
   redPunchCharging: false,
   redPunchChargeTimer: 0,
@@ -157,7 +158,7 @@ export let goldStar = {
   // Power-up visual effect animations
   redPunchAnimation: { active: false, frame: 0, particles: [] },
   blueCannonAnimation: { active: false, frame: 0, energyLines: [] },
-  homingMissileAnimation: { active: false, frame: 0, pods: [] }
+  railGunAnimation: { active: false, frame: 0, charge: [] }
 };
 
 export const GOLD_STAR_PICKUP_FRAMES = 30;
@@ -256,6 +257,7 @@ export function pushRedPunchEffect(e) { redPunchEffects.push(e); }
 export function pushAuraSpark(s) { auraSparks.push(s); }
 export function pushAuraShockwave(s) { auraShockwaves.push(s); }
 export function pushHomingMissile(m) { homingMissiles.push(m); }
+export function pushRailGunShot(r) { railGunShots.push(r); }
 export function pushEmpProjectile(e) { empProjectiles.push(e); }
 export function pushGroundObject(g) { groundObjects.push(g); }
 export function pushMegatonneBomb(b) { megatonneBombs.push(b); }
@@ -266,6 +268,11 @@ export function filterAuraShockwaves(fn) { auraShockwaves = auraShockwaves.filte
 export function filterHomingMissiles(fn) { 
   for (let i = homingMissiles.length - 1; i >= 0; i--) {
     if (!fn(homingMissiles[i])) homingMissiles.splice(i, 1);
+  }
+}
+export function filterRailGunShots(fn) { 
+  for (let i = railGunShots.length - 1; i >= 0; i--) {
+    if (!fn(railGunShots[i])) railGunShots.splice(i, 1);
   }
 }
 export function filterEmpProjectiles(fn) { 
@@ -316,6 +323,7 @@ export function resetGame() {
   auraSparks.length = 0;
   auraShockwaves.length = 0;
   homingMissiles.length = 0;
+  railGunShots.length = 0;
   empProjectiles.length = 0;
   groundObjects.length = 0;
   megatonneBombs.length = 0;
@@ -400,8 +408,8 @@ export function resetGame() {
   goldStar.respawnTimer = 0;
   goldStar.healAccumulator = 0;
   goldStar.targetPowerUp = null;
-  goldStar.homingMissileLevel = 0;
-  goldStar.homingMissileCooldown = 0;
+  goldStar.railGunLevel = 0;
+  goldStar.railGunCooldown = 0;
   goldStar.redPunchCharging = false;
   goldStar.redPunchChargeTimer = 0;
   goldStar.blueCannonTurretDeployed = false;
@@ -410,7 +418,7 @@ export function resetGame() {
   goldStar.dronePodReturnTimer = 0;
   goldStar.redPunchAnimation = { active: false, frame: 0, particles: [] };
   goldStar.blueCannonAnimation = { active: false, frame: 0, energyLines: [] };
-  goldStar.homingMissileAnimation = { active: false, frame: 0, pods: [] };
+  goldStar.railGunAnimation = { active: false, frame: 0, charge: [] };
 
   // aura
   goldStarAura.radius = goldStarAura.baseRadius = 50;

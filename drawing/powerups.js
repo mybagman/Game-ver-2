@@ -89,25 +89,25 @@ export function drawPowerUps() {
       state.ctx.fillStyle = "rgba(220,240,255,0.95)";
       state.ctx.fillRect(-2, -6, 4, 12);
     }
-    else if (p.type === "homing-missile") {
-      state.ctx.fillStyle = "rgba(255,120,40,0.95)";
+    else if (p.type === "rail-gun") {
+      state.ctx.fillStyle = "rgba(100,200,255,0.95)";
       state.ctx.beginPath(); 
       state.ctx.arc(0, 0, (p.size||18)/2, 0, Math.PI*2); 
       state.ctx.fill();
 
-      // shadowBlur removed for performance
+      // Rail gun icon - elongated with electric arcs
       state.ctx.fillStyle = "white";
-      // Missile shape icon
-      state.ctx.beginPath();
-      state.ctx.moveTo(6, 0);
-      state.ctx.lineTo(-4, 3);
-      state.ctx.lineTo(-4, -3);
-      state.ctx.closePath();
-      state.ctx.fill();
+      state.ctx.fillRect(-6, -1.5, 12, 3);
       
-      // Fins
-      state.ctx.fillStyle = "rgba(100,200,255,0.9)";
-      state.ctx.fillRect(-4, -2, 2, 4);
+      // Electric arcs around the gun
+      state.ctx.strokeStyle = "rgba(100,220,255,0.9)";
+      state.ctx.lineWidth = 1.5;
+      state.ctx.beginPath();
+      state.ctx.moveTo(-4, -4);
+      state.ctx.lineTo(0, -2);
+      state.ctx.moveTo(-4, 4);
+      state.ctx.lineTo(0, 2);
+      state.ctx.stroke();
     }
     else {
       // fallback visible placeholder when unknown type
