@@ -131,17 +131,6 @@ export function drawEnemies() {
         state.ctx.fillRect(-size/5, size/4 - size/12, size/20, size/12);
       }
       
-      // Add bright outline for visibility against all backgrounds
-      state.ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-      state.ctx.lineWidth = 2;
-      state.ctx.beginPath();
-      if (isSideView) {
-        state.ctx.rect(-size/2, -size/2.5, size*0.8, size);
-      } else {
-        state.ctx.rect(-size/3, -size/3, size*0.66, size*0.66);
-      }
-      state.ctx.stroke();
-      
       state.ctx.restore();
     }
     else if (e.type === "triangle") { 
@@ -244,17 +233,6 @@ export function drawEnemies() {
         state.ctx.fillStyle = "#2a4a6a";
         state.ctx.fillRect(-size/4, -size/3, size/20, size/8);
       }
-      
-      // Add bright outline for visibility against all backgrounds
-      state.ctx.strokeStyle = "rgba(200, 220, 255, 0.5)";
-      state.ctx.lineWidth = 2;
-      state.ctx.beginPath();
-      if (isSideView) {
-        state.ctx.rect(-size/3, -size/2.5, size*0.75, size);
-      } else {
-        state.ctx.rect(-size/3, -size/3, size*0.66, size*0.66);
-      }
-      state.ctx.stroke();
       
       state.ctx.restore();
 

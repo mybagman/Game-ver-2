@@ -37,32 +37,32 @@ export const waves = [
   
   // NEW ARC: Journey to the Centre of the Earth (Waves 23-32)
   // Wave 23: Entry into the cave system
-  { theme: "cave-entry", enemies: [{ type: "worm", count: 2 }, { type: "red-square", count: 4 }, { type: "triangle", count: 3 }] },
+  { theme: "cave-entry", enemies: [{ type: "worm", count: 3 }, { type: "red-square", count: 6 }, { type: "triangle", count: 5 }] },
   
-  // Wave 24: Deeper into the earth
-  { theme: "cave-depth-1", enemies: [{ type: "worm", count: 3 }, { type: "triangle", count: 5 }, { type: "reflector", count: 1 }] },
+  // Wave 24: Deeper into the earth - Dragons appear
+  { theme: "cave-depth-1", enemies: [{ type: "worm", count: 4 }, { type: "dragon", count: 1 }, { type: "triangle", count: 6 }, { type: "reflector", count: 2 }] },
   
-  // Wave 25: First dinosaurs appear
-  { theme: "cave-depth-2", enemies: [{ type: "dinosaur", count: 1 }, { type: "worm", count: 2 }, { type: "red-square", count: 5 }] },
+  // Wave 25: First dinosaurs and drills appear
+  { theme: "cave-depth-2", enemies: [{ type: "dinosaur", count: 2 }, { type: "drill", count: 1 }, { type: "worm", count: 3 }, { type: "red-square", count: 6 }] },
   
   // Wave 26: Underground ecosystem
-  { theme: "underground-cavern", enemies: [{ type: "dinosaur", count: 2 }, { type: "worm", count: 3 }, { type: "triangle", count: 4 }] },
+  { theme: "underground-cavern", enemies: [{ type: "dinosaur", count: 3 }, { type: "dragon", count: 1 }, { type: "worm", count: 4 }, { type: "triangle", count: 6 }] },
   
-  // Wave 27: Prehistoric battle
-  { theme: "prehistoric-zone", enemies: [{ type: "dinosaur", count: 3 }, { type: "worm", count: 2 }, { type: "reflector", count: 2 }] },
+  // Wave 27: Prehistoric battle - all underground enemies
+  { theme: "prehistoric-zone", enemies: [{ type: "dinosaur", count: 3 }, { type: "dragon", count: 2 }, { type: "drill", count: 2 }, { type: "worm", count: 3 }, { type: "reflector", count: 2 }] },
   
   // Wave 28: Deep caverns
-  { theme: "deep-cavern", enemies: [{ type: "dinosaur", count: 2 }, { type: "worm", count: 4 }, { type: "mini-boss", count: 1 }, { type: "triangle", count: 5 }] },
+  { theme: "deep-cavern", enemies: [{ type: "dinosaur", count: 3 }, { type: "dragon", count: 2 }, { type: "drill", count: 2 }, { type: "worm", count: 5 }, { type: "mini-boss", count: 1 }, { type: "triangle", count: 7 }] },
   
   // Wave 29: Approaching the core
-  { theme: "near-core", enemies: [{ type: "dinosaur", count: 3 }, { type: "worm", count: 3 }, { type: "red-square", count: 6 }, { type: "reflector", count: 2 }] },
+  { theme: "near-core", enemies: [{ type: "dinosaur", count: 4 }, { type: "dragon", count: 2 }, { type: "drill", count: 3 }, { type: "worm", count: 4 }, { type: "red-square", count: 8 }, { type: "reflector", count: 3 }] },
   
   // Wave 30: Molten depths
-  { theme: "molten-depths", enemies: [{ type: "dinosaur", count: 4 }, { type: "worm", count: 2 }, { type: "tank", count: 2 }, { type: "triangle", count: 6 }] },
+  { theme: "molten-depths", enemies: [{ type: "dinosaur", count: 5 }, { type: "dragon", count: 3 }, { type: "drill", count: 2 }, { type: "worm", count: 3 }, { type: "tank", count: 2 }, { type: "triangle", count: 8 }] },
   
   // Wave 31: Final descent
-  { theme: "final-descent", enemies: [{ type: "dinosaur", count: 3 }, { type: "worm", count: 4 }, { type: "mini-boss", count: 2 }, { type: "reflector", count: 3 }] },
+  { theme: "final-descent", enemies: [{ type: "dinosaur", count: 4 }, { type: "dragon", count: 3 }, { type: "drill", count: 3 }, { type: "worm", count: 5 }, { type: "mini-boss", count: 2 }, { type: "reflector", count: 4 }] },
   
   // Wave 32: Molten Diamond Boss
-  { theme: "molten-core", enemies: [{ type: "molten-diamond", count: 1 }, { type: "dinosaur", count: 2 }, { type: "worm", count: 3 }] }
+  { theme: "molten-core", enemies: [{ type: "molten-diamond", count: 1 }, { type: "dinosaur", count: 3 }, { type: "dragon", count: 2 }, { type: "drill", count: 2 }, { type: "worm", count: 4 }] }
 ];

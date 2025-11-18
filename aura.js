@@ -2,14 +2,27 @@ import * as state from './state.js';
 import { createExplosion } from './utils.js';
 import { spawnMiniDrone } from './minidrones.js';
 
+// Progressive aura system with distinct tactical benefits per tier
 export function getAuraSparkColor() {
   switch (state.goldStarAura.level) {
-    case 0: return "rgba(255,255,100,0.3)";
-    case 1: return "rgba(255,200,80,0.35)";
-    case 2: return "rgba(255,150,60,0.4)";
-    case 3: return "rgba(255,100,40,0.45)";
-    case 4: return "rgba(255,80,20,0.5)";
-    default: return "rgba(255,50,0,0.5)";
+    case 0: return "rgba(255,255,100,0.3)"; // No aura
+    case 1: return "rgba(255,200,80,0.35)"; // Tier 1: Basic healing
+    case 2: return "rgba(255,150,60,0.4)";  // Tier 2: Fire rate boost
+    case 3: return "rgba(255,100,40,0.45)"; // Tier 3: Enemy slow
+    case 4: return "rgba(255,80,20,0.5)";   // Tier 4: Damage reduction
+    default: return "rgba(255,50,0,0.5)";   // Tier 5+: Ultimate power
+  }
+}
+
+// Get aura tier description for tactical display
+export function getAuraTierDescription(level) {
+  switch (level) {
+    case 0: return "No Aura Active";
+    case 1: return "Tier I: Healing Field";
+    case 2: return "Tier II: Combat Enhancement";
+    case 3: return "Tier III: Temporal Distortion";
+    case 4: return "Tier IV: Defensive Matrix";
+    default: return "Tier V: Ultimate Power";
   }
 }
 
@@ -157,33 +170,54 @@ export function applyGoldStarAuraEffects() {
   const dist = Math.sqrt(dx*dx + dy*dy);
 
   if (dist < state.goldStarAura.radius) {
-    const healPerSecondStar = 1 + state.goldStarAura.level * 0.5;
-    state.goldStar.healAccumulator = state.goldStar.healAccumulator || 0;
-    state.goldStar.healAccumulator += healPerSecondStar / 60;
-    if (state.goldStar.health < state.goldStar.maxHealth) {
-      const toHeal = Math.floor(state.goldStar.healAccumulator);
-      if (toHeal > 0) {
-        state.goldStar.health = Math.min(state.goldStar.maxHealth, state.goldStar.health + toHeal);
-        state.goldStar.healAccumulator -= toHeal;
-        // OPTIMIZATION: Reduce healing particle effects - only spawn every 10 heal ticks
-        if (Math.floor(state.goldStar.health) % 10 === 0) {
-          createExplosion(state.goldStar.x + (Math.random()-0.5)*8, state.goldStar.y + (Math.random()-0.5)*8, "magenta");
+    // Progressive tactical benefits based on aura tier
+    const auraLevel = state.goldStarAura.level;
+    
+    // Tier 1+: Healing Field (scales with level)
+    if (auraLevel >= 1) {
+      const healPerSecondStar = 1 + auraLevel * 0.6; // Increased healing effectiveness
+      state.goldStar.healAccumulator = state.goldStar.healAccumulator || 0;
+      state.goldStar.healAccumulator += healPerSecondStar / 60;
+      if (state.goldStar.health < state.goldStar.maxHealth) {
+        const toHeal = Math.floor(state.goldStar.healAccumulator);
+        if (toHeal > 0) {
+          state.goldStar.health = Math.min(state.goldStar.maxHealth, state.goldStar.health + toHeal);
+          state.goldStar.healAccumulator -= toHeal;
+          if (Math.floor(state.goldStar.health) % 10 === 0) {
+            createExplosion(state.goldStar.x + (Math.random()-0.5)*8, state.goldStar.y + (Math.random()-0.5)*8, "magenta");
+          }
+        }
+      } else {
+        const healPerSecondPlayer = 1 + auraLevel * 0.6;
+        state.player.healAccumulator = state.player.healAccumulator || 0;
+        state.player.healAccumulator += healPerSecondPlayer / 60;
+        const toHealP = Math.floor(state.player.healAccumulator);
+        if (toHealP > 0) {
+          state.player.health = Math.min(state.player.maxHealth, state.player.health + toHealP);
+          state.player.healAccumulator -= toHealP;
         }
       }
-      state.player.fireRateBoost = 1 + state.goldStarAura.level * 0.15;
+    }
+    
+    // Tier 2+: Combat Enhancement (fire rate boost)
+    if (auraLevel >= 2) {
+      state.player.fireRateBoost = 1 + auraLevel * 0.2; // Improved fire rate scaling
+    }
+    
+    // Tier 4+: Defensive Matrix (damage reduction for player)
+    if (auraLevel >= 4) {
+      state.player.auraDamageReduction = 0.2 + (auraLevel - 4) * 0.1; // 20-30% damage reduction
     } else {
-      const healPerSecondPlayer = 1 + state.goldStarAura.level * 0.5;
-      state.player.healAccumulator = state.player.healAccumulator || 0;
-      state.player.healAccumulator += healPerSecondPlayer / 60;
-      const toHealP = Math.floor(state.player.healAccumulator);
-      if (toHealP > 0) {
-        state.player.health = Math.min(state.player.maxHealth, state.player.health + toHealP);
-        state.player.healAccumulator -= toHealP;
-      }
-      state.player.fireRateBoost = 1 + state.goldStarAura.level * 0.15;
+      state.player.auraDamageReduction = 0;
+    }
+    
+    // Tier 5+: Ultimate Power (shields regenerate slowly)
+    if (auraLevel >= 5 && state.player.shieldActive && state.player.shieldHealth < state.player.maxShieldHealth) {
+      state.player.shieldHealth = Math.min(state.player.maxShieldHealth, state.player.shieldHealth + 0.2);
     }
   } else {
     state.player.fireRateBoost = 1;
+    state.player.auraDamageReduction = 0;
   }
 
   // OPTIMIZATION: Only process lightning bullets every other frame to reduce load
@@ -206,10 +240,14 @@ export function applyGoldStarAuraEffects() {
     const radiusSquared = bulletSlowRadius * bulletSlowRadius;
     
     if (bdSquared < radiusSquared) {
-      const slowFactor = Math.max(0.5, 1 - 0.08 * state.goldStarAura.level);
-      l.dx = l._origDx * slowFactor;
-      l.dy = l._origDy * slowFactor;
-      l._inAura = true;
+      // Tier 3+: Temporal Distortion (enemy projectile slow)
+      const auraLevel = state.goldStarAura.level;
+      if (auraLevel >= 3) {
+        const slowFactor = Math.max(0.3, 1 - 0.12 * auraLevel); // Stronger slow at higher tiers
+        l.dx = l._origDx * slowFactor;
+        l.dy = l._origDy * slowFactor;
+        l._inAura = true;
+      }
     } else {
       if (l._inAura) {
         l.dx = l._origDx;

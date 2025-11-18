@@ -73,12 +73,12 @@ export function trackKillForWeaponProgression() {
   // Increment kill counters for all active weapons
   gs.totalKills = (gs.totalKills || 0) + 1;
   
-  // Every 10 kills, add experience to all weapons
-  if (gs.totalKills % 10 === 0) {
+  // Every 20 kills, add experience to all weapons (slowed down from 10)
+  if (gs.totalKills % 20 === 0) {
     // Red Punch progression
     if (gs.redPunchLevel > 0 && gs.redPunchLevel < 5) {
       gs.redPunchXP = (gs.redPunchXP || 0) + 1;
-      if (gs.redPunchXP >= (gs.redPunchLevel * 2)) { // Increasing XP requirement
+      if (gs.redPunchXP >= (gs.redPunchLevel * 3)) { // Increased XP requirement from *2 to *3
         gs.redPunchLevel++;
         gs.redPunchXP = 0;
         showWeaponLevelUp("RED PUNCH", gs.redPunchLevel);
@@ -89,7 +89,7 @@ export function trackKillForWeaponProgression() {
     // Blue Cannon progression
     if (gs.blueCannonLevel > 0 && gs.blueCannonLevel < 5) {
       gs.blueCannonXP = (gs.blueCannonXP || 0) + 1;
-      if (gs.blueCannonXP >= (gs.blueCannonLevel * 2)) {
+      if (gs.blueCannonXP >= (gs.blueCannonLevel * 3)) { // Increased XP requirement from *2 to *3
         gs.blueCannonLevel++;
         gs.blueCannonXP = 0;
         showWeaponLevelUp("BLUE CANNON", gs.blueCannonLevel);
@@ -97,13 +97,13 @@ export function trackKillForWeaponProgression() {
       }
     }
     
-    // Homing Missile progression
-    if (gs.homingMissileLevel > 0 && gs.homingMissileLevel < 3) {
-      gs.homingMissileXP = (gs.homingMissileXP || 0) + 1;
-      if (gs.homingMissileXP >= (gs.homingMissileLevel * 3)) {
-        gs.homingMissileLevel++;
-        gs.homingMissileXP = 0;
-        showWeaponLevelUp("HOMING MISSILE", gs.homingMissileLevel);
+    // Rail Gun progression (replaces homing missile system)
+    if (gs.railGunLevel > 0 && gs.railGunLevel < 3) {
+      gs.railGunXP = (gs.railGunXP || 0) + 1;
+      if (gs.railGunXP >= (gs.railGunLevel * 4)) { // Requires more XP for rail gun
+        gs.railGunLevel++;
+        gs.railGunXP = 0;
+        showWeaponLevelUp("RAIL GUN", gs.railGunLevel);
         safeCall(levelUpGoldStar, state);
       }
     }
@@ -335,19 +335,19 @@ export function updateGoldStar() {
               safeCall(state.addScore, 5);
             }
           }
-          else if (pu.type === "homing-missile") {
-            // New power-up type for homing missiles (goes to gold star)
-            // Requires 3 power-ups to level up
-            if (gs.homingMissileLevel < 10) {
-              gs.homingMissilePowerUpCount = (gs.homingMissilePowerUpCount || 0) + 1;
+          else if (pu.type === "rail-gun") {
+            // Rail gun power-up (goes to gold star, replaces homing missiles)
+            // Requires 4 power-ups to level up (harder to get than other weapons)
+            if (gs.railGunLevel < 3) {
+              gs.railGunPowerUpCount = (gs.railGunPowerUpCount || 0) + 1;
               
-              if (gs.homingMissilePowerUpCount >= 3) {
-                // Level up after collecting 3 power-ups
-                gs.homingMissileLevel = Math.min(10, (gs.homingMissileLevel || 0) + 1);
-                gs.homingMissilePowerUpCount = 0;
+              if (gs.railGunPowerUpCount >= 4) {
+                // Level up after collecting 4 power-ups
+                gs.railGunLevel = Math.min(3, (gs.railGunLevel || 0) + 1);
+                gs.railGunPowerUpCount = 0;
                 safeCall(levelUpGoldStar, state);
-                safeCall(createExplosion, pu.x, pu.y, "orange");
-                safeCall(state.addScore, 15);
+                safeCall(createExplosion, pu.x, pu.y, "cyan");
+                safeCall(state.addScore, 20);
               } else {
                 // Collected but not enough to level up yet
                 safeCall(createExplosion, pu.x, pu.y, "yellow");

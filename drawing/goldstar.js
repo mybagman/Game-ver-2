@@ -563,13 +563,6 @@ export function drawGoldStar() {
     ctx.stroke();
   }
   
-  // Add bright outline for visibility against all backgrounds
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.arc(0, 0, effectiveSize/2 + 5, 0, Math.PI * 2);
-  ctx.stroke();
-  
   ctx.restore();
   
   // === HEALTH BAR ===

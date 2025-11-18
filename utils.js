@@ -10,7 +10,7 @@ export function spawnPowerUp(x, y, type) {
 
 export function spawnRandomPowerUp(x, y) {
   // Spawn random power-up from available types
-  const powerUpTypes = ["health", "reflect", "red-punch", "blue-cannon", "reflector-level", "homing-missile"];
+  const powerUpTypes = ["health", "reflect", "red-punch", "blue-cannon", "reflector-level", "rail-gun"];
   const randomType = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
   spawnPowerUp(x, y, randomType);
 }
@@ -297,28 +297,111 @@ export function spawnDinosaur(count = 1) {
   }
 }
 
+export function spawnDragon(count = 1) {
+  for (let i = 0; i < count; i++) {
+    const pos = getSafeSpawnPosition();
+    state.pushEnemy({
+      x: pos.x,
+      y: pos.y,
+      size: 60,
+      speed: 2.5,
+      health: 200,
+      type: "dragon",
+      shootTimer: 0,
+      // Dragon-specific properties
+      flyingHeight: 0, // Oscillates for flying effect
+      fireBreathTimer: 0,
+      fireBreathCooldown: 0,
+      swoopTimer: 0,
+      swooping: false,
+      swoopTargetX: 0,
+      swoopTargetY: 0
+    });
+  }
+}
+
+export function spawnDrill(count = 1) {
+  for (let i = 0; i < count; i++) {
+    const pos = getSafeSpawnPosition();
+    state.pushEnemy({
+      x: pos.x,
+      y: pos.y,
+      size: 45,
+      speed: 1.5,
+      health: 120,
+      type: "drill",
+      shootTimer: 0,
+      // Drill-specific properties
+      drillRotation: 0,
+      drilling: false,
+      drillTimer: 0,
+      burrowTimer: 0,
+      burrowed: false,
+      debrisTimer: 0
+    });
+  }
+}
+
 export function spawnMoltenDiamond() {
-  // Boss at centre of the earth
+  // Multi-part boss at centre of the earth
   const centerX = state.canvas.width / 2;
   const centerY = state.canvas.height / 3;
   
-  state.pushDiamond({
+  // Main core (center part)
+  const core = {
     x: centerX,
     y: centerY,
     size: 100,
     speed: 1.0,
-    health: 800, // Very high health
-    maxHealth: 800,
+    health: 1600, // Doubled from 800
+    maxHealth: 1600, // Doubled total health
+    damageReduction: 0.5, // Takes 50% less damage
     type: "molten-diamond",
+    partType: "core", // Core part
     // Boss-specific properties
     phaseTimer: 0,
     currentPhase: 1,
     heatWaveTimer: 0,
     crystalTimer: 0,
     lavaPoolTimer: 0,
+    megaCannonTimer: 0,
+    megaCannonCooldown: 0,
+    reflectorSpawnTimer: 0,
     attachments: [], // Can spawn minions
-    gravitonTimer: 0
-  });
+    gravitonTimer: 0,
+    parts: [] // Will store references to other parts
+  };
+  
+  // Create 4 satellite parts that orbit around the core
+  const partCount = 4;
+  for (let i = 0; i < partCount; i++) {
+    const angle = (i / partCount) * Math.PI * 2;
+    const orbitRadius = 120;
+    
+    const part = {
+      x: centerX + Math.cos(angle) * orbitRadius,
+      y: centerY + Math.sin(angle) * orbitRadius,
+      size: 60,
+      speed: 1.0,
+      health: 400, // 400 each, total 1600 for parts + 1600 core = 3200 total
+      maxHealth: 400,
+      damageReduction: 0.5, // Takes 50% less damage
+      type: "molten-diamond",
+      partType: "satellite", // Satellite part
+      partIndex: i,
+      orbitAngle: angle,
+      orbitRadius: orbitRadius,
+      coreRef: core, // Reference to main core
+      canSeparate: true,
+      separated: false,
+      separateTimer: 0
+    };
+    
+    core.parts.push(part);
+    state.pushDiamond(part);
+  }
+  
+  state.pushDiamond(core);
 }
 
 // Respawn Gold Star while preserving levels/upgrades (used for continue after death)
@@ -335,8 +418,8 @@ export function respawnGoldStar() {
   state.goldStar.cannonCooldown = 0;
   state.goldStar.reflectAvailable = false;
   state.goldStar.healAccumulator = 0;
-  state.goldStar.homingMissileCooldown = 0;
-  // NOTE: Preserve redPunchLevel, blueCannonLevel, homingMissileLevel, redKills, blueKills, homingMissilePowerUpCount
+  state.goldStar.railGunCooldown = 0;
+  // NOTE: Preserve redPunchLevel, blueCannonLevel, railGunLevel, redKills, blueKills, railGunPowerUpCount
 }
 
 // Full reset of Gold Star (used for new game start)
@@ -357,9 +440,9 @@ export function resetGoldStar() {
   state.goldStar.cannonCooldown = 0;
   state.goldStar.reflectAvailable = false;
   state.goldStar.healAccumulator = 0;
-  state.goldStar.homingMissileLevel = 0;
-  state.goldStar.homingMissileCooldown = 0;
-  state.goldStar.homingMissilePowerUpCount = 0;
+  state.goldStar.railGunLevel = 0;
+  state.goldStar.railGunCooldown = 0;
+  state.goldStar.railGunPowerUpCount = 0;
   // Reset player reflector level when gold star is fully reset
   state.player.reflectorLevel = 0;
 }

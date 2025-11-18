@@ -2,6 +2,32 @@ import * as state from './state.js';
 import { createExplosion, spawnPowerUp, spawnRandomPowerUp, spawnDebris, handleTunnelCollisionForEntity, diamondReleaseAttachedEnemies } from './utils.js';
 import { applyPlayerDamage } from './collisions.js';
 
+// Helper function to constrain enemies to screen boundaries in the last stage
+function applyScreenBoundaryConstraints(enemy) {
+  // Only apply on the last stage (wave 31 in 0-indexed array, displayed as wave 32)
+  if (state.wave !== 31) return;
+  
+  const margin = enemy.size / 2 + 10; // Keep some margin from edge
+  const minX = margin;
+  const maxX = state.canvas.width - margin;
+  const minY = margin;
+  const maxY = state.canvas.height - margin;
+  
+  // Constrain position to screen bounds
+  if (enemy.x < minX) enemy.x = minX;
+  if (enemy.x > maxX) enemy.x = maxX;
+  if (enemy.y < minY) enemy.y = minY;
+  if (enemy.y > maxY) enemy.y = maxY;
+  
+  // Also constrain velocity to push enemies back toward screen
+  if (enemy.vx !== undefined && enemy.vy !== undefined) {
+    if (enemy.x <= minX && enemy.vx < 0) enemy.vx = 0;
+    if (enemy.x >= maxX && enemy.vx > 0) enemy.vx = 0;
+    if (enemy.y <= minY && enemy.vy < 0) enemy.vy = 0;
+    if (enemy.y >= maxY && enemy.vy > 0) enemy.vy = 0;
+  }
+}
+
 export function updateBoss(boss) {
   boss.angle = boss.angle||0; boss.angle += 0.01;
   boss.x = state.canvas.width/2 + Math.cos(boss.angle)*150;
@@ -843,7 +869,57 @@ export function updateMechs() {
 
 // NEW: Molten Diamond Boss - Centre of the Earth final boss
 export function updateMoltenDiamond(d) {
-  // Shared diamond behavior (graviton, spawning)
+  // Multi-part boss system
+  if (d.partType === "satellite") {
+    // Update satellite parts
+    if (!d.separated && d.coreRef && d.coreRef.health > 0) {
+      // Orbit around core
+      d.orbitAngle += 0.01;
+      d.x = d.coreRef.x + Math.cos(d.orbitAngle) * d.orbitRadius;
+      d.y = d.coreRef.y + Math.sin(d.orbitAngle) * d.orbitRadius;
+      
+      // Satellite can separate when core health is below 50%
+      if (d.coreRef.health < d.coreRef.maxHealth * 0.5 && d.canSeparate) {
+        d.separated = true;
+        d.vx = Math.cos(d.orbitAngle) * 2;
+        d.vy = Math.sin(d.orbitAngle) * 2;
+      }
+    } else if (d.separated) {
+      // Move independently when separated
+      d.x += d.vx || 0;
+      d.y += d.vy || 0;
+      d.vx *= 0.98;
+      d.vy *= 0.98;
+      
+      // Slowly move toward player
+      const dx = state.player.x - d.x;
+      const dy = state.player.y - d.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 0) {
+        d.x += (dx / dist) * 0.5;
+        d.y += (dy / dist) * 0.5;
+      }
+      
+      // Satellites shoot when separated
+      d.shootTimer = (d.shootTimer || 0) + 1;
+      if (d.shootTimer > 100) {
+        d.shootTimer = 0;
+        const angleToPlayer = Math.atan2(state.player.y - d.y, state.player.x - d.x);
+        state.pushLightning({
+          x: d.x,
+          y: d.y,
+          dx: Math.cos(angleToPlayer) * 6,
+          dy: Math.sin(angleToPlayer) * 6,
+          size: 8,
+          damage: 20,
+          color: "rgba(255, 100, 0, 0.9)"
+        });
+      }
+    }
+    return; // Skip the rest for satellite parts
+  }
+  
+  // Core part behavior - shared diamond behavior (graviton, spawning)
   updateDiamond(d);
   
   // Boss-specific timers
@@ -851,6 +927,8 @@ export function updateMoltenDiamond(d) {
   d.crystalTimer = (d.crystalTimer || 0) + 1;
   d.lavaPoolTimer = (d.lavaPoolTimer || 0) + 1;
   d.phaseTimer = (d.phaseTimer || 0) + 1;
+  d.megaCannonTimer = (d.megaCannonTimer || 0) + 1;
+  d.reflectorSpawnTimer = (d.reflectorSpawnTimer || 0) + 1;
   
   // Phase progression based on health
   const healthPercent = d.health / d.maxHealth;
@@ -913,6 +991,54 @@ export function updateMoltenDiamond(d) {
       color: "rgba(255, 80, 0, 0.8)",
       life: 180, // Lasts 3 seconds
       damage: 10 // Continuous damage
+    });
+  }
+  
+  // NEW: Mega Assault Cannon - fires projectiles in all directions
+  if (d.megaCannonTimer > (d.currentPhase === 3 ? 300 : 400)) {
+    d.megaCannonTimer = 0;
+    const projectileCount = 16 + (d.currentPhase * 4); // 20-28 projectiles
+    for (let i = 0; i < projectileCount; i++) {
+      const angle = (i / projectileCount) * Math.PI * 2;
+      state.pushLightning({
+        x: d.x,
+        y: d.y,
+        dx: Math.cos(angle) * 8,
+        dy: Math.sin(angle) * 8,
+        size: 14,
+        damage: 35,
+        color: "rgba(255, 0, 0, 0.95)"
+      });
+    }
+    // Visual effect for mega cannon
+    for (let i = 0; i < 30; i++) {
+      state.pushExplosion({
+        x: d.x,
+        y: d.y,
+        dx: (Math.random() - 0.5) * 8,
+        dy: (Math.random() - 0.5) * 8,
+        radius: 8 + Math.random() * 4,
+        color: "rgba(255, 100, 0, 0.9)",
+        life: 25
+      });
+    }
+  }
+  
+  // NEW: Spawn mini reflector units during the fight
+  if (d.reflectorSpawnTimer > 450) {
+    d.reflectorSpawnTimer = 0;
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 120;
+    state.pushEnemy({
+      x: d.x + Math.cos(angle) * dist,
+      y: d.y + Math.sin(angle) * dist,
+      size: 35,
+      speed: 2.5,
+      health: 40,
+      type: "reflector",
+      fromBoss: true,
+      reflectCooldown: 0,
+      reflectActive: false
     });
   }
   
@@ -1056,6 +1182,164 @@ export function updateDinosaur(dino) {
   }
 }
 
+// NEW: Dragon enemy - flying prehistoric beast with fire breath
+export function updateDragon(dragon) {
+  dragon.fireBreathTimer = (dragon.fireBreathTimer || 0) + 1;
+  dragon.fireBreathCooldown = Math.max(0, (dragon.fireBreathCooldown || 0) - 1);
+  dragon.swoopTimer = (dragon.swoopTimer || 0) + 1;
+  
+  // Flying oscillation effect
+  dragon.flyingHeight = Math.sin(Date.now() * 0.003) * 15;
+  
+  // Swooping attack behavior
+  if (!dragon.swooping && dragon.swoopTimer > 180) {
+    // Start swoop attack toward player
+    dragon.swooping = true;
+    dragon.swoopTargetX = state.player.x;
+    dragon.swoopTargetY = state.player.y;
+    dragon.swoopTimer = 0;
+  }
+  
+  if (dragon.swooping) {
+    // Swoop toward target
+    const dx = dragon.swoopTargetX - dragon.x;
+    const dy = dragon.swoopTargetY - dragon.y;
+    const dist = Math.hypot(dx, dy);
+    
+    if (dist > 10) {
+      const swoopSpeed = dragon.speed * 2; // Faster during swoop
+      dragon.x += (dx / dist) * swoopSpeed;
+      dragon.y += (dy / dist) * swoopSpeed;
+    } else {
+      // Reached target, end swoop
+      dragon.swooping = false;
+    }
+  } else {
+    // Normal flying movement (circle around player)
+    const angleToPlayer = Math.atan2(state.player.y - dragon.y, state.player.x - dragon.x);
+    const orbitAngle = angleToPlayer + Math.PI / 2; // Perpendicular to player
+    dragon.x += Math.cos(orbitAngle) * dragon.speed * 0.7;
+    dragon.y += Math.sin(orbitAngle) * dragon.speed * 0.7;
+  }
+  
+  // Fire breath attack
+  if (dragon.fireBreathTimer > 150 && dragon.fireBreathCooldown === 0) {
+    dragon.fireBreathTimer = 0;
+    dragon.fireBreathCooldown = 200;
+    
+    // Spray fire projectiles in a cone toward player
+    const angleToPlayer = Math.atan2(state.player.y - dragon.y, state.player.x - dragon.x);
+    const fireCount = 5;
+    for (let i = 0; i < fireCount; i++) {
+      const spread = 0.4; // Cone spread
+      const angle = angleToPlayer + (i - fireCount / 2) * (spread / fireCount);
+      state.pushLightning({
+        x: dragon.x,
+        y: dragon.y,
+        dx: Math.cos(angle) * 6,
+        dy: Math.sin(angle) * 6,
+        size: 10,
+        damage: 25,
+        color: "rgba(255, 150, 0, 0.9)"
+      });
+    }
+  }
+}
+
+// NEW: Drill enemy - burrowing mechanical unit
+export function updateDrill(drill) {
+  drill.drillRotation = (drill.drillRotation || 0) + 0.3; // Constant drill rotation
+  drill.drillTimer = (drill.drillTimer || 0) + 1;
+  drill.burrowTimer = (drill.burrowTimer || 0) + 1;
+  drill.debrisTimer = (drill.debrisTimer || 0) + 1;
+  
+  // Burrow and emerge behavior
+  if (!drill.burrowed && drill.burrowTimer > 240) {
+    // Burrow underground
+    drill.burrowed = true;
+    drill.burrowTimer = 0;
+    drill.drilling = true;
+    
+    // Spawn debris effect
+    for (let i = 0; i < 10; i++) {
+      state.pushExplosion({
+        x: drill.x,
+        y: drill.y,
+        dx: (Math.random() - 0.5) * 4,
+        dy: (Math.random() - 0.5) * 4,
+        radius: 4 + Math.random() * 3,
+        color: "rgba(139, 69, 19, 0.9)",
+        life: 30
+      });
+    }
+  }
+  
+  if (drill.burrowed && drill.burrowTimer > 120) {
+    // Emerge near player
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 100 + Math.random() * 80;
+    drill.x = state.player.x + Math.cos(angle) * dist;
+    drill.y = state.player.y + Math.sin(angle) * dist;
+    drill.burrowed = false;
+    drill.drilling = false;
+    drill.burrowTimer = 0;
+    
+    // Spawn emergence debris
+    for (let i = 0; i < 15; i++) {
+      state.pushExplosion({
+        x: drill.x,
+        y: drill.y,
+        dx: (Math.random() - 0.5) * 6,
+        dy: (Math.random() - 0.5) * 6,
+        radius: 5 + Math.random() * 4,
+        color: "rgba(139, 69, 19, 0.9)",
+        life: 40
+      });
+    }
+  }
+  
+  if (!drill.burrowed) {
+    // Move toward player when above ground
+    const dx = state.player.x - drill.x;
+    const dy = state.player.y - drill.y;
+    const dist = Math.hypot(dx, dy);
+    
+    if (dist > 0) {
+      drill.x += (dx / dist) * drill.speed;
+      drill.y += (dy / dist) * drill.speed;
+    }
+    
+    // Spawn debris particles while moving
+    if (drill.debrisTimer % 10 === 0) {
+      state.pushExplosion({
+        x: drill.x + (Math.random() - 0.5) * 20,
+        y: drill.y + (Math.random() - 0.5) * 20,
+        dx: (Math.random() - 0.5) * 2,
+        dy: (Math.random() - 0.5) * 2,
+        radius: 3,
+        color: "rgba(100, 100, 100, 0.7)",
+        life: 20
+      });
+    }
+    
+    // Drill projectile attack
+    if (drill.drillTimer > 100) {
+      drill.drillTimer = 0;
+      // Fire spinning drill projectile
+      const angleToPlayer = Math.atan2(state.player.y - drill.y, state.player.x - drill.x);
+      state.pushLightning({
+        x: drill.x,
+        y: drill.y,
+        dx: Math.cos(angleToPlayer) * 7,
+        dy: Math.sin(angleToPlayer) * 7,
+        size: 12,
+        damage: 30,
+        color: "rgba(150, 150, 150, 0.95)"
+      });
+    }
+  }
+}
+
 export function updateEnemies() {
   if (state.player.invulnerable) { 
     state.player.invulnerableTimer--; 
@@ -1085,6 +1369,9 @@ export function updateEnemies() {
       updateDiamond(d);
     }
     
+    // Apply screen boundary constraints for last stage (prevents off-screen bug)
+    applyScreenBoundaryConstraints(d);
+    
     if (d.health <= 0) {
       createExplosion(d.x, d.y, d.type === "molten-diamond" ? "orange" : "white");
       // When diamond dies, detach attachments but give them a reattach cooldown so they can't immediately reattach to any diamond.
@@ -1110,6 +1397,8 @@ export function updateEnemies() {
     // NEW: Centre of the Earth enemies
     if (e.type === "worm") { updateWorm(e); return e.health > 0; }
     if (e.type === "dinosaur") { updateDinosaur(e); return e.health > 0; }
+    if (e.type === "dragon") { updateDragon(e); return e.health > 0; }
+    if (e.type === "drill") { updateDrill(e); return e.health > 0; }
 
     if (e.vx !== undefined || e.vy !== undefined) {
       e.x += (e.vx || 0);
@@ -1349,6 +1638,9 @@ export function updateEnemies() {
       return true;
     }
 
+    // Apply screen boundary constraints for last stage (prevents off-screen bug)
+    applyScreenBoundaryConstraints(e);
+    
     return true;
   });
 
