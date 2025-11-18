@@ -843,7 +843,57 @@ export function updateMechs() {
 
 // NEW: Molten Diamond Boss - Centre of the Earth final boss
 export function updateMoltenDiamond(d) {
-  // Shared diamond behavior (graviton, spawning)
+  // Multi-part boss system
+  if (d.partType === "satellite") {
+    // Update satellite parts
+    if (!d.separated && d.coreRef && d.coreRef.health > 0) {
+      // Orbit around core
+      d.orbitAngle += 0.01;
+      d.x = d.coreRef.x + Math.cos(d.orbitAngle) * d.orbitRadius;
+      d.y = d.coreRef.y + Math.sin(d.orbitAngle) * d.orbitRadius;
+      
+      // Satellite can separate when core health is below 50%
+      if (d.coreRef.health < d.coreRef.maxHealth * 0.5 && d.canSeparate) {
+        d.separated = true;
+        d.vx = Math.cos(d.orbitAngle) * 2;
+        d.vy = Math.sin(d.orbitAngle) * 2;
+      }
+    } else if (d.separated) {
+      // Move independently when separated
+      d.x += d.vx || 0;
+      d.y += d.vy || 0;
+      d.vx *= 0.98;
+      d.vy *= 0.98;
+      
+      // Slowly move toward player
+      const dx = state.player.x - d.x;
+      const dy = state.player.y - d.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 0) {
+        d.x += (dx / dist) * 0.5;
+        d.y += (dy / dist) * 0.5;
+      }
+      
+      // Satellites shoot when separated
+      d.shootTimer = (d.shootTimer || 0) + 1;
+      if (d.shootTimer > 100) {
+        d.shootTimer = 0;
+        const angleToPlayer = Math.atan2(state.player.y - d.y, state.player.x - d.x);
+        state.pushLightning({
+          x: d.x,
+          y: d.y,
+          dx: Math.cos(angleToPlayer) * 6,
+          dy: Math.sin(angleToPlayer) * 6,
+          size: 8,
+          damage: 20,
+          color: "rgba(255, 100, 0, 0.9)"
+        });
+      }
+    }
+    return; // Skip the rest for satellite parts
+  }
+  
+  // Core part behavior - shared diamond behavior (graviton, spawning)
   updateDiamond(d);
   
   // Boss-specific timers
@@ -851,6 +901,8 @@ export function updateMoltenDiamond(d) {
   d.crystalTimer = (d.crystalTimer || 0) + 1;
   d.lavaPoolTimer = (d.lavaPoolTimer || 0) + 1;
   d.phaseTimer = (d.phaseTimer || 0) + 1;
+  d.megaCannonTimer = (d.megaCannonTimer || 0) + 1;
+  d.reflectorSpawnTimer = (d.reflectorSpawnTimer || 0) + 1;
   
   // Phase progression based on health
   const healthPercent = d.health / d.maxHealth;
@@ -913,6 +965,54 @@ export function updateMoltenDiamond(d) {
       color: "rgba(255, 80, 0, 0.8)",
       life: 180, // Lasts 3 seconds
       damage: 10 // Continuous damage
+    });
+  }
+  
+  // NEW: Mega Assault Cannon - fires projectiles in all directions
+  if (d.megaCannonTimer > (d.currentPhase === 3 ? 300 : 400)) {
+    d.megaCannonTimer = 0;
+    const projectileCount = 16 + (d.currentPhase * 4); // 20-28 projectiles
+    for (let i = 0; i < projectileCount; i++) {
+      const angle = (i / projectileCount) * Math.PI * 2;
+      state.pushLightning({
+        x: d.x,
+        y: d.y,
+        dx: Math.cos(angle) * 8,
+        dy: Math.sin(angle) * 8,
+        size: 14,
+        damage: 35,
+        color: "rgba(255, 0, 0, 0.95)"
+      });
+    }
+    // Visual effect for mega cannon
+    for (let i = 0; i < 30; i++) {
+      state.pushExplosion({
+        x: d.x,
+        y: d.y,
+        dx: (Math.random() - 0.5) * 8,
+        dy: (Math.random() - 0.5) * 8,
+        radius: 8 + Math.random() * 4,
+        color: "rgba(255, 100, 0, 0.9)",
+        life: 25
+      });
+    }
+  }
+  
+  // NEW: Spawn mini reflector units during the fight
+  if (d.reflectorSpawnTimer > 450) {
+    d.reflectorSpawnTimer = 0;
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 120;
+    state.pushEnemy({
+      x: d.x + Math.cos(angle) * dist,
+      y: d.y + Math.sin(angle) * dist,
+      size: 35,
+      speed: 2.5,
+      health: 40,
+      type: "reflector",
+      fromBoss: true,
+      reflectCooldown: 0,
+      reflectActive: false
     });
   }
   

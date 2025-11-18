@@ -429,7 +429,14 @@ export function checkBulletCollisions() {
       if (bi >= 0 && bi < state.bullets.length && Math.hypot(state.bullets[bi].x-d.x, state.bullets[bi].y-d.y) < d.size/2) {
         const damageMultiplier = d.vulnerable ? 1 : 0.3;
         const bulletDamage = getBulletDamage(state.bullets[bi]);
-        d.health -= (state.bullets[bi].owner === "player" ? bulletDamage * 1.2 : 6) * damageMultiplier;
+        let totalDamage = (state.bullets[bi].owner === "player" ? bulletDamage * 1.2 : 6) * damageMultiplier;
+        
+        // Apply damage reduction for molten-diamond boss parts
+        if (d.damageReduction) {
+          totalDamage *= (1 - d.damageReduction);
+        }
+        
+        d.health -= totalDamage;
         applyKnockback(d, state.bullets[bi], 3);
         state.bullets.splice(bi,1);
         if (d.health <= 0) { 
