@@ -88,6 +88,16 @@ export function setupInputHandlers() {
       state.player.megaCannonChargeTime = 0;
     }
 
+    // V key for Voltron Mode activation
+    if (key === "v") {
+      // Import activateVoltron from voltron.js
+      import('./voltron.js').then(module => {
+        if (module.canActivateVoltron()) {
+          module.activateVoltron();
+        }
+      });
+    }
+    
     // Space bar for Megatonne Bomb
     if (e.key === " " || key === "space") {
       state.keys["space"] = true;

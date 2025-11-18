@@ -110,6 +110,14 @@ export function updatePlayerMovement() {
     } else if (state.player.boosting) {
       speedMultiplier = BOOST_SPEED_MULTIPLIER;
     }
+    
+    // Apply Voltron mode speed boost
+    if (state.player.voltronMode) {
+      import('./voltron.js').then(module => {
+        speedMultiplier *= module.getVoltronSpeedBoost();
+      });
+    }
+    
     speedMultiplier *= slowMultiplier;
     
     const effectiveSpeed = state.player.speed * speedMultiplier;

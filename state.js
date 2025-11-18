@@ -121,7 +121,13 @@ export let player = {
   ramModeCooldown: 0,
   // Mega Shot system
   megaShotCooldown: 0,
-  megaShotSequence: [] // Track key sequence for down + forward + shoot
+  megaShotSequence: [], // Track key sequence for down + forward + shoot
+  // Voltron Mode system
+  voltronMode: false,
+  voltronTimer: 0,
+  voltronBoostDrainRate: 0.3, // Drain per frame
+  voltronAuraDrainRate: 0.01, // Drain per frame
+  voltronPowerMultiplier: 1.0 // Scales with aura level
 };
 
 export let goldStar = {
@@ -388,6 +394,9 @@ export function resetGame() {
   player.ramModeCooldown = 0;
   player.megaShotCooldown = 0;
   player.megaShotSequence = [];
+  player.voltronMode = false;
+  player.voltronTimer = 0;
+  player.voltronPowerMultiplier = 1.0;
 
   // reset gold star
   goldStar.x = 0;

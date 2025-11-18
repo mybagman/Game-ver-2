@@ -20,6 +20,7 @@ import { updateMiniDrones, drawMiniDrones } from './minidrones.js';
 import { tryAdvanceWave, spawnWave, renderCinematic } from './waveManager.js';
 import { updateReflectorSystem, updateHomingMissiles, drawHomingMissiles } from './homingMissiles.js';
 import { updateRailGunSystem, updateRailGunShots, drawRailGunShots } from './railgun.js';
+import { updateVoltron, drawVoltronUI } from './voltron.js';
 import { renderOpeningCinematic, isOpeningCinematicComplete } from './openingCinematic.js';
 /* patched imports: consolidated drawing helpers from drawing.js */
 // Replace the single `from './drawing.js'` import with these direct imports:
@@ -119,6 +120,7 @@ export function gameLoop(now) {
   try { updateHomingMissiles(); } catch (e) { console.error('[gameLoop] updateHomingMissiles error:', e); }
   try { updateRailGunSystem(); } catch (e) { console.error('[gameLoop] updateRailGunSystem error:', e); }
   try { updateRailGunShots(); } catch (e) { console.error('[gameLoop] updateRailGunShots error:', e); }
+  try { updateVoltron(); } catch (e) { console.error('[gameLoop] updateVoltron error:', e); }
   try { checkBulletCollisions(); } catch (e) { console.error('[gameLoop] checkBulletCollisions error:', e); }
   try { checkRamModeCollisions(); } catch (e) { console.error('[gameLoop] checkRamModeCollisions error:', e); }
   try { tryAdvanceWave(); } catch (e) { console.error('[gameLoop] tryAdvanceWave error:', e); }
@@ -325,6 +327,13 @@ export function renderFrame() {
   // 9) UI last (HUD)
   if (typeof drawUI === 'function') {
     try { drawUI(); } catch (e) {}
+  }
+  
+  // 9.5) Voltron UI overlay
+  try {
+    drawVoltronUI(state.ctx);
+  } catch (e) {
+    console.error('[gameLoop] drawVoltronUI error:', e);
   }
   
   // 10) Weapon level-up notifications (on top of everything)
