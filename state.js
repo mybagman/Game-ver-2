@@ -1,476 +1,120 @@
-// == Globals and initial state ==
-export let canvas, ctx;
-
-export function setCanvas(c) { canvas = c; }
-export function setCtx(c) { ctx = c; }
-
-export let cloudParticles = [];
-export let bullets = [];
-export let enemies = [];
-export let diamonds = [];
-export let tunnels = [];
-export let tanks = [];
-export let walkers = [];
-export let mechs = [];
-export let dropships = [];
-export let debris = [];
-export let explosions = [];
-export let lightning = [];
-export let powerUps = [];
-export let reflectionEffects = [];
-export let redPunchEffects = [];
-export let minionsToAdd = [];
-export let homingMissiles = [];
-export let railGunShots = []; // Rail gun projectiles for Gold Star
-export let empProjectiles = [];
-export let groundObjects = []; // Ground collision objects for building waves
-export let megatonneBombs = []; // Megatonne bomb projectiles
-export let miniDrones = []; // Mini-drones spawned by gold star level ups
-
-export let keys = {};
-export let shootCooldown = 0;
-export let frameCount = 0;
-export let firingIndicatorAngle = 0;
-
-// Weapon system state
-export let waveFireRotation = 0;
-export let lightningStrikeCooldown = 0;
-export let fireLightningStrike = false;
-export let lightningStrikeLevel = 0;
-export let lightningStrikes = []; // Active lightning strike arcs
-
-export let score = 0;
-export let wave = 0;
-export let waveTransition = false;
-export let waveTransitionTimer = 0;
-export const WAVE_BREAK_MS = 3000;
-
-// Perspective tracking - side view starts at wave 11
-export function isSideView() {
-  return wave >= 11;
-}
-
-export let highScore = 0;
-export let highScores = [];
-
-export let gameOver = false;
-export let recordedScoreThisRun = false;
-export let lastDeathWave = 0;
-
-export let cinematic = {
-  playing: false,
-  playerName: "Ghost",
-  openingPlayed: false // Track if opening cinematic has been shown
-};
-
-export let player = {
-  x: 0,
-  y: 0,
-  size: 28,
-  speed: 4,
-  health: 100,
-  maxHealth: 100,
-  lives: 3,
-  invulnerable: false,
-  invulnerableTimer: 0,
-  reflectAvailable: false,
-  fireRateBoost: 1,
-  healAccumulator: 0,
-  rotation: -Math.PI / 2, // Start pointing up (0 degrees in game coordinates)
-  targetRotation: -Math.PI / 2,
-  vx: 0, // velocity x
-  vy: 0, // velocity y
-  thrusterParticles: [], // engine particles
-  // Dash system properties
-  dashing: false,
-  dashTimer: 0,
-  dashCooldown: 0,
-  lastKeyPress: { key: null, time: 0 },
-  // Boost meter system properties
-  boosting: false,
-  boostMeter: 100,
-  maxBoostMeter: 100,
-  boostKey: null, // Track which key activated boost
-  // Ability levels (1-3)
-  dashLevel: 1,
-  ramLevel: 1,
-  megaCannonLevel: 1,
-  // Mega cannon charging system
-  megaCannonCharging: false,
-  megaCannonChargeTime: 0,
-  megaCannonMaxCharge: 60, // frames (~1 second at 60fps)
-  // Reflector power-up system (now creates shield instead of missiles)
-  reflectorLevel: 0,
-  reflectorCooldown: 0,
-  reflectorPowerUpCount: 0, // Track power-ups collected before leveling
-  // Shield system
-  shieldHealth: 0,
-  maxShieldHealth: 0,
-  shieldActive: false,
-  // Megatonne Bomb system
-  fireMegatonneBomb: false,
-  megatonneBombCooldown: 0,
-  // Player Homing EMP system
-  lastFireKeyPress: { key: null, time: 0 }, // Track double-tap for fire buttons
-  empCooldown: 0, // Cooldown timer for EMP (frames)
-  empCooldownMax: 180, // 3 seconds at 60fps
-  firePlayerEMP: false, // Flag to trigger EMP firing
-  // Ram Mode system
-  ramMode: false,
-  ramModeTimer: 0,
-  ramModeCooldown: 0,
-  // Mega Shot system
-  megaShotCooldown: 0,
-  megaShotSequence: [], // Track key sequence for down + forward + shoot
-  // Voltron Mode system
-  voltronMode: false,
-  voltronTimer: 0,
-  voltronBoostDrainRate: 0.3, // Drain per frame
-  voltronAuraDrainRate: 0.01, // Drain per frame
-  voltronPowerMultiplier: 1.0 // Scales with aura level
-};
-
-export let goldStar = {
-  x: 0,
-  y: 0,
-  size: 36,
-  health: 200,
-  maxHealth: 200,
-  alive: true,
-  collecting: false,
-  collectTimer: 0,
-  speed: 3.5,  // Increased from 2 to 3.5 (1.75x faster)
-  reflectAvailable: false,
-  redPunchLevel: 0,
-  blueCannonLevel: 0,
-  redKills: 0,
-  blueKills: 0,
-  punchCooldown: 0,
-  cannonCooldown: 0,
-  respawnTimer: 0,
-  healAccumulator: 0,
-  targetPowerUp: null,
-  // Rail gun system (replaces homing missile)
-  railGunLevel: 0,
-  railGunCooldown: 0,
-  railGunPowerUpCount: 0, // Track power-ups collected before leveling
-  // Animation states for visual upgrades
-  redPunchCharging: false,
-  redPunchChargeTimer: 0,
-  blueCannonTurretDeployed: false,
-  blueCannonTurretDeployTimer: 0,
-  dronePodDetached: false,
-  dronePodReturnTimer: 0,
-  // Power-up visual effect animations
-  redPunchAnimation: { active: false, frame: 0, particles: [] },
-  blueCannonAnimation: { active: false, frame: 0, energyLines: [] },
-  railGunAnimation: { active: false, frame: 0, charge: [] }
-};
-
-export const GOLD_STAR_PICKUP_FRAMES = 30;
-export const PICKUP_RADIUS = 60;
-export const MIN_SPAWN_DIST = 220;
-
-export const goldStarAura = {
-  baseRadius: 50,
-  radius: 50,
-  pulse: 0,
-  level: 0,
-  active: false
-};
-
-export let auraSparks = [];
-export let auraShockwaves = [];
-export let auraPulseTimer = 0;
-
-export let backgroundOffset = 0;
-
-// Mutation functions
-export function incrementFrameCount() { frameCount++; }
-export function decrementShootCooldown() { if (shootCooldown > 0) shootCooldown--; }
-export function setShootCooldown(val) { shootCooldown = val; }
-export function setFireIndicatorAngle(val) { firingIndicatorAngle = val; }
-export function incrementBackgroundOffset(val) { backgroundOffset += val; }
-export function setWaveTransition(val) { waveTransition = val; }
-export function setWaveTransitionTimer(val) { waveTransitionTimer = val; }
-export function incrementWaveTransitionTimer() { waveTransitionTimer++; }
-export function incrementWave() { wave++; }
-export function setGameOver(val) { gameOver = val; }
-export function setRecordedScoreThisRun(val) { recordedScoreThisRun = val; }
-export function setLastDeathWave(val) { lastDeathWave = val; }
-export function addScore(val) { score += val; }
-export function setHighScore(val) { highScore = val; }
-export function addHighScore(entry) { highScores.push(entry); }
-export function setAuraSparks(val) { auraSparks = val; }
-export function setAuraShockwaves(val) { auraShockwaves = val; }
-export function incrementAuraPulseTimer() { auraPulseTimer++; }
-
-// Explicit setters/getters for primitives so callers don't accidentally capture import-time snapshots
-export function setScore(value) { score = value; }
-export function getScore() { return score; }
-export function setWave(value) { wave = value; }
-export function getWave() { return wave; }
-
-// Array mutators
-export function clearBullets() { bullets.length = 0; }
-export function clearLightning() { lightning.length = 0; }
-
-export function filterBullets(fn) { 
-  for (let i = bullets.length - 1; i >= 0; i--) {
-    if (!fn(bullets[i])) bullets.splice(i, 1);
-  }
-}
-export function filterPowerUps(fn) { 
-  for (let i = powerUps.length - 1; i >= 0; i--) {
-    if (!fn(powerUps[i])) powerUps.splice(i, 1);
-  }
-}
-export function filterLightning(fn) { 
-  for (let i = lightning.length - 1; i >= 0; i--) {
-    if (!fn(lightning[i])) lightning.splice(i, 1);
-  }
-}
-export function filterExplosions(fn) { 
-  for (let i = explosions.length - 1; i >= 0; i--) {
-    if (!fn(explosions[i])) explosions.splice(i, 1);
-  }
-}
-export function filterEnemies(fn) { 
-  for (let i = enemies.length - 1; i >= 0; i--) {
-    if (!fn(enemies[i])) enemies.splice(i, 1);
-  }
-}
-
-export function pushEnemy(e) { 
-  // keep minimal logging; useful during debugging
-  console.log('[pushEnemy] adding enemy:', e && e.type, 'at', e && e.x, e && e.y);
-  enemies.push(e); 
-}
-export function pushBullet(b) { bullets.push(b); }
-export function pushLightning(l) { lightning.push(l); }
-export function pushExplosion(e) { explosions.push(e); }
-export function pushPowerUp(p) { powerUps.push(p); }
-export function pushTunnel(t) { tunnels.push(t); }
-export function pushDiamond(d) { diamonds.push(d); }
-export function pushTank(t) { tanks.push(t); }
-export function pushWalker(w) { walkers.push(w); }
-export function pushMech(m) { mechs.push(m); }
-export function pushDropship(d) { dropships.push(d); }
-export function pushDebris(d) { debris.push(d); }
-export function pushCloudParticle(c) { cloudParticles.push(c); }
-export function pushReflectionEffect(r) { reflectionEffects.push(r); }
-export function pushRedPunchEffect(e) { redPunchEffects.push(e); }
-export function pushAuraSpark(s) { auraSparks.push(s); }
-export function pushAuraShockwave(s) { auraShockwaves.push(s); }
-export function pushHomingMissile(m) { homingMissiles.push(m); }
-export function pushRailGunShot(r) { railGunShots.push(r); }
-export function pushEmpProjectile(e) { empProjectiles.push(e); }
-export function pushGroundObject(g) { groundObjects.push(g); }
-export function pushMegatonneBomb(b) { megatonneBombs.push(b); }
-export function pushLightningStrike(s) { lightningStrikes.push(s); }
-
-export function filterAuraSparks(fn) { auraSparks = auraSparks.filter(fn); }
-export function filterAuraShockwaves(fn) { auraShockwaves = auraShockwaves.filter(fn); }
-export function filterHomingMissiles(fn) { 
-  for (let i = homingMissiles.length - 1; i >= 0; i--) {
-    if (!fn(homingMissiles[i])) homingMissiles.splice(i, 1);
-  }
-}
-export function filterRailGunShots(fn) { 
-  for (let i = railGunShots.length - 1; i >= 0; i--) {
-    if (!fn(railGunShots[i])) railGunShots.splice(i, 1);
-  }
-}
-export function filterEmpProjectiles(fn) { 
-  for (let i = empProjectiles.length - 1; i >= 0; i--) {
-    if (!fn(empProjectiles[i])) empProjectiles.splice(i, 1);
-  }
-}
-export function filterMegatonneBombs(fn) { 
-  for (let i = megatonneBombs.length - 1; i >= 0; i--) {
-    if (!fn(megatonneBombs[i])) megatonneBombs.splice(i, 1);
-  }
-}
-export function filterLightningStrikes(fn) { 
-  for (let i = lightningStrikes.length - 1; i >= 0; i--) {
-    if (!fn(lightningStrikes[i])) lightningStrikes.splice(i, 1);
-  }
-}
-
-export function pushMinion(m) { minionsToAdd.push(m); }
-export function flushMinions() { 
-  if (minionsToAdd.length) {
-    enemies.push(...minionsToAdd); 
-    minionsToAdd.length = 0;
-  }
-}
-
-// Call this to reset everything for a new run
-export function resetGame() {
-  console.log('[resetGame] resetting game state for a new run');
-
-  // clear collections
-  cloudParticles.length = 0;
-  bullets.length = 0;
-  enemies.length = 0;
-  diamonds.length = 0;
-  tunnels.length = 0;
-  tanks.length = 0;
-  walkers.length = 0;
-  mechs.length = 0;
-  dropships.length = 0;
-  debris.length = 0;
-  explosions.length = 0;
-  lightning.length = 0;
-  powerUps.length = 0;
-  reflectionEffects.length = 0;
-  redPunchEffects.length = 0;
-  minionsToAdd.length = 0;
-  auraSparks.length = 0;
-  auraShockwaves.length = 0;
-  homingMissiles.length = 0;
-  railGunShots.length = 0;
-  empProjectiles.length = 0;
-  groundObjects.length = 0;
-  megatonneBombs.length = 0;
-  lightningStrikes.length = 0;
-  miniDrones.length = 0;
-
-  // reset simple state
-  keys = {};
-  shootCooldown = 0;
-  frameCount = 0;
-  waveFireRotation = 0;
-  lightningStrikeCooldown = 0;
-  fireLightningStrike = false;
-  lightningStrikeLevel = 0;
-  firingIndicatorAngle = 0;
-  score = 0;
-  wave = 0;
-  waveTransition = false;
-  waveTransitionTimer = 0;
-  gameOver = false;
-  recordedScoreThisRun = false;
-  lastDeathWave = 0;
-  auraPulseTimer = 0;
-  backgroundOffset = 0;
-
-  // reset player
-  player.x = 0;
-  player.y = 0;
-  player.size = 28;
-  player.speed = 4;
-  player.health = player.maxHealth = 100;
-  player.lives = 3;
-  player.invulnerable = false;
-  player.invulnerableTimer = 0;
-  player.reflectAvailable = false;
-  player.fireRateBoost = 1;
-  player.healAccumulator = 0;
-  player.rotation = -Math.PI / 2;
-  player.targetRotation = -Math.PI / 2;
-  player.vx = 0;
-  player.vy = 0;
-  player.thrusterParticles = [];
-  player.dashing = false;
-  player.dashTimer = 0;
-  player.dashCooldown = 0;
-  player.lastKeyPress = { key: null, time: 0 };
-  player.boosting = false;
-  player.boostMeter = 100;
-  player.maxBoostMeter = 100;
-  player.boostKey = null;
-  player.reflectorLevel = 0;
-  player.reflectorCooldown = 0;
-  player.shieldHealth = 0;
-  player.maxShieldHealth = 0;
-  player.shieldActive = false;
-  player.lastFireKeyPress = { key: null, time: 0 };
-  player.empCooldown = 0;
-  player.empCooldownMax = 180;
-  player.firePlayerEMP = false;
-  player.ramMode = false;
-  player.ramModeTimer = 0;
-  player.ramModeCooldown = 0;
-  player.megaShotCooldown = 0;
-  player.megaShotSequence = [];
-  player.voltronMode = false;
-  player.voltronTimer = 0;
-  player.voltronPowerMultiplier = 1.0;
-
-  // reset gold star
-  goldStar.x = 0;
-  goldStar.y = 0;
-  goldStar.size = 36;
-  goldStar.health = goldStar.maxHealth = 200;
-  goldStar.alive = true;
-  goldStar.collecting = false;
-  goldStar.collectTimer = 0;
-  goldStar.speed = 3.5;  // Increased from 2 to 3.5 (1.75x faster)
-  goldStar.reflectAvailable = false;
-  goldStar.redPunchLevel = 0;
-  goldStar.blueCannonLevel = 0;
-  goldStar.redKills = 0;
-  goldStar.blueKills = 0;
-  goldStar.punchCooldown = 0;
-  goldStar.cannonCooldown = 0;
-  goldStar.respawnTimer = 0;
-  goldStar.healAccumulator = 0;
-  goldStar.targetPowerUp = null;
-  goldStar.railGunLevel = 0;
-  goldStar.railGunCooldown = 0;
-  goldStar.redPunchCharging = false;
-  goldStar.redPunchChargeTimer = 0;
-  goldStar.blueCannonTurretDeployed = false;
-  goldStar.blueCannonTurretDeployTimer = 0;
-  goldStar.dronePodDetached = false;
-  goldStar.dronePodReturnTimer = 0;
-  goldStar.redPunchAnimation = { active: false, frame: 0, particles: [] };
-  goldStar.blueCannonAnimation = { active: false, frame: 0, energyLines: [] };
-  goldStar.railGunAnimation = { active: false, frame: 0, charge: [] };
-
-  // aura
-  goldStarAura.radius = goldStarAura.baseRadius = 50;
-  goldStarAura.pulse = 0;
-  goldStarAura.level = 0;
-  goldStarAura.active = false;
-
-  console.log('[resetGame] state after reset:', {
-    gameOver, score, wave, playerLives: player.lives, playerHealth: player.health, goldStarAlive: goldStar.alive
-  });
-}
-
-// Optional: defensive check you can call before rendering the game over screen to avoid false positives
-export function shouldShowGameOver() {
-  // adjust conditions to match your intended rules
-  return gameOver || (player.lives <= 0) || (!goldStar.alive && wave > 0);
-}
-
-// Getters for live access to objects/primitives
-export function getGameOver() { return gameOver; }
-export function getPlayer() { return player; }
-export function getPlayerLives() { return player.lives; }
-export function getPlayerHealth() { return player.health; }
-
-// Add helper to reset animation state for live objects
-export function resetAllAnimationTimers() {
-  function resetList(list) {
-    if (!Array.isArray(list)) return;
-    list.forEach(obj => {
-      if (!obj) return;
-      if (typeof obj.animFrame !== 'undefined') obj.animFrame = 0;
-      if (typeof obj.animTimer !== 'undefined') obj.animTimer = 0;
-      if (obj.animation && typeof obj.animation.reset === 'function') {
-        try { obj.animation.reset(); } catch (e) { /* ignore animation reset errors */ }
+// Game State Management
+const gameState = {
+  player: {
+    x: 100,
+    y: 100,
+    width: 40,
+    height: 40,
+    speed: 5,
+    health: 100,
+    maxHealth: 100,
+    score: 0,
+    activeWeapon: null, // Track currently active weapon (gold star)
+    weapons: {
+      goldStar: {
+        active: false,
+        damage: 25,
+        fireRate: 100,
+        range: 300,
+        lastFired: 0
       }
-    });
+    }
+  },
+  
+  enemies: [],
+  
+  projectiles: [],
+  
+  powerUps: [],
+  
+  ui: {
+    score: 0,
+    health: 100,
+    weaponStatus: {
+      goldStar: {
+        available: false,
+        ammo: 0,
+        cooldown: 0
+      }
+    }
+  },
+  
+  game: {
+    paused: false,
+    gameOver: false,
+    wave: 1,
+    enemySpawnRate: 1000,
+    lastEnemySpawn: 0
   }
+};
 
-  resetList(enemies);
-  resetList(mechs);
-  resetList(tanks);
-  resetList(bullets);
-  resetList(walkers);
-  resetList(minionsToAdd);
-  // extend with other live lists as needed...
+// Helper functions to manage state
+function updatePlayerPosition(x, y) {
+  gameState.player.x = x;
+  gameState.player.y = y;
 }
+
+function updatePlayerHealth(amount) {
+  gameState.player.health = Math.max(0, Math.min(gameState.player.maxHealth, gameState.player.health + amount));
+  gameState.ui.health = gameState.player.health;
+}
+
+function setActiveWeapon(weaponName) {
+  gameState.player.activeWeapon = weaponName;
+  if (weaponName === 'goldStar') {
+    gameState.player.weapons.goldStar.active = true;
+  }
+}
+
+function deactivateWeapon(weaponName) {
+  if (gameState.player.activeWeapon === weaponName) {
+    gameState.player.activeWeapon = null;
+  }
+  if (weaponName === 'goldStar') {
+    gameState.player.weapons.goldStar.active = false;
+  }
+}
+
+function addEnemy(enemy) {
+  gameState.enemies.push(enemy);
+}
+
+function removeEnemy(index) {
+  gameState.enemies.splice(index, 1);
+}
+
+function addProjectile(projectile) {
+  gameState.projectiles.push(projectile);
+}
+
+function removeProjectile(index) {
+  gameState.projectiles.splice(index, 1);
+}
+
+function addScore(points) {
+  gameState.player.score += points;
+  gameState.ui.score = gameState.player.score;
+}
+
+function updateWeaponCooldown(weaponName, cooldown) {
+  if (weaponName === 'goldStar') {
+    gameState.ui.weaponStatus.goldStar.cooldown = cooldown;
+  }
+}
+
+function resetGameState() {
+  gameState.player.health = gameState.player.maxHealth;
+  gameState.player.score = 0;
+  gameState.player.activeWeapon = null;
+  gameState.enemies = [];
+  gameState.projectiles = [];
+  gameState.powerUps = [];
+  gameState.game.paused = false;
+  gameState.game.gameOver = false;
+  gameState.game.wave = 1;
+  gameState.ui.score = 0;
+  gameState.ui.health = gameState.player.maxHealth;
+}
+
+export default gameState;
+export { updatePlayerPosition, updatePlayerHealth, setActiveWeapon, deactivateWeapon, addEnemy, removeEnemy, addProjectile, removeProjectile, addScore, updateWeaponCooldown, resetGameState };
